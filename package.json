@@ -1,0 +1,28 @@
+{
+  "name": "test1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js",
+    "dev": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "cheerio": "^0.22.0",
+    "cookie-parser": "^1.4.3",
+    "ejs": "^2.5.2",
+    "express": "^4.14.0",
+    "htmlparser2": "^3.9.2",
+    "jquery": "^3.1.1",
+    "later": "^1.2.0",
+    "mongodb": "^2.2.11",
+    "mongoose": "^4.7.0",
+    "node-inspector": "^0.12.8",
+    "nodemailer": "^2.6.4",
+    "spotify-web-api-node": "^2.3.6"
+  }
+}

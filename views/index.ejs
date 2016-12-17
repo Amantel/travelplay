@@ -1,0 +1,434 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        TravelPlay
+    </title>
+
+    <link href="./css/bootstrap.min.css" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body>
+
+
+
+
+    <div class="container">
+
+
+
+        <div class="row ">
+            <div class="col-lg-12">
+                <h1>TravelPlay</h1>
+                <p class="lead">Going to New York 12.01.2017-20.01.2017</p>
+                <p>
+
+                    <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
+
+                </p>
+            </div>
+        </div>
+
+
+        <div class="row ">
+            <div class="col-lg-12">
+                <h1>Cleared list</h1>
+                <% 
+                if(other_info) {
+
+                var artists=other_info.distinct_list;
+                for(i=0; i<artists.length; i++) {
+                    var artist=artists[i];
+                %>
+
+                <div class="following">
+                        <span class="band_name">
+                            <%=artist%>
+                        </span>
+       
+                </div>
+                <% 
+                    }
+                }
+                %>
+
+
+
+            </div>
+        </div>
+
+
+
+        <div class="row ">
+            <div class="col-lg-12 results" style="background-color: #FFF">
+                <h1>Related list</h1>
+
+               
+    <% 
+                if(other_info) {
+
+                var artists=other_info;
+                for(i=0; i<artists.length; i++) {
+                    var artist=artists[i];
+                %>
+
+        <div class="following">
+            <div class="pull-left">
+                <span class="band_name">
+                    <%=artist.name%>
+                </span>
+                <span class="id_style ">
+                    ID 
+                    :
+                    <%=artist.id%>
+                </span>
+            </div>
+            <div class="pull-right">
+                <a href="<%=artist.href%>" class="btn btn-info">
+                    <%=artist.href%>
+                </a>
+            </div>
+        </div>
+        <h2>Related artists</h2>
+
+
+        <%
+                for(j=0;j<artist.related.length; j++) {
+                    var artist_sp=artist.related[j];
+                %>
+            <div class="related">
+                <div class="pull-left">
+                    <span class="band_name">
+                    <%=artist_sp.name%>
+                </span>
+                    <span class="id_style ">
+                    ID 
+                    :
+                    <%=artist_sp.id%>
+                </span>
+                </div>
+                <div class="pull-right">
+                    <a href="<%=artist_sp.href%>" class="btn btn-link">
+                        <%=artist_sp.href%>
+                    </a>
+                </div>
+            </div>
+            <%
+                    }
+                 %>
+
+
+
+                <hr class="" style="clear:both;     margin-top: 50px;    margin-bottom: 50px;">
+<%
+                    }
+
+
+
+                }
+                 %>
+ 
+    <hr>
+    <div class="all_info">
+        <button id="show_json" class="btn btn-info">Toggle JSON view</button>
+        <div class="hidden all_info_json">
+
+            <%-JSON.stringify(other_info)%>
+
+
+        </div>
+
+
+
+    </div>
+    </div>
+    </div>
+
+
+
+
+
+    <footer class="footer">
+        <hr>
+        <p>&copy; 2016 Company, Inc.</p>
+    </footer>
+
+    </div>
+    <!-- /container -->
+
+
+    <style>
+        .container {
+            color:#4b5462;
+            background-color: rgba(255, 255, 255, 0.6);
+            margin-top:10%;          
+             
+        }
+       
+         .following {
+    clear: both;
+    padding: 10px 100px;
+    border-bottom: 3px solid #e31212;
+    min-height: 60px;         
+         }
+ .following.id_style {
+     vertical-align: super;
+    font-size: 12px;
+ }
+ .following.band_name {
+     font-size: 24px;
+ }
+
+.related {
+    text-align: left;
+    clear:both;
+    padding: 10px;
+ }
+ .id_style {
+     vertical-align: super;
+    font-size: 10px;
+ }
+ .band_name {
+     font-size: 20px;
+ }
+
+
+
+
+
+.all_info {
+    margin:20px;
+}
+.all_info_json {
+    margin-top:10px;
+}
+
+
+
+        .response {
+            font-size: 16px;
+            padding: 10px;
+            border: #eee 2px solid;
+            border-collapse: collapse;
+            margin: 4px;
+        }
+        
+        .responses td {
+            vertical-align: top;
+        }
+        
+        .response_price {
+            color: #e31212;
+            font-weight: bold;
+            word-break: break-word;
+        }
+        
+        .response_title {
+            color: #281557;
+            font-size: 22px;
+            word-break: break-word;
+        }
+        
+        .text_block {
+            text-align: center;
+            word-break: break-word;
+        }
+        
+        .text_block div {
+            margin: 10px 0;
+        }
+        
+        .image_block {
+            text-align: center;
+        }
+        
+        .request {
+            word-break: break-all;
+            clear: both;
+            padding: 70px 0;
+        }
+        
+        .requests {
+            padding: 0;
+            margin: 0;
+            list-style-type: none;
+            margin: 60px 0;
+        }
+        
+        .helper {
+            display: inline-block;
+            border-bottom: 1px dashed lightblue;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .helper:hover {
+            border-bottom: 1px dashed #FFF;
+        }
+        
+        #subscribe_form label {
+            margin: 10px 0;
+        }
+        
+        #subscribe_form input {
+            margin-bottom: 10px;
+        }
+        
+        ul.what_ul {
+            list-style-type: katakana;
+            color: red;
+        }
+        
+        ul.what_ul .content {
+            color: #000;
+        }
+        
+        .what_img_block {
+            text-align: center;
+        }
+        
+        .what_number {
+            font-size: 41px;
+            color: #FF0000;
+        }
+        
+        .what_text {
+            font-size: 28px;
+        }
+        
+        .what_img {
+            display: inline-block;
+        }
+        
+        body {
+            color: #FFF;
+            background-color: #4b5462;
+            background-position: 0px 0px;
+            background-image: url(http://galaktika.hu/wp-content/uploads/2016/02/maxresdefault2.jpg);
+            background-size: cover;
+            background-repeat: repeat;
+            text-align: center;
+        }
+        
+        .jumbotron .lead {
+            font-size: 32px;
+        }
+        
+        .jumbotron h1 {
+            font-size: 64px;
+        }
+        
+        .button {
+            border-radius: 4px;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 24px;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none !important;
+            transition: opacity 0.1s ease-in;
+            color: #fff;
+        }
+        
+        .button:hover {
+            color: #fff;
+        }
+        
+        .button:focus {
+            color: #fff;
+        }
+        
+        .red_button {
+            background-color: #e31212;
+        }
+        
+        .red_button:hover {
+            background-color: #ff0000;
+        }
+        
+        .grey_button {
+            background-color: #827f7f;
+        }
+        
+        .grey_button:hover {
+            background-color: #a7a5a5;
+        }
+        
+        .big_button {
+            width: 100%;
+            padding: 18px 32px;
+            font-size: 22px;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            border-top: 1px solid #4b5462;
+            padding-top: 10px;
+            color: #4b5462;
+            margin: 20px 0;
+            font-size: small;
+            text-align: center;
+                background-color: #FFF;
+        }
+    </style>
+
+
+<script type='text/javascript' src="./js/jquery-latest.js"></script>
+
+<script type='text/javascript' src="./js/bootstrap.min.js"></script>
+<script type='text/javascript' src="./js/URI.js"></script>
+<script type="text/javascript">
+
+
+    $(function () {
+
+
+        $("#show_json").click(function (e) {
+            $(this).parent().find(".all_info_json").toggleClass("hidden");
+        });
+        $(".show_help").click(function (e) {
+            $("#what_to_do").toggleClass("hidden");
+        });
+
+        $("[data-action=loadMore]").click(function (e) {
+            e.preventDefault();
+            var this_button = $(this);
+            var table_body = $(this).parent().find("table tbody");
+            var max_fetch = $(this).attr("data-max_fetch") * 1;
+            var from = table_body.find(".response").length;
+            var to = from * 1 + max_fetch;
+
+            var intro_data = { from: from, to: to, type: "html", max_fetch: max_fetch }
+            $.get("./request/" + $(this).attr("data-id") + "/responses", intro_data, function (data) {
+                if (data == "") {
+                    console.log("Nothing found.");
+                    this_button.hide();
+                }
+                else {
+                    table_body.append(data);
+                    console.log("Load was performed.");
+                }
+            });
+
+
+        })
+
+    });
+
+
+
+</script>
+
+
+
+</body>
+
+</html>

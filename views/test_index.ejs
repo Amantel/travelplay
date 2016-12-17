@@ -1,0 +1,352 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+      Футуратор
+    </title>
+
+	
+<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<script  type='text/javascript'  src="//code.jquery.com/jquery-latest.js"></script>
+
+
+
+
+
+  </head>
+  
+  <body>
+ 
+  
+<!--
+  <a href="/check?url=http://ria.ru">CHECK</a><br>
+  <ul class="library">
+  <% for(var i=0; i<quotes.length; i++) {%>
+    <li class="items">
+      <span class="oid"><%= quotes[i]._id %></span>
+      <hr>        
+      <span class="website"><%= quotes[i].action %></span>
+      <hr>
+      <span class="preference"><%= quotes[i].preference %></span>
+    </li>
+  <% } %>
+  </ul>
+
+-->
+  
+  <div id="widgetboard_main">
+    
+   
+   <div >
+     
+     <section class="page-section padbottom50">
+       
+       <!-- Container -->
+       <div class="container">
+         
+         <!-- Row -->
+         <div class="row">
+           
+            
+           <!-- 3/4 Layout / Main Blog Content -->
+           <div class="pad40 col-sm-12 col-md-12 help_info">
+             
+             <div    style="display:block;">
+               <h4>
+                 Проверка CSS путей 1
+               </h4>
+               <br/>
+				<form id="test_paths" action="/fetch"  method="POST">
+					<input type="hidden" name="action" value="check_page">
+					<input type="hidden" name="preference" id="preference" value="">
+					<input type="hidden" name="cookie" value="">
+				
+					<div class="widget_info">
+						<label>Адрес каталога</label>
+						<input type="text" data-save-field  data-load-field    name="url" style="width:100%;" class="form-control" id="url" placeholder="http://" value="">
+					</div>	
+					
+					
+					<hr/>
+					<div class="widget_info">
+						<label>Путь до типового корня элемента каталога</label>
+						<input type="text" data-save-field  data-load-field  style="width:100%;" class="form-control" id="root_path" placeholder="" value="">
+					</div>					
+					
+					
+					<hr/>
+					<div class="widget_info">
+						<label>Путь от корня элемента до заголовка</label>
+						<input type="text" data-save-field  data-load-field  style="width:100%;" class="form-control" id="title_path" placeholder="" value="">
+						<label>Контент заголовка</label> (<a href="javascript:void(0)" onclick="document.getElementById('title_content').value ='all_text'">all_text</a>, <a href="javascript:void(0)" onclick="document.getElementById('title_content').value ='just_text'">just_text</a>)
+						<input type="text" data-save-field  data-load-field    style="width:100%;" class="form-control" id="title_content" placeholder="all_text, just_text" value="all_text">
+						<label>Если не найдено</label><br/>
+						<table width="100%"><tr>
+						<td><label><input type="radio"  name="title_absent" value="notify"/>Уведомать нас и продолжить - notify</label></td>
+						<td><label><input type="radio" checked="checked" name="title_absent" value="fail"/>Уведомить нас и остановить - fail</label></td>
+						<td><label><input type="radio" name="title_absent" value="ignore"/>Взять айтем молча - ignore</label></td>
+						<td><label><input type="radio" name="title_absent" value="skip" />Пропустить айтем молча - skip</label></td>
+						</tr></table>
+					</div>
+					<br/> 
+					<div class="widget_info">
+						<label>Путь от корня элемента до картинки</label>
+						<input type="text"  data-save-field  data-load-field  style="width:100%;" class="form-control" id="img_path" placeholder="" value="">
+						<label>Контент заголовка</label> (<a href="javascript:void(0)" onclick="document.getElementById('img_content').value ='[src]'">[src]</a>, <a href="javascript:void(0)" onclick="document.getElementById('img_content').value ='background'">background</a>)
+						<input type="text" data-save-field  data-load-field   style="width:100%;" class="form-control" id="img_content" placeholder="[src], just_text, [data-src], background" value="[src]">
+						<label>Если не найдено</label><br/>
+						<table width="100%"><tr>
+						<td><label><input type="radio"  name="img_absent" value="notify"/>Уведомать нас и продолжить - notify</label></td>
+						<td><label><input type="radio" checked="checked" name="img_absent" value="fail"/>Уведомить нас и остановить - fail</label></td>
+						<td><label><input type="radio" name="img_absent" value="ignore"/>Взять айтем молча - ignore</label></td>
+						<td><label><input type="radio" name="img_absent" value="skip" />Пропустить айтем молча - skip</label></td>								
+						</tr></table>
+					</div>					
+					<br/>
+					<div class="widget_info">
+						<label>Путь от корня элемента до ссылки</label>
+						<input type="text" data-save-field  data-load-field   style="width:100%;" class="form-control" id="url_path" placeholder="" value="">
+						<label>Контент ссылки</label> (<a href="javascript:void(0)" onclick="document.getElementById('url_content').value ='[href]'">[href]</a>, <a href="javascript:void(0)" onclick="document.getElementById('url_content').value ='[data-url]'">[data-url]</a>)
+						<input type="text" data-save-field  data-load-field   style="width:100%;" class="form-control" id="url_content" placeholder="[data-href], just_text, [data-src],[data-url],[href]" value="[href]">
+						<label>Если не найдено</label><br/>
+						<table width="100%"><tr>
+						<td><label><input type="radio"   name="url_absent" value="notify"/>Уведомать нас и продолжить - notify</label></td>
+						<td><label><input type="radio" checked="checked" name="url_absent" value="fail"/>Уведомить нас и остановить - fail</label></td>
+						<td><label><input type="radio" name="url_absent" value="ignore"/>Взять айтем молча - ignore</label></td>
+						<td><label><input type="radio" name="url_absent" value="skip" />Пропустить айтем молча - skip</label></td>		
+						</tr></table>
+					</div>
+					<hr/>
+					<div class="widget_info">
+						<label>Путь до элемента пагинации (от корня сайта)</label>
+						<input type="text" data-save-field  data-load-field   style="width:100%;" class="form-control" id="pagen_path" placeholder="" value="">
+						<label>Атрибут</label> (<a href="javascript:void(0)" onclick="document.getElementById('pagen_content').value ='[href]'">[href]</a>, <a href="javascript:void(0)" onclick="document.getElementById('pagen_content').value ='[data-url]'">[data-url]</a>)
+						<input type="text" data-save-field  data-load-field   style="width:100%;" class="form-control" id="pagen_content" placeholder="[data-href], just_text, [data-src],[data-url],[href]" value="[href]">	
+						<label>Если не найдено</label><br/>
+						<table width="100%"><tr>
+						<td><label><input type="radio"   value="notify"/>Уведомать нас и продолжить - notify</label></td>
+						<td><label><input type="radio" checked="checked" name="pagen_absent" value="fail"/>Уведомить нас и остановить - fail</label></td>
+						<td><label><input type="radio" checked="checked"  name="pagen_absent" value="ignore"/>Взять айтем молча - ignore</label></td>
+						<td><label><input type="radio" name="pagen_absent" value="skip" />Пропустить айтем молча - skip</label></td>		
+						</tr></table>						
+					</div>
+					
+				 
+					<br/> <button class="btn btn-success" type="submit">Сохранить в базу</button> <button class="btn btn-info" id="clearStorage" type="">Удалить историю</button>
+				</form>
+             </div>
+             <hr/>
+			<textarea id="results" style="width: 100%; height: 300px;" data-save-field  data-load-field></textarea>
+		 
+             
+             
+           </div>
+           
+           
+           
+           
+           
+           
+           
+           
+         </div>
+         <!-- 3/4 Layout / Main Blog Content -->
+         
+       </div>
+       <!-- Row -->
+       
+     </div>
+     <!-- Container -->
+     
+   </section>
+   
+   
+   
+   
+   
+   
+  </div >
+  </div>
+  
+  
+ 
+  
+  
+  
+  
+  
+
+ 
+  
+  
+  
+
+
+
+<script  type='text/javascript'  src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+
+        <script type="text/javascript">
+$(function() {
+ 
+  
+ 
+ 
+ 
+LoadFromOfflineStorage();
+
+$("#clearStorage").click(function(e){
+e.preventDefault();
+ ClearStorage();
+});
+
+$("[data-save-field]").focus(function(e){
+ 
+ $(this).css("background-color","#FFF");
+});
+ 
+function get_prefs() {
+
+
+    var prefs='{'+
+'    "tables": ['+
+'\r\n        {'+
+'\r\n           "root": "'+$("#root_path").val()+'",'+
+'\r\n           "fields": ['+
+'\r\n               {'+
+'\r\n                   "title": "text",'+
+'\r\n                   "css_path": "'+$("#title_path").val()+'",'+
+'\r\n                   "content": "'+$("#title_content").val()+'",'+
+'\r\n                   "when_absent": "'+$("[name=title_absent]:checked").val()+'"'+
+'\r\n               },'+
+'\r\n               {'+
+'\r\n                   "title": "img",'+
+'\r\n                   "css_path": "'+$("#img_path").val()+'",'+
+'\r\n                    "content": "'+$("#img_content").val()+'",'+
+'\r\n                    "format": "url",'+
+'\r\n                    "when_absent": "'+$("[name=img_absent]:checked").val()+'"'+
+'\r\n               },                '+
+'\r\n               {'+
+'\r\n                   "title": "url",'+
+'\r\n                   "css_path": "'+$("#url_path").val()+'",'+
+'\r\n                   "content": "'+$("#url_content").val()+'",'+
+'\r\n                   "format": "url",'+
+//                     "url_format": "http://site.ru/{T}/item-{N}"
+//                     "text_like": "Нет в наличии$/i/"
+'\r\n                   "is_id": true,'+
+'\r\n                   "when_absent": "'+$("[name=url_absent]:checked").val()+'"'+
+'\r\n               }'+
+'\r\n           ]'+
+'\r\n       }'+
+'\r\n   ],'+
+'\r\n   "pagination": {'+
+'\r\n       "css_path": "'+$("#pagen_path").val()+'",'+
+'\r\n       "content": "'+$("#pagen_content").val()+'",'+
+'\r\n       "when_absent": "'+$("[name=pagen_absent]:checked").val()+'"'+
+'\r\n    }'+
+
+'}';    
+	//prefs=prefs.replace(/ /g," ");
+
+return prefs;
+}
+ 
+ 
+$("#test_paths").submit(function(e){
+	//SaveToOfflineStorage();
+	//e.preventDefault();
+
+	
+	prefs=get_prefs();
+	
+	prefs_json=JSON.parse(prefs);
+	console.log(prefs_json);
+
+	$("#preference").val(prefs);
+
+
+	$("#results").val(prefs);
+
+    $("#test_paths").find("input[type=radio]").prop('disabled', true);
+	//$(this).unbind('submit').submit();
+	
+	SaveToOfflineStorage();
+
+	setTimeout(undisable	, 300);
+
+	
+	//console.log(prefs);	
+		
+		
+	}); 
+
+
+});  
+  
+function undisable() {
+ $("#test_paths").find("input[type=radio]").prop('disabled', false);
+}
+
+function SaveToOfflineStorage() {
+	try {
+		//If localStorage supports with the browser
+		if (localStorage) {
+			$("[data-save-field]").each(function(index,item){
+				var id=item.attributes.id.value;
+				var txtValue = document.getElementById(id).value;
+				localStorage.setItem(id, txtValue);
+				//item.attributes.style.value+="background-color: #FAFAD2;"											
+			});			
+		}
+	}
+	catch (err) {
+		alert('localStorage error');
+	}
+} 
+
+function LoadFromOfflineStorage() {
+	try {
+		//If localStorage supports with the browser
+		if (localStorage) {
+			$("[data-load-field]").each(function(index,item){
+				var id=item.attributes.id.value;
+				if(localStorage.getItem(id)!=null) {
+					item.value=localStorage.getItem(id);
+					item.attributes.style.value+="background-color: #FAFAD2;"											
+				}
+			});			
+		}
+	}
+	catch (err) {
+		alert('localStorage error');
+	}
+} 		
+
+
+function ClearStorage() {
+	try {
+		//If localStorage supports with the browser
+		if (localStorage) {
+			$("[data-save-field]").each(function(index,item){
+				var id=item.attributes.id.value;
+				localStorage.removeItem(id);										
+			});			
+		}
+	}
+	catch (err) {
+		alert('localStorage error');
+	}
+} 
+		
+		
+		
+		
+		
+ 
+        </script>
+ 
+</body>
+</html>

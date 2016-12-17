@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        BnB
+    </title>
+
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body>
+
+<div class="main_div text-center" style="padding:0 30%;">
+
+<form class="" action="/save" method="POST">
+    <label for="url">
+        
+         
+        </label>
+    
+    <textarea   class="form-control" rows="8" name="url" id="url" placeholder="https://airbnb.com/...">
+
+https://www.airbnb.ru/s/Maldiv?guests=1&checkin=29.04.2017&checkout=03.05.2017&price_max=2845&ss_id=dmtd8n9l&ss_preload=true&adults=1&children=0&infants=0&source=bb&page=1&allow_override%5B%5D=&room_types%5B%5D=Entire%20home%2Fapt&s_tag=oWEiTBBc
+
+    </textarea>
+    <input type="email" name="email" id="email"  class="form-control" placeholder="name@server.com" value="amantels@gmail.com">
+ <input type="hidden" name="active"    value="1"> 
+  <button type="submit" class="btn btn-default btn-lg">Subscribe me</button>
+</form>
+
+  <a href="/crawl" class="btn btn-default btn-lg">crawl</a>
+  <a href="/sendmail" class="btn btn-default btn-lg">send</a>
+
+<ul>
+      <% for(var i=0; i<requests.length; i++) {%>
+ 
+    <li class="request">
+        <span class="email"><%= requests[i].email %></span>
+        <br>
+        <a href="<%= requests[i].url %>" target="_blank" class="url"><%= requests[i].url %></a>
+        <br>
+        
+        <form action="/set_active" method="POST">
+            <input type="hidden" name="request_id" value="<%= requests[i]._id %>">
+            <input type="hidden" name="new_active_state" value="<%= 1-requests[i].active %>">
+           Active: <span class="active"><%= requests[i].active %>  <input type="submit" value="change">
+        </form>
+        </span>        
+    </li>    
+  <% } %>
+
+    </ul>
+
+
+
+ 
+
+</div>
+
+ 
+<style>
+
+.small_img {
+    max-width: 200px;
+    max-height: 200px;
+}
+
+.room_item {
+    margin:10px;
+    float:left;
+    text-align:left;
+    border:1px #abc dashed;
+}
+.request {
+    max-width:600px;
+        word-break: break-all;
+        text-align: left;
+}
+</style>
+
+
+    <script type='text/javascript' src="//code.jquery.com/jquery-latest.js"></script>
+
+    <script type='text/javascript' src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+     <script type="text/javascript">
+    
+    
+        $(function() {
+ 
+
+
+        });  
+
+
+
+    </script>
+
+
+
+</body>
+
+</html>
