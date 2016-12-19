@@ -20,6 +20,7 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('public'));
 //GRAB FIRST 500
+var ticketmaster_url="https://app.ticketmaster.com/discovery/v2/events.json?apikey=F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN&startDateTime=2017-01-17T20:15:00Z&endDateTime=2017-01-20T20:15:00Z&size=500&city=New%20York&classificationId=KZFzniwnSyZfZ7v7nJ";
 //KZFzniwnSyZfZ7v7nJ music
 var client_id = '75ff063399cf492199d40d630060fbce'; // Your client id
 var client_secret = 'a9b8d76f15ef497aa27b8596d9b372be'; // Your secret
