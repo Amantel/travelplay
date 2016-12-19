@@ -33,13 +33,38 @@
                 </p>
             </div>
         </div>
+        <div class="row ">
+            <div class="col-lg-12">
+                <h1>ArtistsWithTickets list</h1>
+                <% 
+                if(other_info && other_info.artistsWithTickets) {
 
+                var artists=other_info.artistsWithTickets;
+                for(i=0; i<artists.length; i++) {
+                    var artist=artists[i];
+                %>
+
+                <div class="tickets_following">
+                        <span class="band_name">
+                            <%=artist%>
+                        </span>
+       
+                </div>
+                <% 
+                    }
+                }
+                %>
+
+
+
+            </div>
+        </div>
 
         <div class="row ">
             <div class="col-lg-12">
                 <h1>Cleared list</h1>
                 <% 
-                if(other_info) {
+                if(other_info && other_info.distinct_list && 0) {
 
                 var artists=other_info.distinct_list;
                 for(i=0; i<artists.length; i++) {
@@ -70,7 +95,7 @@
 
                
     <% 
-                if(other_info) {
+                if(other_info  && 0) {
 
                 var artists=other_info;
                 for(i=0; i<artists.length; i++) {
@@ -137,9 +162,10 @@
     <div class="all_info">
         <button id="show_json" class="btn btn-info">Toggle JSON view</button>
         <div class="hidden all_info_json">
-
+<% if(0) { %>
             <%-JSON.stringify(other_info)%>
-
+ <%
+  }    %>
 
         </div>
 
@@ -180,9 +206,17 @@
      vertical-align: super;
     font-size: 12px;
  }
- .following.band_name {
+ .following .band_name {
      font-size: 24px;
  }
+ .tickets_following .band_name {
+     font-size: 14px;
+ }
+
+    .tickets_following {
+     border-bottom: 1px solid #e31212;
+          }
+
 
 .related {
     text-align: left;

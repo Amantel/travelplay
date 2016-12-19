@@ -20,8 +20,7 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('public'));
 //GRAB FIRST 500
-var ticketmaster_url="https://app.ticketmaster.com/discovery/v2/events.json?apikey=F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN&startDateTime=2017-01-17T20:15:00Z&endDateTime=2017-01-20T20:15:00Z&size=500&city=New%20York";
-
+//KZFzniwnSyZfZ7v7nJ music
 var client_id = '75ff063399cf492199d40d630060fbce'; // Your client id
 var client_secret = 'a9b8d76f15ef497aa27b8596d9b372be'; // Your secret
 var redirect_uri = 'http://localhost:3000'; // Your redirect uri
@@ -85,7 +84,7 @@ app.get('/', (req, res) => {
 
 function getFollowedArtists(andRelated=false,res,authorizeURL) {
 
-    spotifyApi.getFollowedArtists({ limit: 2 }).then(function artistsInfo(basicInfo) {
+    spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
         var found_artists = basicInfo.body.artists.items;
         var all_artists;
         if(andRelated) {
@@ -131,16 +130,19 @@ function getFollowedArtists(andRelated=false,res,authorizeURL) {
 }
 
 function findTickets(res,res,authorizeURL, all_artists) {
-  //  res.render('index.ejs', { auth_url: authorizeURL, other_info: all_artists });
 
     var url_instance = new URIlib.URI(ticketmaster_url);
     var transport = (url_instance.getScheme() || "").toLowerCase() === "https" ? https : http;
 
     var queryParams = url_instance.parseQuery();
+
+    
     var httpParams = {
         host: url_instance.getAuthority(),
         headers: { 'user-agent': 'Mozilla/5.0' }
     }
+
+    httpParams.path = (url_instance.getPath() || "") + "?" + queryParams.toString();
 
     var transpot_info = transport.get(httpParams, function (result) {
         var data = "";
@@ -148,13 +150,45 @@ function findTickets(res,res,authorizeURL, all_artists) {
             data += chunk;
         }).on("end", function (chunk) {
             var json = JSON.parse(data);
-            console.log(json);
+            console.log("the end");
+            console.log("Total Elements: ");
+            console.log(json.page.totalElements);
+            console.log("--------");
+            console.log("First Element: ");
+            console.log(json._embedded.events[0].name);
+            console.log("--------"); 
+            var concerts = json._embedded.events;
+            var artistList=all_artists.distinct_list;
+            //artistList.push("Les Liaisons Dangereuses");
+            var totalFoundTickets=0;
+            artistsWithTickets=artistList.map(function(artistName){
+                artistName=artistName.toLowerCase();
+                var foundTickets = concerts.filter(function(concert, index, array) {
+
+                        bandName=concert.name.toLowerCase();
+                        //console.log(bandName);
+                        return (bandName.indexOf(artistName)>-1 || artistName.indexOf(bandName)>-1);
+                    });
+                    totalFoundTickets+=foundTickets.length;
+                 var text="Band \""+artistName+"\" found "+foundTickets.length+" in "+concerts.length+" events";   
+                 //console.log("band "+artistName+" found "+foundTickets.length+" in "+concerts.length+" events");   
+                 return text;
+     
+            });
+            //console.log(artistsWithTickets);
+            console.log("Всего билетов найдено: "+totalFoundTickets);
+
+               all_artists.artistsWithTickets=artistsWithTickets;
+               res.render('index.ejs', { auth_url: authorizeURL, other_info: all_artists });
+       
         })
 
     }).on('error', function (e) {
-        console.log("not ok");
+         console.log("not ok");
+         res.render('index.ejs', { auth_url: authorizeURL, other_info: {} });
     });
  
+  
 
 
 
