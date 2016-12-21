@@ -25,7 +25,7 @@
         <div class="row ">
             <div class="col-lg-12">
                 <h1>TravelPlay</h1>
-                <p class="lead">Going to New York 12.01.2017-20.01.2017</p>
+                <p class="lead">Going to New York (USA) 01.02.2017-28.02.2017</p>
                 <p>
 
                     <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
@@ -42,9 +42,14 @@
                 var artists=other_info.artistsWithTickets;
                 for(i=0; i<artists.length; i++) {
                     var artist=artists[i];
+                    var sub_class="";
+                if(artist.endsWith("!!!")) {
+                    sub_class="has_concert";
+                    artist=artist.replace(/!!!/, '');
+                }
                 %>
 
-                <div class="tickets_following">
+                <div class="tickets_following <%=sub_class%>">
                         <span class="band_name">
                             <%=artist%>
                         </span>
@@ -59,7 +64,7 @@
 
             </div>
         </div>
-
+ 
         <div class="row ">
             <div class="col-lg-12">
                 <h1>Cleared list</h1>
@@ -242,7 +247,10 @@
     margin-top:10px;
 }
 
-
+.tickets_following.has_concert {
+    font-size: 24px;
+    background-color: white;
+}
 
         .response {
             font-size: 16px;
