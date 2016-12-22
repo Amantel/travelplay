@@ -25,7 +25,7 @@
         <div class="row ">
             <div class="col-lg-12">
                 <h1>TravelPlay</h1>
-                <p class="lead">Going to New York (USA) 01.02.2017-28.02.2017</p>
+                <p class="lead"></p>
                 <p>
 
                     <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
@@ -35,55 +35,31 @@
         </div>
         <div class="row ">
             <div class="col-lg-12">
-                <h1>ArtistsWithTickets list</h1>
-                <% 
-                if(other_info && other_info.artistsWithTickets) {
 
-                var artists=other_info.artistsWithTickets;
-                for(i=0; i<artists.length; i++) {
-                    var artist=artists[i];
-                    var sub_class="";
-                if(artist.endsWith("!!!")) {
-                    sub_class="has_concert";
-                    artist=artist.replace(/!!!/, '');
-                }
+                <% 
+                if(typeof(result)!="undefined" && result.error) {
                 %>
-
-                <div class="tickets_following <%=sub_class%>">
-                        <span class="band_name">
-                            <%=artist%>
-                        </span>
-       
-                </div>
-                <% 
+              
+                    <h1 class="this_is_error">
+                        <%=result.error%>
+                    </h1>
+                    <%
+                } else if (typeof(result)!="undefined"  && result.events) {
+                    for(i=0;i<result.events.length; i++) {
+                        var event=result.events[i];
+                    %>
+                    <h3>
+                        <%=event.event_title%> )<%=event.event.id%>)
+                    </h3>                    
+                    <%
                     }
-                }
+                } else if(typeof(result)!="undefined")
+                {
                 %>
-
-
-
-            </div>
-        </div>
- 
-        <div class="row ">
-            <div class="col-lg-12">
-                <h1>Cleared list</h1>
-                <% 
-                if(other_info && other_info.distinct_list && 0) {
-
-                var artists=other_info.distinct_list;
-                for(i=0; i<artists.length; i++) {
-                    var artist=artists[i];
-                %>
-
-                <div class="following">
-                        <span class="band_name">
-                            <%=artist%>
-                        </span>
-       
-                </div>
-                <% 
-                    }
+                        <h1>
+                            Stange. No events at all.
+                        </h1>
+                        <%
                 }
                 %>
 
@@ -93,92 +69,19 @@
         </div>
 
 
-
-        <div class="row ">
-            <div class="col-lg-12 results" style="background-color: #FFF">
-                <h1>Related list</h1>
-
-               
-    <% 
-                if(other_info  && 0) {
-
-                var artists=other_info;
-                for(i=0; i<artists.length; i++) {
-                    var artist=artists[i];
-                %>
-
-        <div class="following">
-            <div class="pull-left">
-                <span class="band_name">
-                    <%=artist.name%>
-                </span>
-                <span class="id_style ">
-                    ID 
-                    :
-                    <%=artist.id%>
-                </span>
-            </div>
-            <div class="pull-right">
-                <a href="<%=artist.href%>" class="btn btn-info">
-                    <%=artist.href%>
-                </a>
-            </div>
-        </div>
-        <h2>Related artists</h2>
-
-
-        <%
-                for(j=0;j<artist.related.length; j++) {
-                    var artist_sp=artist.related[j];
-                %>
-            <div class="related">
-                <div class="pull-left">
-                    <span class="band_name">
-                    <%=artist_sp.name%>
-                </span>
-                    <span class="id_style ">
-                    ID 
-                    :
-                    <%=artist_sp.id%>
-                </span>
-                </div>
-                <div class="pull-right">
-                    <a href="<%=artist_sp.href%>" class="btn btn-link">
-                        <%=artist_sp.href%>
-                    </a>
-                </div>
-            </div>
-            <%
-                    }
-                 %>
-
-
-
-                <hr class="" style="clear:both;     margin-top: 50px;    margin-bottom: 50px;">
-<%
-                    }
-
-
-
-                }
-                 %>
- 
-    <hr>
-    <div class="all_info">
-        <button id="show_json" class="btn btn-info">Toggle JSON view</button>
-        <div class="hidden all_info_json">
-<% if(0) { %>
-            <%-JSON.stringify(other_info)%>
- <%
+        <hr>
+        <div class="all_info">
+            <button id="show_json" class="btn btn-info">Toggle JSON view</button>
+            <div class="hidden all_info_json">
+                <% if(typeof(result)!="undefined") { %>
+                    <%-JSON.stringify(result)%>
+                        <%
   }    %>
 
+            </div>
         </div>
-
-
-
     </div>
-    </div>
-    </div>
+
 
 
 
@@ -251,7 +154,11 @@
     font-size: 24px;
     background-color: white;
 }
-
+.this_is_error {
+    color:#e31212;
+    background: #FFF;
+    border:2px solid black;
+}
         .response {
             font-size: 16px;
             padding: 10px;
