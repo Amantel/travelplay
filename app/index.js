@@ -14,9 +14,10 @@ const url = require('url');
 const nodemailer = require('nodemailer');
 const later = require('later');
 
-var request = require('request'); // "Request" library
-var querystring = require('querystring');
-var cookieParser = require('cookie-parser');
+const request = require('request'); 
+const async = require('async'); 
+const querystring = require('querystring');
+const cookieParser = require('cookie-parser');
 
 
 
@@ -72,6 +73,7 @@ app.get('/', (req, res) => {
     var authorizeURL = spotifyApi.createAuthorizeURL(scopes, state);
 
     if(spotifyApi.getAccessToken()) {
+        buff("getFollowedArtists");
         getFollowedArtists(true,res,authorizeURL); //1 true
     }
     else if(code) {
@@ -85,14 +87,9 @@ app.get('/', (req, res) => {
          res.render('index.ejs', { auth_url: authorizeURL, other_info: {} });
     }
 
-
-
-
-
-
 })
 
-
+ 
 function getFollowedArtists(andRelated=false,res,authorizeURL) {
 
     spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
@@ -154,37 +151,88 @@ var BiTurl="http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.js
 
 
 
-//findBandsinTownEvents(); 
+//findBandsinTownEvents(["rage","accept","voltaire","metallica"]);  
 function findBandsinTownEvents(artistList) {
+    iteratorMarker=0;
     if(!artistList)
         artistList=["rage"];
     //buff(artistList);
+    /*
     var result=artistList.map(function(artistName){
         return {artistName: makeRequest(BiTurl.replace("ARTIST_NAME",encodeURI(artistName)),{},findBrandsinTownEvent,callbackError_ex1)}; 
     });
-    buff("Finding...");
+    */
+    buff("Finding..."); 
+    async.map(artistList, makeBandRequest, function(err, results) {
+         
+    if(err) {
+       buff("FINISHED WITH ERROR"); 
+        buff("iteratorMarker "+iteratorMarker);   
+       buff(err);
+    } else {
+
+    
+
+    var events=results.filter(function(elem, i, array) {
+        
+        return elem.length>0;
+    });
+   console.log(events.length);
+    // events=events.reduce(function(prevVal, elem){  },[]);
+    //remove inner arrays
+    events=events.map(function(elem){
+        return elem[0];
+    }); 
+
+    buff("FINISHED"); 
+ 
+ 
+    buff(events[0]);
+  
+    buff(results.length);
+    buff(events.length);    
+    }
+});
+ 
 
 } 
+//makeBandRequest("rage");
+var iteratorMarker=1;
 
 
-function findBrandsinTownEvent(data) {
+function makeBandRequest(artistName,callback) {
+    //buff("Searching for "+artistName);
+    makeRequest(BiTurl.replace("ARTIST_NAME",encodeURI(artistName)),{callback:callback},findBrandsinTownEvent,callbackError_ex1); 
+} 
+     
+
+function findBrandsinTownEvent(data) { 
     //var data=BiTtestResponse;
     //buff(BiTtestResponse);
-    var foundEvents =""; 
+    var foundEvents =[]; 
     var json = JSON.parse(data);
+
+    iteratorMarker++ 
     
   //  buff("data");
-  //  buff(json);
-    if(json && json.length>0) {
-        console.log("Found JSON");
+    //buff(json.length);
+    if(json && json.length>0 && (json.errors && !json.errors.length>0)) {
+        //console.log("Found JSON");
         //console.log(json);
-        foundEvents = json.reduce(function(prevVal, elem) {
-            return prevVal +" event: "+ elem.title+"; ";
-        }, "");
-    }
-    if(foundEvents!="") {
+        foundEvents = json.map(function(elem) {
+            return {"event_title":elem.title,"event":elem};
+        });
+    } else { 
+        if(typeof(json)=="object" && json.errors &&  json.errors.length>0) {
+                     
+            return json.errors[0];
+        }
+    } 
+    /*
+    if(foundEvents!="") { 
         buff(foundEvents);
     }
+    */
     return foundEvents;
  
 
@@ -205,7 +253,8 @@ function callbackError_ex1(e) {
 
 
 function makeRequest(url,params,callbackSuccess,callbackError) {
-    buff("making request to URL: "+url);
+    //buff("making request to URL: "+url);
+   
     var url_instance = new URIlib.URI(url);
     var transport = (url_instance.getScheme() || "").toLowerCase() === "https" ? https : http;
 
@@ -224,7 +273,17 @@ function makeRequest(url,params,callbackSuccess,callbackError) {
         var test="dfsd";
         result.on("data", function (chunk) {
             data += chunk;
-        }).on("end", function () {callbackSuccess(data,url,params)}
+        }).on("end", function () {
+            var result=callbackSuccess(data,url,params);
+            //buff(result.length);
+            if(params && typeof(params.callback)=="function")
+            {
+                var err=null;
+                if(typeof(result)=="string")
+                    err=result;
+                params.callback(err,result);
+            }
+        }
         )
 
     }).on('error', function (e) {callbackError(e,url,params)}
@@ -295,7 +354,7 @@ function logError(err, result) {
 
 function buff(object) {
     console.log(object);
-    if(typeof(object)!="string")
+    if(object && typeof(object)!="string")
         epicBuffer+="\n\r"+object.toString();
     else
         epicBuffer+="\n\r"+object;
