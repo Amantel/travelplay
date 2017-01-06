@@ -25,6 +25,10 @@ const cookieParser = require('cookie-parser');
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('public'));
+
+
+
+
 //GRAB FIRST 500
 var ticketmaster_url = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN"
     + "&startDateTime=2017-02-01T09:15:00Z&endDateTime=2017-02-28T20:15:00Z"
@@ -54,10 +58,11 @@ var state = 'test-state';
 
 
 
+var songKey = "7czFd6q870oymybH";
+var songStockId = "32252";
 
 
-
-
+//var BandsInTownUrl="http://api.bandsintown.com/artists/ARTIST_NAME/events/search.json?api_version=2.0&app_id=TRAVELPLAY_ID&location=Stockholm&radius=10&date=2017-01-01,2017-06-31";
 
 
 
@@ -66,202 +71,257 @@ app.listen(3000, () => {
     buff('listening on 3000')
 })
 
+
+var useModules = {};
+useModules.useSpotify = true; 
+useModules.useTicketMaster = false;
+useModules.useBandsInTown = true;
+useModules.useTicketMasterEurope = false;
+useModules.useSongKick = false;
+
+
+var modelCurrent = {};
+modelCurrent.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID&location=Stockholm&radius=10&date=2017-01-01,2017-06-31";
+
+
+
+
+
+
 app.get('/', (req, res) => {
-
-
 
     var code = req.query.code || null;
     var authorizeURL = spotifyApi.createAuthorizeURL(scopes, state);
+    modelCurrent.authorizeURL = authorizeURL;
+    modelCurrent.res = res;
 
-    if (spotifyApi.getAccessToken()) {
-        buff("getFollowedArtists");
-        getFollowedArtists(true, res, authorizeURL); //1 true
+     if (!useModules.useSpotify) {
+        findEvents(["rage", "accept", "voltaire", "metallica"]);
     }
-    else if (code) {
-        spotifyApi.authorizationCodeGrant(code).then(function (authInfo) {
-            spotifyApi.setAccessToken(authInfo.body['access_token']);
-            spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
-            res.redirect('/');
+    else {
+        if (spotifyApi.getAccessToken()) {
+            buff("getFollowedArtists");
+            var andRelated = true;
+            if (andRelated)
+                getFollowedArtistsAndRelated();
+            else
+                getFollowedArtists();
+        }
+        else if (code) {
+            spotifyApi.authorizationCodeGrant(code).then(function (authInfo) {
+                spotifyApi.setAccessToken(authInfo.body['access_token']);
+                spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
+                res.redirect('/');
 
-        });
-    } else {
-        res.render('index.ejs', { auth_url: authorizeURL, other_info: {} });
+            });
+        } else {
+            res.render('index.ejs', { auth_url: authorizeURL, other_info: {} });
+        }
     }
 
 })
 
 
-function getFollowedArtists(andRelated = false, res, authorizeURL) {
-    buff("*********************START**************************");
+
+
+
+function getFollowedArtistsAndRelated() {
+    buff("*********************getFollowedArtistsAndRelated**************************");
     spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
         var found_artists = basicInfo.body.artists.items;
         var all_artists;
-        if (andRelated) {
-            Promise.all(found_artists.map(function (artist) {
-                return spotifyApi.getArtistRelatedArtists(artist.id);
-            })).then(function (allRelatedArtists) {
-                for (i = 0; i < found_artists.length; i++)
-                    found_artists[i].related = allRelatedArtists[i].body.artists;
+        Promise.all(found_artists.map(function (artist) {
+            return spotifyApi.getArtistRelatedArtists(artist.id);
+        })).then(function (allRelatedArtists) {
+            for (i = 0; i < found_artists.length; i++)
+                found_artists[i].related = allRelatedArtists[i].body.artists;
 
 
-                all_artists = found_artists;
-                all_artists.distinct_list = [];
-
-                for (i = 0; i < all_artists.length; i++) {
-                    var artist = all_artists[i];
-                    if (all_artists.distinct_list.indexOf(artist.name) < 0)
-                        all_artists.distinct_list.push(artist.name);
-                    for (j = 0; j < artist.related.length; j++) {
-                        var related_artist = artist.related[j];
-                        if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
-                            all_artists.distinct_list.push(related_artist.name);
-                    }
-
-                }
-                all_artists.distinct_list.sort(function (a, b) {
-                    if (a < b) return -1;
-                    if (a > b) return 1;
-                    return 0;
-                })
-
-                //   buff(all_artists.distinct_list);
-                //findTickets(res,res,authorizeURL, all_artists);
-
-                //makeRequest(ticketmaster_url,{authorizeURL:authorizeURL,res:res,all_artists:all_artists },findTicketsTicketMaster,callbackError_ex1)
-                buff("followed: " + all_artists.distinct_list.length);
-                findBandsinTownEvents(all_artists.distinct_list,res,authorizeURL);
-                // findBandsinTownEvents(res,res,authorizeURL, all_artists);
-             });
-        } else {
             all_artists = found_artists;
-            all_artists.distinct_list = all_artists.map(function (elem) { return elem.name.toLowerCase() });
-            buff("followed: " + all_artists.distinct_list.length);
+            all_artists.distinct_list = [];
 
-            findBandsinTownEvents(all_artists.distinct_list,res,authorizeURL);
-         }
+            for (i = 0; i < all_artists.length; i++) {
+                var artist = all_artists[i];
+                if (all_artists.distinct_list.indexOf(artist.name) < 0)
+                    all_artists.distinct_list.push(artist.name);
+                for (j = 0; j < artist.related.length; j++) {
+                    var related_artist = artist.related[j];
+                    if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
+                        all_artists.distinct_list.push(related_artist.name);
+                }
 
+            }
+            all_artists.distinct_list.sort(function (a, b) {
+                if (a < b) return -1;
+                if (a > b) return 1;
+                return 0;
+            })
+
+            //   buff(all_artists.distinct_list);
+            buff("Followed (c) Spotify: " + all_artists.distinct_list.length);
+
+            //findTickets(res,res,authorizeURL, all_artists);
+
+            //makeRequest(ticketmaster_url,{authorizeURL:authorizeURL,res:res,all_artists:all_artists },findTicketsTicketMaster,callbackErrorGeneral)
+            findEvents(all_artists.distinct_list);
+        });
 
     });
 }
 
 
-var BiTurl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID&location=Stockholm&radius=10&date=2017-01-01,2017-06-31";
-//var BiTurl="http://api.bandsintown.com/artists/ARTIST_NAME/events/search.json?api_version=2.0&app_id=TRAVELPLAY_ID&location=Stockholm&radius=10&date=2017-01-01,2017-06-31";
+
+function getFollowedArtists() {
+    buff("*********************getFollowedArtists**************************");
+
+    spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+        var found_artists = basicInfo.body.artists.items;
+        var all_artists;
+
+        all_artists = found_artists;
+        all_artists.distinct_list = all_artists.map(function (elem) { return elem.name.toLowerCase() });
+        buff("Followed (c) Spotify: " + all_artists.distinct_list.length);
+
+        findEvents(all_artists.distinct_list);
+    });
+}
 
 
 
-//findBandsinTownEvents(["rage","accept","voltaire","metallica"]);  
-function findBandsinTownEvents(artistList,res,auth_url) {
+function findEvents(artistList) {
+
+
+    if (useModules.useBandsInTown) {
+        buff("*********************BandsInTown**************************");
+        findBandsinTownEvents(artistList, true); //2 timeOut may be false
+
+    }
+    else if (useModules.useTicketMaster) {
+        buff("*********************TicketMaster**************************");
+
+    }
+    else if (useModules.useTicketMasterEurope) {
+        buff("*********************TicketMasterEurope**************************");
+
+    }
+    else if (useModules.useSongKick) {
+        buff("*********************SongKick**************************");
+
+    }
+    else {
+        buff("*********************No Event Source**************************");
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
+    }
+
+
+}
+
+
+
+
+function findBandsinTownEvents(artistList, timeOut = true) {
     iteratorMarker = 0;
     if (!artistList)
-        artistList = ["rage"];
-    //buff(artistList);
-    /*
-    var result=artistList.map(function(artistName){
-        return {artistName: makeRequest(BiTurl.replace("ARTIST_NAME",encodeURI(artistName)),{},findBrandsinTownEvent,callbackError_ex1)}; 
-    });
-    */
-    buff("Finding...");
-    async.mapSeries(artistList, makeBandRequest, function (err, results) {
-     //   async.map(artistList, makeBandRequest, function (err, results) {
+        artistList = ["rage"]; //dummy list
 
+    var requestFunction;
+    if (timeOut)
+        requestFunction = makeBandRequestTimeOut;
+    else
+        requestFunction = makeBandRequest;
+
+    //Serial
+    async.mapSeries(artistList, requestFunction, function (err, results) {
+        //True async    
+        //async.map(artistList, requestFunction, function (err, results) {
         if (err) {
-            buff("FINISHED WITH ERROR");
+            buff("*********************FINISHED WITH ERROR**************************");
             buff("iteratorMarker " + iteratorMarker);
             buff(err);
-            res.render('index.ejs', { auth_url: auth_url, result: {"error":err} });
+            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
 
-         } else {
+        } else {
             var events = results.filter(function (elem, i, array) {
                 return elem.length > 0;
             });
-            // events=events.reduce(function(prevVal, elem){  },[]);
             //remove inner arrays
             events = events.map(function (elem) {
                 return elem[0];
             });
-            quick_ids = [];
-            events = events.filter(function(elem, i, array) {
-                    if(quick_ids.indexOf(elem.event.id)>=0)
-                        return false;
-                    else 
-                        quick_ids.push(elem.event.id);
-                    return true;      
+
+
+            //Filter with unique IDs
+            uniqueIds = [];
+            events = events.filter(function (elem, i, array) {
+                if (uniqueIds.indexOf(elem.event.id) >= 0)
+                    return false;
+                else
+                    uniqueIds.push(elem.event.id);
+                return true;
             });
 
-            buff("FINISHED");
 
 
             //buff(events[0]);
 
             buff("Results: " + results.length);
             buff("Events: " + events.length);
-            buff("**************************************************");
-            //console.log(events);
-            res.render('index.ejs', { auth_url: auth_url, result: {"events":events} });
+            buff("*********************FINISHED WITH SUCCESS*********************");
 
- 
+            //console.log(events);
+            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+
+
         }
     });
 
 
 }
-//makeBandRequest("rage");
-var iteratorMarker = 1;
-
-
 function makeBandRequest(artistName, callback) {
-    //buff("Searching for "+artistName);
-    //setTimeout(function () { makeRequest(BiTurl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackError_ex1); }, Math.random() * 1000)
-    setTimeout(function () { makeRequest(BiTurl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackError_ex1); }, Math.random() * 100)
-    //makeRequest(BiTurl.replace("ARTIST_NAME",encodeURI(artistName)),{callback:callback},findBrandsinTownEvent,callbackError_ex1); 
-
+    //buff("Searching for "+artistName);    
+    makeRequest(modelCurrent.BandsInTownUrl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackErrorGeneral);
 
 }
 
 
+function makeBandRequestTimeOut(artistName, callback) {
+
+    setTimeout(function () {
+        //buff("Searching for "+artistName);    
+        makeRequest(modelCurrent.BandsInTownUrl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackErrorGeneral);
+    }, Math.random() * 100);
+}
+
+
 function findBrandsinTownEvent(data) {
-    //var data=BiTtestResponse;
-    //buff(BiTtestResponse);
+
     var foundEvents = [];
     var json = JSON.parse(data);
 
     iteratorMarker++
 
-    //  buff("data");
-    //buff(json.length);
+    //buff("data");
+    buff(json.length);
+
     if (json && json.length > 0 && (typeof (json.errors) == "undefined")) {
-        //console.log("Found JSON");
-        //console.log(json);
         foundEvents = json.map(function (elem) {
             return { "event_title": elem.title, "event": elem };
         });
     } else {
         if (typeof (json) == "object" && json.errors && json.errors.length > 0) {
-
+            //If error return immediately
             return json.errors[0];
         }
     }
-    /*
-    if(foundEvents!="") { 
-        buff(foundEvents);
-    }
-    */
     return foundEvents;
-
-
 }
 
 
 
 
-function callbackSuccess_ex1(data) {
-    buff("****INNER data");
-    buff(data);
-}
 
-function callbackError_ex1(e) {
-    buff("e");
+function callbackErrorGeneral(e) {
+    buff("Callback Error:");
     buff(e);
 }
 
@@ -298,10 +358,25 @@ function makeRequest(url, params, callbackSuccess, callbackError) {
         }
             )
 
-    }).on('error', function (e) { callbackError(e, url, params) }
-        );
+    }).on('error', function (e) { callbackError(e, url, params) });
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function findTicketsTicketMaster(data, url, params) {
@@ -349,6 +424,20 @@ function findTicketsTicketMaster(data, url, params) {
     all_artists.artistsWithTickets = artistsWithTickets;
     params.res.render('index.ejs', { auth_url: params.authorizeURL, other_info: all_artists });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
