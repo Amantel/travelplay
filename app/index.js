@@ -78,8 +78,8 @@ app.listen(3000, () => {
 var useModules = {};
 useModules.useSpotify = false; 
 useModules.useBandsInTown = false;
-useModules.useTicketMaster = true;
-useModules.useTicketMasterEurope = false;
+useModules.useTicketMaster = false;
+useModules.useTicketMasterEurope = true;
 useModules.useSongKick = false;
 
 
@@ -91,18 +91,26 @@ settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events
 settings.BandsInTownTimeOut=true;
 settings.BandsInTownTimeOutTime=100;
 
-settings.useTicketMasterUrl= "https://app.ticketmaster.com/discovery/v2/events.json?apikey=F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN"
+
+settings.TicketMasterKey="F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN";
+
+
+settings.TicketMasterUrl= "https://app.ticketmaster.com/discovery/v2/events.json?apikey="+settings.TicketMasterKey
     + "&startDateTime=2017-02-01T09:15:00Z&endDateTime=2017-02-28T20:15:00Z"
     + "&size=20"
     + "&city=New York"
-    + "&classification"
-    + "id=KZFzniwnSyZfZ7v7nJ";
+    + "&classificationId=KZFzniwnSyZfZ7v7nJ";
 
-settings.testBands=["rage", "accept", "voltaire", "metallica","the fantasticks"];
+settings.TicketMasterEuropeUrl= "https://livenation-test.apigee.net/mfxapi-stage/events?apikey="+settings.TicketMasterKey
+    + "&eventdate_from=2016-01-01T10:00:00Z"
+    + "&rows=20"
+    + "&domain_ids=finland"
+    + "&category_ids=10001"; 
+ 
+settings.testBands=["rage", "accept", "voltaire", "metallica","tessa lark","insurance test 3"];
 
 
-
-
+ 
 
 app.get('/', (req, res) => {
 
@@ -212,11 +220,14 @@ function findEvents(artistList) {
     }
     else if (useModules.useTicketMaster) {
         buff("*********************TicketMaster**************************");
-        makeRequest(settings.useTicketMasterUrl,artistList,findTicketsTicketMaster,callbackErrorGeneral);
+        makeRequest(settings.TicketMasterUrl,artistList,findTicketsTicketMaster,callbackErrorGeneral);
 
     }
     else if (useModules.useTicketMasterEurope) {
         buff("*********************TicketMasterEurope**************************");
+        makeRequest(settings.TicketMasterEuropeUrl,artistList,findTicketMasterEuropeUrl,callbackErrorGeneral);
+
+        
 
     }
     else if (useModules.useSongKick) {
@@ -354,7 +365,7 @@ function findTicketsTicketMaster(data, url, artistList) {
 
 
     var json = JSON.parse(data);
-    buff("Results: "+json.page.totalElements);
+    buff("Results: "+json._embedded.events.length);
     if (json.page.totalElements < 1) {
         buff("*********************FINISHED WITH SUCCESS*********************");
         buff("*********************ZERO EVENTS FOUND*********************");
@@ -392,6 +403,66 @@ function findTicketsTicketMaster(data, url, artistList) {
 
     modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 }
+
+
+
+
+
+function findTicketMasterEuropeUrl(data, url, artistList) {
+
+    var json = JSON.parse(data);
+    
+    buff("Results: "+json.events.length);
+    if (json.pagination.total < 1) {
+        buff("*********************FINISHED WITH SUCCESS*********************");
+        buff("*********************ZERO EVENTS FOUND*********************");
+
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
+
+        return false;
+    }  
+
+
+    var concerts = json.events;
+ 
+    var events=concerts.map(function(concert){
+       // buff(concert.name.toLowerCase());
+        if(artistList.indexOf(concert.name.toLowerCase())>-1) {
+            event=concert;
+            event.event_title=concert.name+" "+concert.eventdate.value;
+            event.event={};
+            event.event.id=concert.id;
+        }
+        else {
+            event=false; 
+        }
+        
+        return event;
+
+    });
+    events = events.filter(function (elem, i, array) {
+        return elem!==false;
+    });
+    
+    buff("*********************FINISHED WITH SUCCESS*********************");
+    
+    buff("Events: " + events.length);
+
+    modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
