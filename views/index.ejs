@@ -49,7 +49,7 @@
                         var event=result.events[i];
                     %>
                     <h3>
-                        <%=event.event_title%> )<%=event.event.id%>)
+                        <%=event.event_title%> (Event ID: <%=event.event.id%>)
                     </h3>                    
                     <%
                     }
@@ -70,7 +70,7 @@
 
 
         <hr>
-        <div class="all_info">
+        <div class="all_info"> 
             <button id="show_json" class="btn btn-info">Toggle JSON view</button>
             <div class="hidden all_info_json">
                 <% if(typeof(result)!="undefined") { %>
