@@ -1,5 +1,3 @@
-var BiTtestResponse = [{ "id": 12938812, "title": "Rage @ G\u00f6ta K\u00e4llare in Stockholm, Sweden", "datetime": "2017-01-15T19:00:00", "formatted_datetime": "Sunday, January 15, 2017 at 7:00PM", "formatted_location": "Stockholm, Sweden", "ticket_url": "http://www.bandsintown.com/event/12938812/buy_tickets?app_id=TRAVELPLAY_ID\u0026artist=Rage\u0026came_from=67", "ticket_type": "Tickets", "ticket_status": "available", "on_sale_datetime": null, "facebook_rsvp_url": "http://www.bandsintown.com/event/12938812?app_id=TRAVELPLAY_ID\u0026artist=Rage\u0026came_from=67", "description": null, "artists": [{ "name": "Rage", "mbid": "2a90aa9c-d2ff-49fd-a8e5-2463f657eb45", "image_url": "https://s3.amazonaws.com/bit-photos/large/6724943.jpeg", "thumb_url": "https://s3.amazonaws.com/bit-photos/thumb/6724943.jpeg", "facebook_tour_dates_url": "http://www.bandsintown.com/Rage/facebookapp?came_from=67", "facebook_page_url": "http://www.facebook.com/pages/Rage/802922219754478", "tracker_count": 16096, "url": "Rage", "website": "http://www.rage-on.de/" }], "venue": { "name": "G\u00f6ta K\u00e4llare", "place": "G\u00f6ta K\u00e4llare", "city": "Stockholm", "region": null, "country": "Sweden", "latitude": 59.315808, "longitude": 18.079347 } },
-{ "id": 12768408, "title": "Accept @ Hovet in Stockholm, Sweden", "datetime": "2017-03-24T19:00:00", "formatted_datetime": "Friday, March 24, 2017 at 7:00PM", "formatted_location": "Stockholm, Sweden", "ticket_url": "http://www.bandsintown.com/event/12768408/buy_tickets?app_id=TRAVELPLAY_ID\u0026artist=Accept\u0026came_from=67", "ticket_type": "Tickets", "ticket_status": "available", "on_sale_datetime": "2016-08-26T10:00:00", "facebook_rsvp_url": "http://www.bandsintown.com/event/12768408?app_id=TRAVELPLAY_ID\u0026artist=Accept\u0026came_from=67", "description": "Special guests of Sabaton.", "artists": [{ "name": "Accept", "mbid": "41f4d85a-0bd7-4602-a3e3-8c47f36efb0a", "image_url": "https://s3.amazonaws.com/bit-photos/large/7087362.jpeg", "thumb_url": "https://s3.amazonaws.com/bit-photos/thumb/7087362.jpeg", "facebook_tour_dates_url": "http://www.bandsintown.com/Accept/facebookapp?came_from=67", "facebook_page_url": "https://www.facebook.com/accepttheband", "tracker_count": 127827, "url": "Accept", "website": null }, { "name": "Sabaton", "mbid": "39a31de6-763d-48b6-a45c-f7cfad58ffd8", "image_url": "https://s3.amazonaws.com/bit-photos/artistLarge.jpg", "thumb_url": "https://s3.amazonaws.com/bit-photos/artistThumb.jpg", "facebook_tour_dates_url": "http://www.bandsintown.com/Sabaton/facebookapp?came_from=67", "facebook_page_url": "http://www.facebook.com/sabaton", "tracker_count": 127310 }, { "name": "Accept", "mbid": "41f4d85a-0bd7-4602-a3e3-8c47f36efb0a", "image_url": "https://s3.amazonaws.com/bit-photos/artistLarge.jpg", "thumb_url": "https://s3.amazonaws.com/bit-photos/artistThumb.jpg", "facebook_tour_dates_url": "http://www.bandsintown.com/Accept/facebookapp?came_from=67", "facebook_page_url": "https://www.facebook.com/accepttheband", "tracker_count": 127827 }], "venue": { "name": "Hovet", "place": "Hovet", "city": "Stockholm", "region": "26", "country": "Sweden", "latitude": 59.3333333, "longitude": 18.05 } }];
 
 var epicBuffer = "";
 
@@ -62,9 +60,6 @@ var state = 'test-state';
 
 
 
-var songKey = "7czFd6q870oymybH";
-var songStockId = "32252";
-
 
 
 
@@ -79,15 +74,18 @@ var useModules = {};
 useModules.useSpotify = false; 
 useModules.useBandsInTown = false;
 useModules.useTicketMaster = false;
-useModules.useTicketMasterEurope = true;
-useModules.useSongKick = false;
+useModules.useTicketMasterEurope = false;
+useModules.useSongKick = true;
 
 
 var modelCurrent = {};
 
 var settings = {};
 
-settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID&location=Stockholm&radius=10&date=2017-01-01,2017-06-31";
+settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID"+
+"&location=Stockholm"
++"&radius=10&date=2017-01-01,2017-06-31";
+
 settings.BandsInTownTimeOut=true;
 settings.BandsInTownTimeOutTime=100;
 
@@ -106,8 +104,19 @@ settings.TicketMasterEuropeUrl= "https://livenation-test.apigee.net/mfxapi-stage
     + "&rows=20"
     + "&domain_ids=finland"
     + "&category_ids=10001"; 
+
+settings.SongKickKey="7czFd6q870oymybH";
+
+settings.SongKickUrl="http://api.songkick.com/api/3.0/metro_areas/"+
++"32252" //Stockholm
++"/calendar.json"
++"?apikey="+settings.SongKickKey
++"&page=PAGE_NUMBER";    
  
-settings.testBands=["rage", "accept", "voltaire", "metallica","tessa lark","insurance test 3"];
+settings.SongKickStartDate="2017-01-01";
+settings.SongKickEndtDate="2017-06-31";
+
+settings.testBands=["rage", "accept", "voltaire", "metallica","tessa lark","insurance test 3","perry","anthrax"];
 
 
  
@@ -232,6 +241,7 @@ function findEvents(artistList) {
     }
     else if (useModules.useSongKick) {
         buff("*********************SongKick**************************");
+        findSongKickEvents(artistList); 
 
     }
     else {
@@ -241,6 +251,97 @@ function findEvents(artistList) {
 
 
 }
+ 
+
+function findSongKickEvents(artistList) {
+    iteratorMarker = 0;
+    if (!artistList)
+        artistList = ["rage"]; //dummy list
+
+    var requestFunction;
+    requestFunction = makeKickRequest;
+
+    //Serial
+    //async.mapSeries(artistList, requestFunction, function (err, results) {
+    //True async    
+    //Easy way. Like 60 (3000/50) requests for New York. Still it's lower than bandsintown
+
+    //1. get totalEntries (makeRequest for 1 page and do everything in the callback)
+    var totalEntries=491;
+    //2. create pagesArray  pagesArray=Array.from({length: N}, (v, k) => k+1);  
+    var N=Math.ceil(totalEntries/50);
+    var pagesArray=Array(N).fill(0).map((e,i)=>i+1);
+    //async map pagesArray as pageNumber for URL like settings.SongKickUrl.replace("PAGE_NUMBER", encodeURI(pageNumber))
+
+
+    async.map(pagesArray, requestFunction, function (err, results) {
+        if (err) {
+            buff("*********************FINISHED WITH ERROR**************************");
+            buff("iteratorMarker " + iteratorMarker);
+            buff(err);
+            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
+
+        } else {
+ 
+            var flattened=results.reduce(function(a, b) {
+                return a.concat(b);
+            }); 
+            //filter by dates
+            var events = flattened.filter(function (elem, i, array) {
+                if(elem.event!==undefined && elem.event.start!==undefined)      
+                {  
+                    return new Date(elem.event.start.date)>=new Date(settings.SongKickStartDate) && new Date(elem.event.start.date)<=new Date(settings.SongKickEndtDate);
+                }
+                return false;    
+
+            });
+            //filter by bands
+            var events = events.filter(function (elem, i, array) {
+                if(elem.event_title!=undefined) {
+                    return artistList.indexOf(elem.event_title.toLowerCase())>-1;
+                } 
+                return false;
+
+            });            
+
+            buff("Results: " + flattened.length);
+            buff("Events: " + events.length);
+            buff("*********************FINISHED WITH SUCCESS*********************");
+
+            //console.log(events);
+            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+
+
+        }
+    });
+
+
+}
+
+function makeKickRequest(pageNumber, callback) {
+    makeRequest(settings.SongKickUrl.replace("PAGE_NUMBER", encodeURI(pageNumber)), { callback: callback }, findSongKickEventsPage, callbackErrorGeneral);
+}
+
+function findSongKickEventsPage(data) {
+
+    var foundEvents = [];
+    var json = JSON.parse(data);
+
+    iteratorMarker++
+ 
+    //buff("data");
+    //buff(json.length);
+
+    //HERE BE SOME ERROR CATCHING
+    foundEvents = json.resultsPage.results.event.filter(function (elem, i, array) {
+                return elem.performance.length > 0;
+            }).map(function (elem) {
+        return { "event_title": elem.performance[0].displayName, "event": elem };
+    });
+
+    return foundEvents;
+}
+
 
 
 
@@ -326,7 +427,7 @@ function findBrandsinTownEvent(data) {
     iteratorMarker++
 
     //buff("data");
-    buff(json.length);
+    //buff(json.length);
 
     if (json && json.length > 0 && (typeof (json.errors) == "undefined")) {
         foundEvents = json.map(function (elem) {
@@ -335,7 +436,7 @@ function findBrandsinTownEvent(data) {
     } else {
         if (typeof (json) == "object" && json.errors && json.errors.length > 0) {
             //If error return immediately
-            return json.errors[0];
+            return json.errors[0]; //if not UNKNOWN ARTIST! TODO
         }
     }
     return foundEvents;
