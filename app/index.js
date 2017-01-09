@@ -27,7 +27,7 @@ app.use(express.static('public'));
 
 
 
- 
+
 
 
 
@@ -71,7 +71,7 @@ app.listen(3000, () => {
 
 
 var useModules = {};
-useModules.useSpotify = false; 
+useModules.useSpotify = false;
 useModules.useBandsInTown = false;
 useModules.useTicketMaster = false;
 useModules.useTicketMasterEurope = false;
@@ -82,49 +82,49 @@ var modelCurrent = {};
 
 var settings = {};
 
-settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID"+
-"&location=Stockholm"
-+"&radius=10&date=2017-01-01,2017-06-31";
+settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID" +
+    "&location=Stockholm"
+    + "&radius=10&date=2017-01-01,2017-06-31";
 
-settings.BandsInTownTimeOut=true;
-settings.BandsInTownTimeOutTime=100;
-
-
-settings.TicketMasterKey="F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN";
+settings.BandsInTownTimeOut = true;
+settings.BandsInTownTimeOutTime = 100;
 
 
-settings.TicketMasterUrl= "https://app.ticketmaster.com/discovery/v2/events.json?apikey="+settings.TicketMasterKey
+settings.TicketMasterKey = "F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN";
+
+
+settings.TicketMasterUrl = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=" + settings.TicketMasterKey
     + "&startDateTime=2017-02-01T09:15:00Z&endDateTime=2017-02-28T20:15:00Z"
     + "&size=20"
     + "&city=New York"
     + "&classificationId=KZFzniwnSyZfZ7v7nJ";
 
-settings.TicketMasterEuropeUrl= "https://livenation-test.apigee.net/mfxapi-stage/events?apikey="+settings.TicketMasterKey
+settings.TicketMasterEuropeUrl = "https://livenation-test.apigee.net/mfxapi-stage/events?apikey=" + settings.TicketMasterKey
     + "&eventdate_from=2016-01-01T10:00:00Z"
     + "&rows=20"
     + "&domain_ids=finland"
-    + "&category_ids=10001"; 
+    + "&category_ids=10001";
 
-settings.SongKickKey="7czFd6q870oymybH";
+settings.SongKickKey = "7czFd6q870oymybH";
 
-settings.SongKickUrl="http://api.songkick.com/api/3.0/metro_areas/"
-+"CITY_ID" //Stockholm
-+"/calendar.json"
-+"?apikey="+settings.SongKickKey
-+"&page=PAGE_NUMBER";    
- 
-settings.SongKickLocationUrl="http://api.songkick.com/api/3.0/search/locations.json"
-+"?query=CITY_NAME" //Stockholm
-+"&apikey="+settings.SongKickKey;    
+settings.SongKickUrl = "http://api.songkick.com/api/3.0/metro_areas/"
+    + "CITY_ID" //Stockholm
+    + "/calendar.json"
+    + "?apikey=" + settings.SongKickKey
+    + "&page=PAGE_NUMBER";
 
- 
-settings.SongKickStartDate="2017-01-01";
-settings.SongKickEndtDate="2017-06-31";
-
-settings.testBands=["rage", "accept", "voltaire", "metallica","tessa lark","insurance test 3","perry","anthrax"];
+settings.SongKickLocationUrl = "http://api.songkick.com/api/3.0/search/locations.json"
+    + "?query=CITY_NAME" //Stockholm
+    + "&apikey=" + settings.SongKickKey;
 
 
- 
+settings.SongKickStartDate = "2017-01-01";
+settings.SongKickEndtDate = "2017-06-31";
+
+settings.testBands = ["rage", "accept", "voltaire", "metallica", "tessa lark", "insurance test 3", "perry", "anthrax"];
+
+
+
 
 app.get('/', (req, res) => {
 
@@ -133,9 +133,9 @@ app.get('/', (req, res) => {
     modelCurrent.authorizeURL = authorizeURL;
     modelCurrent.res = res;
 
-     if (!useModules.useSpotify) {
+    if (!useModules.useSpotify) {
         findEvents(settings.testBands);
-         
+
     }
     else {
         if (spotifyApi.getAccessToken()) {
@@ -229,24 +229,24 @@ function findEvents(artistList) {
 
     if (useModules.useBandsInTown) {
         buff("*********************BandsInTown**************************");
-        findBandsinTownEvents(artistList, settings.BandsInTownTimeOut); 
+        findBandsinTownEvents(artistList, settings.BandsInTownTimeOut);
 
     }
     else if (useModules.useTicketMaster) {
         buff("*********************TicketMaster**************************");
-        makeRequest(settings.TicketMasterUrl,artistList,findTicketsTicketMaster,callbackErrorGeneral);
+        makeRequest(settings.TicketMasterUrl, artistList, findTicketsTicketMaster, callbackErrorGeneral);
 
     }
     else if (useModules.useTicketMasterEurope) {
         buff("*********************TicketMasterEurope**************************");
-        makeRequest(settings.TicketMasterEuropeUrl,artistList,findTicketMasterEuropeUrl,callbackErrorGeneral);
+        makeRequest(settings.TicketMasterEuropeUrl, artistList, findTicketMasterEuropeUrl, callbackErrorGeneral);
 
-        
+
 
     }
     else if (useModules.useSongKick) {
         buff("*********************SongKick**************************");
-        findSongKickEvents(artistList); 
+        findSongKickEvents(artistList);
 
     }
     else {
@@ -256,7 +256,7 @@ function findEvents(artistList) {
 
 
 }
- 
+
 
 function findSongKickEvents(artistList) {
     iteratorMarker = 0;
@@ -270,146 +270,142 @@ function findSongKickEvents(artistList) {
     //async.mapSeries(artistList, requestFunction, function (err, results) {
     //True async    
     //Easy way. Like 60 (3000/50) requests for New York. Still it's lower than bandsintown
- 
-/*
-async.waterfall([
-    function(callback) {
-        callback(null, 'one', 'two');
-    },
-    function(arg1, arg2, callback) {
-        // arg1 now equals 'one' and arg2 now equals 'two'
-        callback(null, 'three');
-    },
-    function(arg1, callback) {
-        // arg1 now equals 'three'
-        callback(null, 'done');
-    }
-], function (err, result) {
-    // result now equals 'done'
-});
-*/
-var cityName="Stockholm";
-var params={waterfallFinished:false};
 
-async.waterfall([
-
-    function(callback) {
-        
-        params.resultName="cityID";
-
- 
-        makeRequest(
-            settings.SongKickLocationUrl.replace("CITY_NAME", cityName), //url
-            { callback: callback,callback_params:params }, //async callback to move futher
-            getSongKickEventsCity, //callbackSuccess - let's find cityID
-            callbackErrorGeneral //callbackError - general
-        );
-    },
-
-    function(callback,result,callback_params) {
-
- buff(result);
- buff(callback_params);
-  buff(callback);
-
-        if(result!=0)
-        {
-            params.resultName="totalEntries";
-
-
-            makeRequest(
-                settings.SongKickUrl.replace("CITY_ID", callback_params.cityID).replace("PAGE_NUMBER", 1), //url
-                { callback: callback,callback_params:params }, //async callback to move futher
-                findSongKickEventsTotal, //callbackSuccess - let's find totalEntries
-                callbackErrorGeneral //callbackError - general
-            );
-        } else {
-            callback("city_not_found","0");
+    /*
+    async.waterfall([
+        function(callback) {
+            callback(null, 'one', 'two');
+        },
+        function(arg1, arg2, callback) {
+            // arg1 now equals 'one' and arg2 now equals 'two'
+            callback(null, 'three');
+        },
+        function(arg1, callback) {
+            // arg1 now equals 'three'
+            callback(null, 'done');
         }
-        //var totalEntries=491;
-        //callback(null, totalEntries,cityID); //requestFunction with cityID
-    }
+    ], function (err, result) {
+        // result now equals 'done'
+    });
+    */
+    var cityName = "Stockholm";
+    buff("cityName "+cityName);
+    
 
-], function (err, result,callback_params) { 
-        buff(result);
-        buff(callback_params);
-        
- 
-    // result now equals 'done'
-});
-        buff("emd");
+    async.waterfall([
 
+        function (callback) {
+            var url = settings.SongKickLocationUrl.replace("CITY_NAME", cityName);
+            request(url, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var json = JSON.parse(body);
+                    var totalEntries = json.resultsPage.totalEntries;
+                    if (!totalEntries)
+                        totalEntries = 0;
+                    if (totalEntries > 0) {
+
+                        callback(null, json.resultsPage.results.location[0].metroArea.id);
+                    } else {
+                        callback("city not found", 0);
+                    }
+                }
+            })
+        },
+
+        function (cityID,callback) {
+            var url = settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", 1);
+            request(url, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var json = JSON.parse(body);
+                    var totalEntries = json.resultsPage.totalEntries;
+                    if (!totalEntries)
+                        totalEntries = 0;
+                    callback(null,totalEntries,cityID);
+                }
+            })
  
+        }
+
+    ], function (err, totalEntries, cityID) {
+        buff("totalEntries "+totalEntries);
+        buff("cityID "+cityID);
+
+
+        // result now equals 'done'
+    });
+ 
+
+
 
 
     //1. get totalEntries (makeRequest for 1 page and do everything in the callback)
-    var totalEntries=491;
+    var totalEntries = 491;
     //2. create pagesArray  pagesArray=Array.from({length: N}, (v, k) => k+1);  
-    var N=Math.ceil(totalEntries/50);
-    var pagesArray=Array(N).fill(0).map((e,i)=>i+1);
+    var N = Math.ceil(totalEntries / 50);
+    var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
     //async map pagesArray as pageNumber for URL like settings.SongKickUrl.replace("PAGE_NUMBER", encodeURI(pageNumber))
 
-/*
-    async.map(pagesArray, requestFunction, function (err, results) {
-        if (err) {
-            buff("*********************FINISHED WITH ERROR**************************");
-            buff("iteratorMarker " + iteratorMarker);
-            buff(err);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-        } else {
- 
-            var flattened=results.reduce(function(a, b) {
-                return a.concat(b);
-            }); 
-            //filter by dates
-            var events = flattened.filter(function (elem, i, array) {
-                if(elem.event!==undefined && elem.event.start!==undefined)      
-                {  
-                    return new Date(elem.event.start.date)>=new Date(settings.SongKickStartDate) && new Date(elem.event.start.date)<=new Date(settings.SongKickEndtDate);
-                }
-                return false;    
-
-            });
-            //filter by bands
-            var events = events.filter(function (elem, i, array) {
-                if(elem.event_title!=undefined) {
-                    return artistList.indexOf(elem.event_title.toLowerCase())>-1;
-                } 
-                return false;
-
-            });            
-
-            buff("Results: " + flattened.length);
-            buff("Events: " + events.length);
-            buff("*********************FINISHED WITH SUCCESS*********************");
-
-            //console.log(events);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
-        }
-    });
-*/
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: {  } });
+    /*
+        async.map(pagesArray, requestFunction, function (err, results) {
+            if (err) {
+                buff("*********************FINISHED WITH ERROR**************************");
+                buff("iteratorMarker " + iteratorMarker);
+                buff(err);
+                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
+    
+            } else {
+     
+                var flattened=results.reduce(function(a, b) {
+                    return a.concat(b);
+                }); 
+                //filter by dates
+                var events = flattened.filter(function (elem, i, array) {
+                    if(elem.event!==undefined && elem.event.start!==undefined)      
+                    {  
+                        return new Date(elem.event.start.date)>=new Date(settings.SongKickStartDate) && new Date(elem.event.start.date)<=new Date(settings.SongKickEndtDate);
+                    }
+                    return false;    
+    
+                });
+                //filter by bands
+                var events = events.filter(function (elem, i, array) {
+                    if(elem.event_title!=undefined) {
+                        return artistList.indexOf(elem.event_title.toLowerCase())>-1;
+                    } 
+                    return false;
+    
+                });            
+    
+                buff("Results: " + flattened.length);
+                buff("Events: " + events.length);
+                buff("*********************FINISHED WITH SUCCESS*********************");
+    
+                //console.log(events);
+                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+    
+    
+            }
+        });
+    */
+    modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: {} });
 
 }
 
 
 function findSongKickEventsTotal(data) {
-    var json=JSON.parse(data);    
-    var totalEntries=json.resultsPage.totalEntries;
-    if(!totalEntries)
-        totalEntries=0;
-    return totalEntries;           
+    var json = JSON.parse(data);
+    var totalEntries = json.resultsPage.totalEntries;
+    if (!totalEntries)
+        totalEntries = 0;
+    return totalEntries;
 }
 
 function getSongKickEventsCity(data) {
-    var json=JSON.parse(data);
-    var totalEntries=json.resultsPage.totalEntries;
-    if(!totalEntries)
-        totalEntries=0;
-    if(totalEntries>0) {
+    var json = JSON.parse(data);
+    var totalEntries = json.resultsPage.totalEntries;
+    if (!totalEntries)
+        totalEntries = 0;
+    if (totalEntries > 0) {
         return json.resultsPage.results.location[0].metroArea.id;
     } else {
         return 0;
@@ -428,14 +424,14 @@ function findSongKickEventsPage(data) {
     var json = JSON.parse(data);
 
     iteratorMarker++
- 
+
     //buff("data");
     //buff(json.length);
 
     //HERE BE SOME ERROR CATCHING
     foundEvents = json.resultsPage.results.event.filter(function (elem, i, array) {
-                return elem.performance.length > 0;
-            }).map(function (elem) {
+        return elem.performance.length > 0;
+    }).map(function (elem) {
         return { "event_title": elem.performance[0].displayName, "event": elem };
     });
 
@@ -566,7 +562,7 @@ function findTicketsTicketMaster(data, url, artistList) {
 
 
     var json = JSON.parse(data);
-    buff("Results: "+json._embedded.events.length);
+    buff("Results: " + json._embedded.events.length);
     if (json.page.totalElements < 1) {
         buff("*********************FINISHED WITH SUCCESS*********************");
         buff("*********************ZERO EVENTS FOUND*********************");
@@ -574,32 +570,32 @@ function findTicketsTicketMaster(data, url, artistList) {
         modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
 
         return false;
-    }  
+    }
 
 
     var concerts = json._embedded.events;
- 
-    var events=concerts.map(function(concert){
-       // buff(concert.name.toLowerCase());
-        if(artistList.indexOf(concert.name.toLowerCase())>-1) {
-            event=concert;
-            event.event_title=concert.name+" "+concert.dates.start.localDate;
-            event.event={};
-            event.event.id=concert.id;
+
+    var events = concerts.map(function (concert) {
+        // buff(concert.name.toLowerCase());
+        if (artistList.indexOf(concert.name.toLowerCase()) > -1) {
+            event = concert;
+            event.event_title = concert.name + " " + concert.dates.start.localDate;
+            event.event = {};
+            event.event.id = concert.id;
         }
         else {
-            event=false; 
+            event = false;
         }
-        
+
         return event;
 
     });
     events = events.filter(function (elem, i, array) {
-        return elem!==false;
+        return elem !== false;
     });
-    
+
     buff("*********************FINISHED WITH SUCCESS*********************");
-    
+
     buff("Events: " + events.length);
 
     modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
@@ -612,8 +608,8 @@ function findTicketsTicketMaster(data, url, artistList) {
 function findTicketMasterEuropeUrl(data, url, artistList) {
 
     var json = JSON.parse(data);
-    
-    buff("Results: "+json.events.length);
+
+    buff("Results: " + json.events.length);
     if (json.pagination.total < 1) {
         buff("*********************FINISHED WITH SUCCESS*********************");
         buff("*********************ZERO EVENTS FOUND*********************");
@@ -621,32 +617,32 @@ function findTicketMasterEuropeUrl(data, url, artistList) {
         modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
 
         return false;
-    }  
+    }
 
 
     var concerts = json.events;
- 
-    var events=concerts.map(function(concert){
-       // buff(concert.name.toLowerCase());
-        if(artistList.indexOf(concert.name.toLowerCase())>-1) {
-            event=concert;
-            event.event_title=concert.name+" "+concert.eventdate.value;
-            event.event={};
-            event.event.id=concert.id;
+
+    var events = concerts.map(function (concert) {
+        // buff(concert.name.toLowerCase());
+        if (artistList.indexOf(concert.name.toLowerCase()) > -1) {
+            event = concert;
+            event.event_title = concert.name + " " + concert.eventdate.value;
+            event.event = {};
+            event.event.id = concert.id;
         }
         else {
-            event=false; 
+            event = false;
         }
-        
+
         return event;
 
     });
     events = events.filter(function (elem, i, array) {
-        return elem!==false;
+        return elem !== false;
     });
-    
+
     buff("*********************FINISHED WITH SUCCESS*********************");
-    
+
     buff("Events: " + events.length);
 
     modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
@@ -667,7 +663,7 @@ function findTicketMasterEuropeUrl(data, url, artistList) {
 
 
 
- 
+
 
 /*HELPER FUNCTIONS*/
 /*
@@ -689,7 +685,7 @@ function makeRequest(url, params, callbackSuccess, callbackError) {
     var transport = (url_instance.getScheme() || "").toLowerCase() === "https" ? https : http;
     var queryParams = url_instance.parseQuery();
     var httpParams = {
-        host: url_instance.getAuthority(), 
+        host: url_instance.getAuthority(),
         headers: { 'user-agent': 'Mozilla/5.0' }
     }
     httpParams.path = (url_instance.getPath() || "") + "?" + queryParams.toString();
@@ -706,14 +702,14 @@ function makeRequest(url, params, callbackSuccess, callbackError) {
             buff("result");
             buff(result);
             //buff(result.length);
-            if (params && typeof (params.callback) == "function" && typeof (params.callback_params)!="undefined") { //if we need async callback - pass result here
+            if (params && typeof (params.callback) == "function" && typeof (params.callback_params) != "undefined") { //if we need async callback - pass result here
                 var err = null;
                 if (typeof (result) == "string")
-                    err = resul;                    
-                params.callback_params[params.callback_params.resultName]=result; 
+                    err = resul;
+                params.callback_params[params.callback_params.resultName] = result;
 
-                params.callback(err, result,params.callback_params); //here
-            } else if(params && typeof (params.callback) == "function") { //if we need async callback - pass result here
+                params.callback(err, result, params.callback_params); //here
+            } else if (params && typeof (params.callback) == "function") { //if we need async callback - pass result here
                 var err = null;
                 if (typeof (result) == "string")
                     err = result;
