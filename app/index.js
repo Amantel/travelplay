@@ -107,11 +107,16 @@ settings.TicketMasterEuropeUrl= "https://livenation-test.apigee.net/mfxapi-stage
 
 settings.SongKickKey="7czFd6q870oymybH";
 
-settings.SongKickUrl="http://api.songkick.com/api/3.0/metro_areas/"+
-+"32252" //Stockholm
+settings.SongKickUrl="http://api.songkick.com/api/3.0/metro_areas/"
++"CITY_ID" //Stockholm
 +"/calendar.json"
 +"?apikey="+settings.SongKickKey
 +"&page=PAGE_NUMBER";    
+ 
+settings.SongKickLocationUrl="http://api.songkick.com/api/3.0/search/locations.json"
++"?query=CITY_NAME" //Stockholm
++"&apikey="+settings.SongKickKey;    
+
  
 settings.SongKickStartDate="2017-01-01";
 settings.SongKickEndtDate="2017-06-31";
@@ -265,6 +270,77 @@ function findSongKickEvents(artistList) {
     //async.mapSeries(artistList, requestFunction, function (err, results) {
     //True async    
     //Easy way. Like 60 (3000/50) requests for New York. Still it's lower than bandsintown
+ 
+/*
+async.waterfall([
+    function(callback) {
+        callback(null, 'one', 'two');
+    },
+    function(arg1, arg2, callback) {
+        // arg1 now equals 'one' and arg2 now equals 'two'
+        callback(null, 'three');
+    },
+    function(arg1, callback) {
+        // arg1 now equals 'three'
+        callback(null, 'done');
+    }
+], function (err, result) {
+    // result now equals 'done'
+});
+*/
+var cityName="Stockholm";
+var params={waterfallFinished:false};
+
+async.waterfall([
+
+    function(callback) {
+        
+        params.resultName="cityID";
+
+ 
+        makeRequest(
+            settings.SongKickLocationUrl.replace("CITY_NAME", cityName), //url
+            { callback: callback,callback_params:params }, //async callback to move futher
+            getSongKickEventsCity, //callbackSuccess - let's find cityID
+            callbackErrorGeneral //callbackError - general
+        );
+    },
+
+    function(callback,result,callback_params) {
+
+ buff(result);
+ buff(callback_params);
+  buff(callback);
+
+        if(result!=0)
+        {
+            params.resultName="totalEntries";
+
+
+            makeRequest(
+                settings.SongKickUrl.replace("CITY_ID", callback_params.cityID).replace("PAGE_NUMBER", 1), //url
+                { callback: callback,callback_params:params }, //async callback to move futher
+                findSongKickEventsTotal, //callbackSuccess - let's find totalEntries
+                callbackErrorGeneral //callbackError - general
+            );
+        } else {
+            callback("city_not_found","0");
+        }
+        //var totalEntries=491;
+        //callback(null, totalEntries,cityID); //requestFunction with cityID
+    }
+
+], function (err, result,callback_params) { 
+        buff(result);
+        buff(callback_params);
+        
+ 
+    // result now equals 'done'
+});
+        buff("emd");
+
+ 
+
 
     //1. get totalEntries (makeRequest for 1 page and do everything in the callback)
     var totalEntries=491;
@@ -273,7 +349,7 @@ function findSongKickEvents(artistList) {
     var pagesArray=Array(N).fill(0).map((e,i)=>i+1);
     //async map pagesArray as pageNumber for URL like settings.SongKickUrl.replace("PAGE_NUMBER", encodeURI(pageNumber))
 
-
+/*
     async.map(pagesArray, requestFunction, function (err, results) {
         if (err) {
             buff("*********************FINISHED WITH ERROR**************************");
@@ -314,9 +390,33 @@ function findSongKickEvents(artistList) {
 
         }
     });
-
+*/
+            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: {  } });
 
 }
+
+
+function findSongKickEventsTotal(data) {
+    var json=JSON.parse(data);    
+    var totalEntries=json.resultsPage.totalEntries;
+    if(!totalEntries)
+        totalEntries=0;
+    return totalEntries;           
+}
+
+function getSongKickEventsCity(data) {
+    var json=JSON.parse(data);
+    var totalEntries=json.resultsPage.totalEntries;
+    if(!totalEntries)
+        totalEntries=0;
+    if(totalEntries>0) {
+        return json.resultsPage.results.location[0].metroArea.id;
+    } else {
+        return 0;
+    }
+}
+
+
 
 function makeKickRequest(pageNumber, callback) {
     makeRequest(settings.SongKickUrl.replace("PAGE_NUMBER", encodeURI(pageNumber)), { callback: callback }, findSongKickEventsPage, callbackErrorGeneral);
@@ -403,7 +503,7 @@ function findBandsinTownEvents(artistList, timeOut = true) {
 
 
 }
-function makeBandRequest(artistName, callback) {
+function makeBandRequest(artistName, callback) { //callback is callback for async
     //buff("Searching for "+artistName);    
     makeRequest(settings.BandsInTownUrl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackErrorGeneral);
 
@@ -419,7 +519,7 @@ function makeBandRequestTimeOut(artistName, callback) {
 }
 
 
-function findBrandsinTownEvent(data) {
+function findBrandsinTownEvent(data) { //sync function
 
     var foundEvents = [];
     var json = JSON.parse(data);
@@ -567,40 +667,57 @@ function findTicketMasterEuropeUrl(data, url, artistList) {
 
 
 
-
+ 
 
 /*HELPER FUNCTIONS*/
-
+/*
+function makeRequest(url) {
+    request(url, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+        console.log(body) // Show the HTML for the Google homepage. 
+    }
+    })
+    
+}
+*/
 
 function makeRequest(url, params, callbackSuccess, callbackError) {
     //buff("making request to URL: "+url);
 
- 
+    //gather httpParams start
     var url_instance = new URIlib.URI(url);
     var transport = (url_instance.getScheme() || "").toLowerCase() === "https" ? https : http;
-
     var queryParams = url_instance.parseQuery();
-
-
     var httpParams = {
         host: url_instance.getAuthority(), 
         headers: { 'user-agent': 'Mozilla/5.0' }
     }
-
     httpParams.path = (url_instance.getPath() || "") + "?" + queryParams.toString();
+    //gather httpParams end
+
+
 
     var transpot_info = transport.get(httpParams, function (result) {
         var data = "";
         result.on("data", function (chunk) {
             data += chunk;
         }).on("end", function () {
-            var result = callbackSuccess(data, url, params);
+            var result = callbackSuccess(data, url, params); //sync function - do something with data (like get city)
+            buff("result");
+            buff(result);
             //buff(result.length);
-            if (params && typeof (params.callback) == "function") {
+            if (params && typeof (params.callback) == "function" && typeof (params.callback_params)!="undefined") { //if we need async callback - pass result here
+                var err = null;
+                if (typeof (result) == "string")
+                    err = resul;                    
+                params.callback_params[params.callback_params.resultName]=result; 
+
+                params.callback(err, result,params.callback_params); //here
+            } else if(params && typeof (params.callback) == "function") { //if we need async callback - pass result here
                 var err = null;
                 if (typeof (result) == "string")
                     err = result;
-                params.callback(err, result);
+                params.callback(err, result); //here
             }
         }
             )
