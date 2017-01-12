@@ -75,8 +75,8 @@ app.listen(3000, () => {
 var useModules = {};
 useModules.useSpotify = false;
 useModules.useBandsInTown = false;
-useModules.useTicketMaster = true;
-useModules.useTicketMasterEurope = false;
+useModules.useTicketMaster = false;
+useModules.useTicketMasterEurope = true;
 useModules.useSongKick = false;
 useModules.useTripIt = false;
 useModules.useEventful = false;
@@ -104,12 +104,14 @@ settings.TicketMasterUrl = "https://app.ticketmaster.com/discovery/v2/events.jso
     + "&classificationId=KZFzniwnSyZfZ7v7nJ";
 
     
-
+settings.TicketMasterEuropeRows=20;
 settings.TicketMasterEuropeUrl = "https://livenation-test.apigee.net/mfxapi-stage/events?apikey=" + settings.TicketMasterKey
     + "&eventdate_from=2016-01-01T10:00:00Z"
-    + "&rows=20"
-    + "&domain_ids=finland"
+    + "&rows="+settings.TicketMasterEuropeRows
+    + "&domain_ids=sweden"
     + "&category_ids=10001";
+ 
+ 
 
 settings.SongKickKey = "7czFd6q870oymybH";
 
@@ -127,7 +129,7 @@ settings.SongKickLocationUrl = "http://api.songkick.com/api/3.0/search/locations
 settings.SongKickStartDate = "2017-01-01";
 settings.SongKickEndtDate = "2017-06-30";
 
-settings.testBands = ["rage", "accept", "voltaire", "metallica", "tessa lark", "insurance test 3", "perry", "anthrax"];
+settings.testBands = ["rage", "accept", "voltaire", "metallica", "tessa lark", "insurance test 3", "perry", "anthrax","sing-a-long"];
 
 settings.tripItCallback="http://localhost:3000/tripitcallback";
  
@@ -692,11 +694,6 @@ function findEventfulFinish(eventsArray,artistList) {
 
 
 
-function makeTicketMasterRequest(pageNumber, callback) {
-    makeRequest(settings.TicketMasterUrl+"&page="+pageNumber, { callback: callback }, findTicketMasterPage, callbackErrorGeneral);
-}
-
-
 
 
 function findTicketsTicketMaster(data, url, artistList) {
@@ -753,6 +750,13 @@ function findTicketsTicketMaster(data, url, artistList) {
 }
 
 
+
+function makeTicketMasterRequest(pageNumber, callback) {
+    makeRequest(settings.TicketMasterUrl+"&page="+pageNumber, { callback: callback }, findTicketMasterPage, callbackErrorGeneral);
+}
+
+
+
 function findTicketMasterPage(data) {
     var foundEvents = [];
     var json = JSON.parse(data);
@@ -770,6 +774,7 @@ function findTicketMasterPage(data) {
 }
 
 
+/*
 function findTicketMasterEurope(data, url, artistList) {
 
     var json = JSON.parse(data);
@@ -813,9 +818,91 @@ function findTicketMasterEurope(data, url, artistList) {
     modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 }
 
+*/
 
 
 
+
+
+
+
+
+
+
+function findTicketMasterEurope(data, url, artistList) {
+
+ 
+    var json = JSON.parse(data);
+    buff("Results: " + json.events.length);
+    buff("Total: " + json.pagination.total);
+    if (json.pagination.total < 1) {
+        buff("*********************FINISHED WITH SUCCESS*********************");
+        buff("*********************ZERO EVENTS FOUND*********************");
+
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
+
+        return false;
+    }
+
+
+        var N = Math.ceil(json.pagination.total / settings.TicketMasterEuropeRows);
+ 
+
+        var pagesArray = Array(N*1).fill(0).map((e, i) => i*settings.TicketMasterEuropeRows);
+
+       async.map(pagesArray, makeTicketMasterEuropeRequest, function (err, results) {
+            if (err) {
+                buff("*********************FINISHED WITH ERROR**************************");
+                buff("iteratorMarker " + iteratorMarker);
+                buff(err);
+                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
+    
+            } else {
+                var flattened=results.reduce(function(a, b) {
+                    return a.concat(b);
+                }); 
+                 //filter by bands
+                 var events = flattened.filter(function (elem, i, array) {
+                    if(elem.event_title!=undefined) {
+                          return artistList.indexOf(elem.event_title.toLowerCase())>-1;
+                    } 
+                    return false;
+    
+                });            
+    
+                buff("Results: " + flattened.length);
+                buff("Events: " + events.length);
+                buff("*********************FINISHED WITH SUCCESS*********************");
+    
+                //console.log(events);
+                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+    
+    
+            }
+        });
+ 
+}
+function makeTicketMasterEuropeRequest(pageNumber, callback) {
+    makeRequest(settings.TicketMasterEuropeUrl+"&start="+pageNumber, { callback: callback }, findTicketMasterEuropePage, callbackErrorGeneral);
+}
+
+
+
+function findTicketMasterEuropePage(data) {
+    var foundEvents = [];
+    var json = JSON.parse(data);
+ 
+ 
+    //buff("data");
+    //buff(json.length);
+
+    //HERE BE SOME ERROR CATCHING
+    foundEvents =  json.events.map(function (elem) {
+        return { "event_title":  elem.name, "event": elem };
+    });
+
+    return foundEvents;
+}
 
 
 
