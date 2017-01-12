@@ -17,7 +17,9 @@ const async = require('async');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 
-
+const TripItApiClient = require("tripit-node");
+var TripItClient = new TripItApiClient("a90d6eda3798d491a24bb57fcaa5bb4cd10642e5", "9653c259420ba6c242527151175d01ded2765f5a");
+var requestTokenSecrets = {};
 
 
 const app = express();
@@ -76,6 +78,7 @@ useModules.useBandsInTown = false;
 useModules.useTicketMaster = false;
 useModules.useTicketMasterEurope = false;
 useModules.useSongKick = true;
+useModules.useTripIt = true;
 
 
 var modelCurrent = {};
@@ -119,13 +122,76 @@ settings.SongKickLocationUrl = "http://api.songkick.com/api/3.0/search/locations
 
 
 settings.SongKickStartDate = "2017-01-01";
-settings.SongKickEndtDate = "2017-06-31";
+settings.SongKickEndtDate = "2017-06-30";
 
 settings.testBands = ["rage", "accept", "voltaire", "metallica", "tessa lark", "insurance test 3", "perry", "anthrax"];
 
+settings.tripItCallback="http://localhost:3000/tripitcallback";
+ 
+
+app.get('/', (req, res) => {
+
+/*
+            modelCurrent.tripItAccessToken="b95230c0787144d90cf14a35055769abe21c1085";
+            modelCurrent.tripItAccessTokenSecret="6ed2eee367f091d4c81a3c769acea3ef0f452f57";
+            modelCurrent.tripitAccessGrantedNow=true;
+*/
+
+modelCurrent.res = res;
+if(modelCurrent.tripitAccessGrantedNow) {
+    showTrips();
+    modelCurrent.tripitAccessGrantedNow=false;
+}
+else
+    //res.send({"text":"go to /tripitrequesttoken"});
+    modelCurrent.res.render('trip.ejs', {  });
+
+})
+
+app.get('/tripitrequesttoken', (req, res) => {
+
+    TripItClient.getRequestToken().then(function (results) {
+            var token = results[0],
+                secret = results[1];
+            requestTokenSecrets[token] = secret;
+            var request="https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback="+settings.tripItCallback;
+            res.redirect(request);
+        }, function (error) {
+            res.send(error);
+        });
+
+}); 
 
 
+app.get('/tripitcallback', (req, res) => {
+    //res.send({oauth_token:req.query.oauth_token});
+	var token = req.query.oauth_token,
+		    secret = requestTokenSecrets[token],
+		    verifier = null;
+	    TripItClient.getAccessToken(token, secret, verifier).then(function (results) {
+		    var accessToken = results[0],
+			accessTokenSecret = results[1];
 
+            modelCurrent.tripItAccessToken=accessToken;
+            modelCurrent.tripItAccessTokenSecret=accessTokenSecret;
+            modelCurrent.tripitAccessGrantedNow = true;
+            res.redirect("/");
+
+	}, function (error) {
+		res.send(error);
+	});
+
+});
+
+ function showTrips() {
+    TripItClient.requestResource("/list/trip", "GET", modelCurrent.tripItAccessToken, modelCurrent.tripItAccessTokenSecret).then(function (results) {
+            var response = JSON.parse(results[0]);
+             modelCurrent.res.render('trip.ejs', { result:response });
+    });    
+ }
+ 
+
+/*
 app.get('/', (req, res) => {
 
     var code = req.query.code || null;
@@ -136,7 +202,6 @@ app.get('/', (req, res) => {
 
     if (!useModules.useSpotify) {
         findEvents(settings.testBands);
-
     }
     else {
         if (spotifyApi.getAccessToken()) {
@@ -160,7 +225,7 @@ app.get('/', (req, res) => {
     }
 
 })
-
+*/
 
 
 
