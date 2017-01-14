@@ -13,90 +13,192 @@
 
 </head>
 
+
+
 <body>
 
+    <div class="container">
+        <div class="row ">
+            <div class="col-xs-12">
+                TRIP INFO SELECTOR
+            </div>
+            <div class="col-xs-12">
+                <a class="button red_button" href="/tripitrequesttoken">Trip me</a>
+            </div>
+
+            <div class="col-xs-12">
+                GET INFO FROM TRIP IT
+            </div>
 
 
+        </div>
+    </div>
 
     <div class="container">
-
-
-
         <div class="row ">
-            <div class="col-lg-12">
-                <h1>TravelPlay</h1>
-                <p class="lead"></p>
-                <p>
-<% if(auth_url) { %>
-                    <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
-<% } %>
-                </p>
+            <div class="col-xs-12">
+                TRIP INFO
             </div>
-        </div>
-        <div class="row ">
-            <div class="col-lg-12">
+            <div class="row ">
+                <div class="col-lg-12">
 
-                <% 
+                    <% 
+                if(typeof(tripitResult)!="undefined" && tripitResult.error) {
+                %>
+
+                        <h1 class="this_is_error">
+                            <%=tripitResult.error%>
+                        </h1>
+                        <%
+                } else if (typeof(tripitResult)!="undefined"  && tripitResult.Trip) {
+                    var trips=tripitResult.Trip;
+
+                    for(i=0;i<trips.length; i++) {
+                        var trip=trips[i];
+                    %>
+                            <h3>
+                                City:
+                                <%=trip.PrimaryLocationAddress.city%> (
+                                    <%=trip.PrimaryLocationAddress.country%>) | Start <span class="label label-success"> <%=trip.start_date%> </span> | End
+                                        <span class="label label-success">
+                                            <%=trip.end_date%>
+                                                </span>
+                            </h3>
+                            <%
+                    }
+                } else if(typeof(tripitResult)!="undefined")
+                {
+                %>
+                                <h1>
+                                    Strange. No events at all.
+                                </h1>
+
+                                <hr>
+                                <div class="all_info">
+                                    <button id="show_json" class="btn btn-info">Toggle JSON view</button>
+                                    <div class="hidden all_info_json">
+                                        <%-JSON.stringify(tripitResult)%>
+
+                                    </div>
+                                </div>
+                                <%       }       %>
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="row ">
+                    <div class="col-xs-12">
+                        BANDS INFO SELECTOR
+                    </div>
+                    <div class="col-xs-12">
+                        GET INFO FROM SPOTIFY
+                    </div>
+                    <div class="col-xs-12">
+                        <% if(locals.auth_url) { %>
+                            <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
+                            <% } %>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="row ">
+                    <div class="col-xs-12">
+                        BANDS INFO
+                    </div>
+                    <div class="col-xs-12">
+                        <div class="band_info" data-band="rage">Rage</div>
+                        <div class="band_info" data-band="dream theater">Dream theater</div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!--
+
+
+            <div class="container">
+
+
+
+                <div class="row ">
+                    <div class="col-lg-12">
+                        <h1>TravelPlay</h1>
+                        <p class="lead"></p>
+                        <p>
+                            <% if(locals.auth_url) { %>
+                                <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
+                                <% } %>
+                        </p>
+                    </div>
+                </div>
+                <div class="row ">
+                    <div class="col-lg-12">
+
+                        <% 
                 if(typeof(result)!="undefined" && result.error) {
                 %>
-              
-                    <h1 class="this_is_error">
-                        <%=result.error%>
-                    </h1>
-                    <%
+
+                            <h1 class="this_is_error">
+                                <%=result.error%>
+                            </h1>
+                            <%
                 } else if (typeof(result)!="undefined"  && result.events) {
                     for(i=0;i<result.events.length; i++) {
                         var event=result.events[i];
                     %>
-                    <h3>
-                        <%=event.event_title%> (Event ID: <%=event.event.id%>)
-                    </h3>                    
-                    <%
+                                <h3>
+                                    <%=event.event_title%> (Event ID:
+                                        <%=event.event.id%>)
+                                </h3>
+                                <%
                     }
                 } else if(typeof(result)!="undefined")
                 {
                 %>
-                        <h1>
-                            Strange. No events at all.
-                        </h1>
-                        <%
+                                    <h1>
+                                        Strange. No events at all.
+                                    </h1>
+                                    <%
                 }
                 %>
 
 
 
-            </div>
-        </div>
+                    </div>
+                </div>
 
 
-        <hr>
-        <div class="all_info"> 
-            <button id="show_json" class="btn btn-info">Toggle JSON view</button>
-            <div class="hidden all_info_json">
-                <% if(typeof(result)!="undefined") { %>
-                    <%-JSON.stringify(result)%>
-                        <%
+                <hr>
+                <div class="all_info">
+                    <button id="show_json" class="btn btn-info">Toggle JSON view</button>
+                    <div class="hidden all_info_json">
+                        <% if(typeof(result)!="undefined") { %>
+                            <%-JSON.stringify(result)%>
+                                <%
   }    %>
 
+                    </div>
+                </div>
             </div>
+
+-->
+
+
+
+
+            <footer class="footer">
+                <hr>
+                <p>&copy; 2016 Company, Inc.</p>
+            </footer>
+
         </div>
-    </div>
+        <!-- /container -->
 
 
-
-
-
-
-    <footer class="footer">
-        <hr>
-        <p>&copy; 2016 Company, Inc.</p>
-    </footer>
-
-    </div>
-    <!-- /container -->
-
-
-    <style>
+        <style>
         .container {
             color:#4b5462;
             background-color: rgba(255, 255, 255, 0.6);
