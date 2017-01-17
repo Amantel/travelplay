@@ -62,13 +62,83 @@ var state = 'test-state';
 
 
 
+const MongoClient = require('mongodb').MongoClient
+var ObjectID = require('mongodb').ObjectID;
+
+var mongo_url = "mongodb://root:1234@ds111589.mlab.com:11589/travel_play";
+
+var db;
 
 
-
-
-app.listen(3000, () => {
-    buff('listening on 3000')
+MongoClient.connect(mongo_url, (err, database) => {
+    if (err) return console.log(err)
+    db = database
+    app.listen(3000, () => {
+        console.log('listening on 3000')
+    })
 })
+
+
+
+ 
+
+app.post('/save_user', (req, res) => {
+    //check if old email
+
+
+    var json = req.body;
+    json.email = json.email.trim();
+     //check if there is this email
+    //db.users.find({active:{$eq:"1"}}).pretty()
+    //
+    db.collection('users').find({ email: {  $eq: json.email } } ).toArray(function (err, result) {
+        
+        if (!err) {
+            //console.log(result)
+            if(result.length>0) {
+               buff("There is this email");
+               json["_id"]=new ObjectID(result[0]._id);
+            }
+            else {
+                buff("No email found");   
+            }
+
+            db.collection('users').save(json, (err, result) => {
+                if (err)
+                    {
+                        res.send({error:err});
+                    }
+
+                console.log('saved to database')
+                res.send("OK");
+            })  
+          
+                    
+        }
+        else {
+            res.send({ error: err });
+
+        }
+    });
+
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 var useModules = {};
@@ -143,21 +213,6 @@ settings.spotifyApiUrl = spotifyApi.createAuthorizeURL(scopes, state);
 
 
 
-/*
-app.get('/', (req, res) => {
-
-
-
-modelCurrent.res = res;
-if(modelCurrent.tripitAccessGrantedNow) {
-    showTrips();
-    modelCurrent.tripitAccessGrantedNow=false;
-}
-else
-    modelCurrent.res.render('trip.ejs', {  });
-
-})
-*/
 app.get('/tripitrequesttoken', (req, res) => {
 
     TripItClient.getRequestToken().then(function (results) {
@@ -221,37 +276,45 @@ app.get('/', (req, res) => {
     // findEvents(settings.testBands);
 
 
- 
-     modelCurrent.res = res;
 
+    modelCurrent.res = res;
+
+ 
 
     if (modelCurrent.tripitAccessGrantedNow) {
-
+ 
         TripItClient.requestResource("/list/trip", "GET", modelCurrent.tripItAccessToken, modelCurrent.tripItAccessTokenSecret).then(function (results) {
             var response = JSON.parse(results[0]);
-            modelCurrent.tripitResult=response;
-            modelCurrent.res.render('index.ejs', { auth_url: settings.spotifyApiUrl, tripitResult: modelCurrent.tripitResult });
+            modelCurrent.tripitResult = response;
+            res.redirect("/");
+            //modelCurrent.res.render('index.ejs', { auth_url: settings.spotifyApiUrl, tripitResult: modelCurrent.tripitResult, spotifyResult:modelCurrent.spotifyResult });
         });
         modelCurrent.tripitAccessGrantedNow = false;
         return false;
 
+    } 
+
+ 
+    
+    if (spotifyApi.getAccessToken() && typeof(modelCurrent.spotifyAccessGrantedNow)=="undefined") {
+        modelCurrent.spotifyAccessGrantedNow = true; 
     }
 
-
-
-
-
-    if (spotifyApi.getAccessToken()) {
+    if (modelCurrent.spotifyAccessGrantedNow) {
         buff("getFollowedArtists");
         var andRelated = true;
         if (andRelated)
             getFollowedArtistsAndRelated();
         else
             getFollowedArtists();
-    }
+        modelCurrent.spotifyAccessGrantedNow = false;
+        return false;    
+    } 
  
- // modelCurrent.res.render('index.ejs', {});
- modelCurrent.res.render('index.ejs', { auth_url: settings.spotifyApiUrl, tripitResult: modelCurrent.tripitResult });
+    modelCurrent.res.render('index.ejs', { auth_url: settings.spotifyApiUrl, tripitResult: modelCurrent.tripitResult, spotifyResult:modelCurrent.spotifyResult });
+
+    // modelCurrent.res.render('index.ejs', {});
+     
 
 })
 
@@ -293,11 +356,12 @@ function getFollowedArtistsAndRelated() {
 
             //buff(all_artists.distinct_list);
             buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
-
-            //findEvents(all_artists.distinct_list);
-        });
-
-    });
+            modelCurrent.spotifyResult=all_artists.distinct_list;
+            modelCurrent.res.redirect("/");
+             //findEvents(all_artists.distinct_list);
+         });
+  
+    }); 
 }
 
 

@@ -17,188 +17,131 @@
 
 <body>
 
-    <div class="container">
-        <div class="row ">
-            <div class="col-xs-12">
-                TRIP INFO SELECTOR
-            </div>
-            <div class="col-xs-12">
-                <a class="button red_button" href="/tripitrequesttoken">Trip me</a>
-            </div>
-
-            <div class="col-xs-12">
-                GET INFO FROM TRIP IT
-            </div>
-
-
-        </div>
-    </div>
 
     <div class="container">
-        <div class="row ">
-            <div class="col-xs-12">
-                TRIP INFO
-            </div>
+        <form class="save_user_form" action="/save_user" method="POST">
             <div class="row ">
-                <div class="col-lg-12">
+                <div class="col-xs-6">
+                    <div class="trips" data-trips>
 
-                    <% 
-                if(typeof(tripitResult)!="undefined" && tripitResult.error) {
-                %>
-
-                        <h1 class="this_is_error">
-                            <%=tripitResult.error%>
-                        </h1>
-                        <%
-                } else if (typeof(tripitResult)!="undefined"  && tripitResult.Trip) {
+                        <% 
+                     if (typeof(tripitResult)!="undefined"  && tripitResult.Trip) {
                     var trips=tripitResult.Trip;
 
                     for(i=0;i<trips.length; i++) {
                         var trip=trips[i];
                     %>
-                            <h3>
-                                City:
-                                <%=trip.PrimaryLocationAddress.city%> (
-                                    <%=trip.PrimaryLocationAddress.country%>) | Start <span class="label label-success"> <%=trip.start_date%> </span> | End
-                                        <span class="label label-success">
-                                            <%=trip.end_date%>
-                                                </span>
-                            </h3>
+
+                            <div class="trip" data-trip>
+                                <label for="trip_<%=i%>">
+                                    <input type="checkbox"  data-trip_active
+                                     checked="checked" id="trip_<%=i%>" />
+                                     <span class="trip_city_text"><%=trip.PrimaryLocationAddress.city%></span> 
+                                     <span class="trip_start_text"><%=trip.start_date%></span> 
+                                     <span class="trip_start_text"><%=trip.end_date%></span> 
+                                     </label>
+                                <input type="hidden" data-trip_city value="<%= trip.PrimaryLocationAddress.city%>">
+                                <input type="hidden" data-trip_us value="<%= (trip.PrimaryLocationAddress.country.toLowerCase() == 'us'? 1 : 0)  %>">
+                                <input type="hidden" data-trip_start value="<%= trip.start_date%>">
+                                <input type="hidden" data-trip_end value="<%= trip.end_date%>">
+                            </div>
+
                             <%
-                    }
-                } else if(typeof(tripitResult)!="undefined")
-                {
-                %>
-                                <h1>
-                                    Strange. No events at all.
-                                </h1>
+                        }
+                    } 
+                          %>
 
-                                <hr>
-                                <div class="all_info">
-                                    <button id="show_json" class="btn btn-info">Toggle JSON view</button>
-                                    <div class="hidden all_info_json">
-                                        <%-JSON.stringify(tripitResult)%>
 
-                                    </div>
-                                </div>
-                                <%       }       %>
-                </div>
-            </div>
 
-            <div class="container">
-                <div class="row ">
-                    <div class="col-xs-12">
-                        BANDS INFO SELECTOR
                     </div>
-                    <div class="col-xs-12">
-                        GET INFO FROM SPOTIFY
-                    </div>
-                    <div class="col-xs-12">
-                        <% if(locals.auth_url) { %>
-                            <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
-                            <% } %>
+                    <a href="/tripitrequesttoken" id="Tripit" class="button red_button">Tripit</a>
+                    <div class="add_trip_div" data-add_trip_div>
+                        <span class="helper" data-show_more>Add trips</span>
+                        <div class="hidden" data-show_content>
+                            <div data-add_trip_form>
+                                <label><input class="" value="" data-new_city> City</label> <br>
+                                <label><input class="" value="" data-new_start> Start date</label><br>
+                                <label><input class="" value="" data-new_end> End date</label><br>
+                                <label><input type="checkbox" class="" value="" data-new_us>  US?</label><br>
+                                <a href="#" id="more_trips" class="button red_button">Add a trip</a>
+                            </div>
+
+                        </div>
                     </div>
 
                 </div>
-            </div>
-
-            <div class="container">
-                <div class="row ">
-                    <div class="col-xs-12">
-                        BANDS INFO
-                    </div>
-                    <div class="col-xs-12">
-                        <div class="band_info" data-band="rage">Rage</div>
-                        <div class="band_info" data-band="dream theater">Dream theater</div>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <!--
-
-
-            <div class="container">
-
-
-
-                <div class="row ">
-                    <div class="col-lg-12">
-                        <h1>TravelPlay</h1>
-                        <p class="lead"></p>
-                        <p>
-                            <% if(locals.auth_url) { %>
-                                <a class="button red_button" href="<%=auth_url%>"> Spotify me</a>
-                                <% } %>
-                        </p>
-                    </div>
-                </div>
-                <div class="row ">
-                    <div class="col-lg-12">
-
+                <div class="col-xs-6">
+                    <div class="bands" data-bands>
                         <% 
-                if(typeof(result)!="undefined" && result.error) {
-                %>
+                     if (typeof(spotifyResult)!="undefined") {
+                    var bands=spotifyResult;
 
-                            <h1 class="this_is_error">
-                                <%=result.error%>
-                            </h1>
-                            <%
-                } else if (typeof(result)!="undefined"  && result.events) {
-                    for(i=0;i<result.events.length; i++) {
-                        var event=result.events[i];
+                    for(i=0;i<bands.length; i++) {
+                        var band=bands[i];
                     %>
-                                <h3>
-                                    <%=event.event_title%> (Event ID:
-                                        <%=event.event.id%>)
-                                </h3>
-                                <%
-                    }
-                } else if(typeof(result)!="undefined")
-                {
-                %>
-                                    <h1>
-                                        Strange. No events at all.
-                                    </h1>
-                                    <%
-                }
-                %>
+                            <div class="band" data-band>
+                                <label for="band_<%=i%>">
+                                    <input type="checkbox" data-band_active class="band_active"
+                                     checked="checked" id="band_<%=i%>" value="<%=band%>"  />
+                                     <%=band%>
+                        </label>
+                            </div>
 
 
-
+                            <%
+                        }
+                    } 
+                          %>
                     </div>
-                </div>
 
 
-                <hr>
-                <div class="all_info">
-                    <button id="show_json" class="btn btn-info">Toggle JSON view</button>
-                    <div class="hidden all_info_json">
-                        <% if(typeof(result)!="undefined") { %>
-                            <%-JSON.stringify(result)%>
-                                <%
-  }    %>
 
+                    <br>
+                    <a id="Spotify" href="<%=auth_url%>" class="button red_button">Spotify</a>
+                    <div class="add_band_div" data-add_band_div>
+                        <span class="helper" data-show_more>Add bands</span>
+                        <div class="hidden" data-show_content>
+                            <div data-add_band_form>
+                                <label><input class="" value="" data-new_band> Band </label> <br>
+                                <a href="#" id="more_bands" class="button red_button">Add a band</a>
+                            </div>
+
+                        </div>
                     </div>
+
                 </div>
             </div>
-
--->
-
-
-
-
-            <footer class="footer">
-                <hr>
-                <p>&copy; 2016 Company, Inc.</p>
-            </footer>
-
-        </div>
-        <!-- /container -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <a href="#" id="brb" class="button red_button">Save</a>
+                </div>
+            </div>
+        </form>
+    </div>
 
 
-        <style>
+
+
+
+
+
+
+
+    <footer class="footer">
+        <hr>
+        <p>&copy; 2016 Company, Inc.</p>
+    </footer>
+
+    </div>
+    <!-- /container -->
+
+
+    <style>
+.bands {
+ max-height: 200px;
+ overflow: auto;
+}
+
         .container {
             color:#4b5462;
             background-color: rgba(255, 255, 255, 0.6);
@@ -313,7 +256,8 @@
         
         .helper {
             display: inline-block;
-            border-bottom: 1px dashed lightblue;
+            border-bottom: 1px dashed #55d5ff;
+            color: #55d5ff;
             margin: 10px;
             font-size: 16px;
             cursor: pointer;
@@ -440,7 +384,127 @@
 
 
     $(function () {
+        function createTrip(city, start, end, US, i) {
+            return '                   <div class="trip" data-trip>'
+                + '                                <label for="trip_' + i + '">'
+                + '                                    <input type="checkbox"  data-trip_active'
+                + '                                     checked="checked" id="trip_' + i + '" />'
+                + '                                     <span class="trip_city_text">' + city + '</span> '
+                + '                                     <span class="trip_start_text">' + start + '</span> '
+                + '                                     <span class="trip_start_text">' + end + '</span> '
+                + '                                     </label>'
+                + '                                <input type="hidden" data-trip_city value="' + city + '">'
+                + '                                <input type="hidden" data-trip_us value="' + US + '">'
+                + '                                <input type="hidden" data-trip_start value="' + start + '">'
+                + '                                <input type="hidden" data-trip_end value="' + end + '">'
+                + '                            </div>'
+                + '';
+        }
 
+        function createBand(band, i) {
+
+
+            return '<div class="band" data-band>'
+                + '     <label for="band_' + i + '">'
+                + '             <input type="checkbox" data-band_active class="band_active"'
+                + '              checked="checked" id="band_' + i + '" value="' + band + '"  />'
+                + '             ' + band + ''
+                + ' </label>'
+                + ' </div>';
+
+
+
+        }
+
+
+        $("#more_bands").click(function (e) {
+            e.preventDefault();
+            var band_name = $("[data-new_band]").val();
+
+            //check all;
+            var check = band_name;
+            if (check) {
+                var band = createBand(band_name,  $("[data-band]").length + 1);
+                $('[data-bands]').prepend(band);
+            } else {
+                alert("Band name is empty");
+            }
+        });
+
+
+        $("#more_trips").click(function (e) {
+            e.preventDefault();
+            var city = $("[data-new_city]").val();
+            var start = $("[data-new_start]").val();
+            var end = $("[data-new_end]").val();
+            var us = 0;
+
+            if ($("[data-new_city]").is(":checked"))
+                us = 1;
+            //check all;
+            var check = city && start && end;
+            if (check) {
+                var trip = createTrip(city, start, end, us, $("[data-trip]").length + 1);
+                $('[data-trips]').prepend(trip);
+            } else {
+                alert("One field is empty");
+            }
+        });
+
+        $("#brb").click(function (e) {
+            e.preventDefault();
+            var form = $(this).parents("form");
+            var rbody = {};
+            rbody.active = 1;
+            rbody.updateDate = Date();
+            rbody.email = "test2@test.com";
+
+
+            var tripForms = form.find("[data-trip]");
+
+            var trips = [];
+            $.each(tripForms, function (i, el) {
+                el = $(el);
+                if (el.find("[data-trip_active]").is(":checked")) {
+                    var trip = {};
+                    trip.city = el.find("[data-trip_city]").val();
+                    trip.us = el.find("[data-trip_us]").val();
+                    trip.start = el.find("[data-trip_start]").val();
+                    trip.end = el.find("[data-trip_end]").val();
+                    trips.push(trip);
+                }
+            });
+            rbody.trips = trips;
+
+            var bandForms = form.find("[data-band]");
+
+            var bands = [];
+            $.each(bandForms, function (i, el) {
+                el = $(el);
+                if (el.find("[data-band_active]").is(":checked")) {
+                    var band = el.find("[data-band_active]").val().trim().toLowerCase();
+                    bands.push(band);
+                }
+            });
+
+
+            rbody.bands = bands;
+            console.log(rbody);
+
+            $.ajax({
+                type: "POST",
+                url: "/save_user",
+                data: rbody,
+                complete: function (data) {
+                    console.log(data);
+                },
+                dataType: 'json'
+            });
+        });
+
+        $("[data-show_more]").click(function (e) {
+            $(this).parent().find("[data-show_content]").toggleClass("hidden");
+        });
 
         $("#show_json").click(function (e) {
             $(this).parent().find(".all_info_json").toggleClass("hidden");
