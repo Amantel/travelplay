@@ -1,15 +1,6 @@
 <%
 if(tripItResult) { 
-var trips=[];
-tripItResult.Trip.forEach(function(pre_trip){
-    var trip={};
-    trip.city=pre_trip.PrimaryLocationAddress.city.toLowerCase();
-    trip.start=pre_trip.start_date;
-    trip.end=pre_trip.end_date;
-    trip.country=pre_trip.PrimaryLocationAddress.country.toLowerCase();
-    trips.push(trip);
-});
-
+var trips=tripItResult;
  
  
 

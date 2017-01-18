@@ -104,20 +104,36 @@ app.post('/save_user', (req, res) => {
             if(result.length>0) {
                buff("There is this email");
                json["_id"]=new ObjectID(result[0]._id);
+               db.collection('users').update({ _id:json["_id"]} , { $set: { trips : json.trips, bands:json.bands  }}
+               ,(err, result) => {
+                    if (err)
+                        {
+                            res.send({error:err});
+                        }
+
+                    console.log('saved to database')
+                    res.send("OK");
+                });
+  
+               
             }
             else {
-                buff("No email found");   
+                buff("New User. No email found");   
+                json.password=generatePass();
+                db.collection('users').save(json, (err, result) => {
+                    if (err)
+                        {
+                            res.send({error:err});
+                        }
+
+                    console.log('saved to database')
+                    res.send("OK");
+                });                  
             }
 
-            db.collection('users').save(json, (err, result) => {
-                if (err)
-                    {
-                        res.send({error:err});
-                    }
 
-                console.log('saved to database')
-                res.send("OK");
-            })  
+
+
           
                     
         }
@@ -386,9 +402,9 @@ app.get('/', (req, res) => {
             res.redirect("/");
         });
         modelCurrent.tripitAccessGrantedNow = false;
-        return false;
+        return false; 
 
-    } 
+    }  
 
  */
 
@@ -430,8 +446,17 @@ app.get('/tripittrips', (req, res) => {
  
     TripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
         var response = JSON.parse(results[0]);
+        var trips=[];
+        response.Trip.forEach(function(pre_trip){
+            var trip={};
+            trip.city=pre_trip.PrimaryLocationAddress.city.toLowerCase();
+            trip.start=pre_trip.start_date;
+            trip.end=pre_trip.end_date;
+            trip.country=pre_trip.PrimaryLocationAddress.country.toLowerCase();
+            trips.push(trip);
+        });
         
-         res.render('trips.ejs', {tripItResult:response});  
+         res.render('trips.ejs', {tripItResult:trips});  
         }).catch(function(reason) {
             console.log(reason);
             res.send({result:[], err:"App not authed in TripIt"});
@@ -443,18 +468,18 @@ app.get('/tripittrips', (req, res) => {
 app.get('/getspotifyartists', (req, res) => {
     sess=req.session;
 
-    if(spotifyApi.getAccessToken())
+    if(spotifyApi.getAccessToken()) 
     {
     spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
         var found_artists = basicInfo.body.artists.items;
-        var all_artists;
+        var all_artists; 
         Promise.all(found_artists.map(function (artist) {
             return spotifyApi.getArtistRelatedArtists(artist.id);
         })).then(function (allRelatedArtists) {
             for (i = 0; i < found_artists.length; i++)
-                found_artists[i].related = allRelatedArtists[i].body.artists;
+                found_artists[i].related = allRelatedArtists[i].body.artists; 
 
-
+   
             all_artists = found_artists;
             all_artists.distinct_list = [];
 

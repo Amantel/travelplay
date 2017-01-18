@@ -24,8 +24,10 @@
                 <div class="col-xs-12">
 
 
-                    <%  if (typeof(user)!="undefined"  && user.current_auth==1) { %>
-                        <%-JSON.stringify(user)%>
+                        <% if (typeof(session)!="undefined"  
+                           && typeof(session.auth)!="undefined"  
+                           && typeof(session.authed_user)!="undefined"  
+                           && session.auth==1) { %>
                             <h2>
                                 HELLO AUTHED USER
                             </h2>
@@ -40,14 +42,19 @@
                     <div class="trips" data-trips>
 
 
-
-
+ 
 
                         <% 
                        var trips=[];
+                       
+                       if (typeof(session)!="undefined"  
+                           && typeof(session.auth)!="undefined"  
+                           && typeof(session.authed_user)!="authed_user"  
+                           && session.auth==1) 
+                         trips=session.authed_user.trips;
+                        %>
  
-                       //if (typeof(user)!="undefined"  && user.current_auth==1)  trips=fguser.trips;
-
+                        <%
                         for(i=0;i<trips.length; i++) {  
                             var trip=trips[i];
                         %>
@@ -93,19 +100,20 @@
                 </div>
                 <div class="col-xs-6">
                     <div class="bands" data-bands>
+                
+                   
+                       
                         <% 
-                        var bands=[];
-
-                        if (typeof(spotifyResult)!="undefined" && spotifyResult.length>0) {  
-                             %>
+                       var bands=[];
                        
-                       
-                       
-                        <%
-                            bands=spotifyResult;
-
-                            for(i=0;i<bands.length; i++) {
-                                var band=bands[i];
+                    if (typeof(session)!="undefined"  
+                           && typeof(session.auth)!="undefined"  
+                           && typeof(session.authed_user)!="authed_user"  
+                           && session.auth==1) 
+                                                bands=session.authed_user.bands;            
+                     
+                             for(i=0;i<bands.length; i++) {
+                                var band=bands[i].band;
                             %>
                                     <div class="band" data-band>
                                         <label for="band_<%=i%>">
@@ -119,7 +127,7 @@
                               <% }   %>
 
 
-                <%    }     %>
+              
                     </div>
 
 
@@ -410,9 +418,30 @@
 <script type='text/javascript' src="./js/URI.js"></script>
 <script type="text/javascript">
 
+function createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
+}
 
-    $(function () {
+function readCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
 
+function eraseCookie(name) {
+	createCookie(name,"",-1);
+}
 
 
         function createTrip(city, start, end, US, i) {
@@ -447,6 +476,24 @@
 
         }
 
+
+
+    $(function () {
+
+        function start() {
+            if(readCookie("spotifyAuthTry")) {
+                $("#Spotify").click(); 
+                eraseCookie("spotifyAuthTry");
+            }
+            if(readCookie("tripItAuthTry")) {
+                $("#Tripit").click(); 
+                eraseCookie("tripItAuthTry");
+            }
+ 
+        }
+
+
+         
 
         $("#more_bands").click(function (e) {
             e.preventDefault();
@@ -492,10 +539,12 @@
                     //console.log(data);
                     var result=data.responseText;
                     if(data.responseJSON && data.responseJSON.err) {
+                        createCookie("spotifyAuthTry",1,1);
                         window.location.replace(auth_url);
                     } else {
                         //console.log(result);
                         $("[data-bands]").html(result);
+                        eraseCookie("spotifyAuthTry");
                     }
 
                 },
@@ -507,24 +556,25 @@
         $("#Tripit").click(function(e){
                     e.preventDefault();
                     var auth_url=$(this).attr("href");
-                $.ajax({
-                        type: "GET",
-                        url: "/tripittrips",
-                        complete: function (data) {
-                            //console.log(data);
-                            var result=data.responseText;
-                            if(data.responseJSON && data.responseJSON.err) {
-                                window.location.replace(auth_url);
-                            } else {
-                                //console.log(result);
-                                $("[data-trips]").html(result);
-                            }
+                    $.ajax({
+                            type: "GET",
+                            url: "/tripittrips",
+                            complete: function (data) {
+                                //console.log(data);
+                                var result=data.responseText;
+                                if(data.responseJSON && data.responseJSON.err) {
+                                     createCookie("tripItAuthTry",1,1);
+                                    window.location.replace(auth_url);
+                                } else {
+                                    //console.log(result);
+                                    $("[data-trips]").html(result);
+                                    eraseCookie("tripItAuthTry");
+                                }
 
-                        },
-                        dataType: 'json'
-                    });            
-
-                })
+                            },
+                            dataType: 'json'
+                        });            
+       })
 
 
         $("#brb").click(function (e) {
@@ -544,7 +594,7 @@
                 if (el.find("[data-trip_active]").is(":checked")) {
                     var trip = {};
                     trip.city = el.find("[data-trip_city]").val();
-                    trip.us = el.find("[data-trip_us]").val();
+                    trip.country = el.find("[data-trip_country]").val();
                     trip.start = el.find("[data-trip_start]").val();
                     trip.end = el.find("[data-trip_end]").val();
                     trips.push(trip);
@@ -558,12 +608,12 @@
             $.each(bandForms, function (i, el) {
                 el = $(el);
                 if (el.find("[data-band_active]").is(":checked")) {
-                    var band = el.find("[data-band_active]").val().trim().toLowerCase();
+                    var band = {"band":el.find("[data-band_active]").val().trim().toLowerCase(),"additional_info":{"band_name_original":el.find("[data-band_active]").val()}};
                     bands.push(band);
                 }
             });
 
-
+ 
             rbody.bands = bands;
             console.log(rbody);
 
@@ -611,6 +661,8 @@
 
 
         })
+
+                start();  
 
     });
 
