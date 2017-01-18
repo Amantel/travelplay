@@ -21,34 +21,55 @@
     <div class="container">
         <form class="save_user_form" action="/save_user" method="POST">
             <div class="row ">
+                <div class="col-xs-12">
+
+
+                    <%  if (typeof(user)!="undefined"  && user.current_auth==1) { %>
+                        <%-JSON.stringify(user)%>
+                            <h2>
+                                HELLO AUTHED USER
+                            </h2>
+                            <% } %>
+
+
+
+                </div> 
+            </div>
+            <div class="row ">
                 <div class="col-xs-6">
                     <div class="trips" data-trips>
 
-                        <% 
-                     if (typeof(tripitResult)!="undefined"  && tripitResult.Trip) {
-                    var trips=tripitResult.Trip;
 
-                    for(i=0;i<trips.length; i++) {
-                        var trip=trips[i];
-                    %>
+
+
+
+                        <% 
+                       var trips=[];
+ 
+                       //if (typeof(user)!="undefined"  && user.current_auth==1)  trips=fguser.trips;
+
+                        for(i=0;i<trips.length; i++) {  
+                            var trip=trips[i];
+                        %>
 
                             <div class="trip" data-trip>
                                 <label for="trip_<%=i%>">
                                     <input type="checkbox"  data-trip_active
                                      checked="checked" id="trip_<%=i%>" />
-                                     <span class="trip_city_text"><%=trip.PrimaryLocationAddress.city%></span> 
-                                     <span class="trip_start_text"><%=trip.start_date%></span> 
-                                     <span class="trip_start_text"><%=trip.end_date%></span> 
+                                     <span class="trip_city_text"><%=trip.city%></span> 
+                                     <span class="trip_country_text"><%=trip.country%></span> 
+                                     <span class="trip_start_text"><%=trip.start%></span> 
+                                     <span class="trip_start_text"><%=trip.end%></span> 
                                      </label>
-                                <input type="hidden" data-trip_city value="<%= trip.PrimaryLocationAddress.city%>">
-                                <input type="hidden" data-trip_us value="<%= (trip.PrimaryLocationAddress.country.toLowerCase() == 'us'? 1 : 0)  %>">
-                                <input type="hidden" data-trip_start value="<%= trip.start_date%>">
-                                <input type="hidden" data-trip_end value="<%= trip.end_date%>">
+                                <input type="hidden" data-trip_city value="<%= trip.city%>">
+                                <input type="hidden" data-trip_country value="<%= trip.country  %>">
+                                <input type="hidden" data-trip_start value="<%= trip.start%>">
+                                <input type="hidden" data-trip_end value="<%= trip.end%>">
                             </div>
 
                             <%
                         }
-                    } 
+                   
                           %>
 
 
@@ -73,25 +94,32 @@
                 <div class="col-xs-6">
                     <div class="bands" data-bands>
                         <% 
-                     if (typeof(spotifyResult)!="undefined") {
-                    var bands=spotifyResult;
+                        var bands=[];
 
-                    for(i=0;i<bands.length; i++) {
-                        var band=bands[i];
-                    %>
-                            <div class="band" data-band>
-                                <label for="band_<%=i%>">
-                                    <input type="checkbox" data-band_active class="band_active"
-                                     checked="checked" id="band_<%=i%>" value="<%=band%>"  />
-                                     <%=band%>
-                        </label>
-                            </div>
+                        if (typeof(spotifyResult)!="undefined" && spotifyResult.length>0) {  
+                             %>
+                       
+                       
+                       
+                        <%
+                            bands=spotifyResult;
+
+                            for(i=0;i<bands.length; i++) {
+                                var band=bands[i];
+                            %>
+                                    <div class="band" data-band>
+                                        <label for="band_<%=i%>">
+                                            <input type="checkbox" data-band_active class="band_active"
+                                            checked="checked" id="band_<%=i%>" value="<%=band%>"  />
+                                            <%=band%>
+                                </label>
+                                    </div>
 
 
-                            <%
-                        }
-                    } 
-                          %>
+                              <% }   %>
+
+
+                <%    }     %>
                     </div>
 
 
@@ -371,7 +399,7 @@
             margin: 20px 0;
             font-size: small;
             text-align: center;
-                background-color: #FFF;
+            background-color: #FFF;
         }
     </style>
 
@@ -384,6 +412,9 @@
 
 
     $(function () {
+
+
+
         function createTrip(city, start, end, US, i) {
             return '                   <div class="trip" data-trip>'
                 + '                                <label for="trip_' + i + '">'
@@ -405,7 +436,7 @@
 
 
             return '<div class="band" data-band>'
-                + '     <label for="band_' + i + '">'
+                + '<label for="band_' + i + '">'
                 + '             <input type="checkbox" data-band_active class="band_active"'
                 + '              checked="checked" id="band_' + i + '" value="' + band + '"  />'
                 + '             ' + band + ''
@@ -424,7 +455,7 @@
             //check all;
             var check = band_name;
             if (check) {
-                var band = createBand(band_name,  $("[data-band]").length + 1);
+                var band = createBand(band_name, $("[data-band]").length + 1);
                 $('[data-bands]').prepend(band);
             } else {
                 alert("Band name is empty");
@@ -450,6 +481,51 @@
                 alert("One field is empty");
             }
         });
+
+        $("#Spotify").click(function(e){
+            e.preventDefault();
+            var auth_url=$(this).attr("href");
+           $.ajax({
+                type: "GET",
+                url: "/getspotifyartists",
+                complete: function (data) {
+                    //console.log(data);
+                    var result=data.responseText;
+                    if(data.responseJSON && data.responseJSON.err) {
+                        window.location.replace(auth_url);
+                    } else {
+                        //console.log(result);
+                        $("[data-bands]").html(result);
+                    }
+
+                },
+                dataType: 'json'
+            });            
+
+        })
+
+        $("#Tripit").click(function(e){
+                    e.preventDefault();
+                    var auth_url=$(this).attr("href");
+                $.ajax({
+                        type: "GET",
+                        url: "/tripittrips",
+                        complete: function (data) {
+                            //console.log(data);
+                            var result=data.responseText;
+                            if(data.responseJSON && data.responseJSON.err) {
+                                window.location.replace(auth_url);
+                            } else {
+                                //console.log(result);
+                                $("[data-trips]").html(result);
+                            }
+
+                        },
+                        dataType: 'json'
+                    });            
+
+                })
+
 
         $("#brb").click(function (e) {
             e.preventDefault();

@@ -16,6 +16,8 @@ const request = require('request');
 const async = require('async');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
+
 
 const TripItApiClient = require("tripit-node");
 var TripItClient = new TripItApiClient("a90d6eda3798d491a24bb57fcaa5bb4cd10642e5", "9653c259420ba6c242527151175d01ded2765f5a");
@@ -25,7 +27,11 @@ var requestTokenSecrets = {};
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('public'));
+app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }, resave: true, saveUninitialized: true }))
 
+
+var sess;
+ 
 
 
 
@@ -156,6 +162,8 @@ var modelCurrent = {};
 
 var settings = {};
 
+settings.superSecretKey="Bfsd39_ersxddg";
+
 settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID" +
     "&location=Stockholm"
     + "&radius=10&date=2017-01-01,2017-06-31";
@@ -163,7 +171,7 @@ settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events
 settings.BandsInTownTimeOut = true;
 settings.BandsInTownTimeOutTime = 100;
 
-
+ 
 settings.TicketMasterKey = "F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN";
 
 
@@ -230,6 +238,7 @@ app.get('/tripitrequesttoken', (req, res) => {
 
 
 app.get('/tripitcallback', (req, res) => {
+    var sess=req.session;
     //res.send({oauth_token:req.query.oauth_token});
     var token = req.query.oauth_token,
         secret = requestTokenSecrets[token],
@@ -238,9 +247,8 @@ app.get('/tripitcallback', (req, res) => {
         var accessToken = results[0],
             accessTokenSecret = results[1];
 
-        modelCurrent.tripItAccessToken = accessToken;
-        modelCurrent.tripItAccessTokenSecret = accessTokenSecret;
-        modelCurrent.tripitAccessGrantedNow = true;
+        sess.tripItAccessToken = accessToken;
+        sess.tripItAccessTokenSecret = accessTokenSecret;
 
         res.redirect("/");
 
@@ -251,14 +259,106 @@ app.get('/tripitcallback', (req, res) => {
 });
 
 
+
+app.all('/admin_login', (req, res) => {
+    sess=req.session;
+
+    
+    if(req.body.password || null)
+        {
+           
+  
+            if(req.body.password==settings.superSecretKey)
+            {
+                 sess.auth="2"; //AUTH COMPLETED
+ 
+
+                 res.redirect('/users');
+            } else {
+                res.render('admin_login.ejs', {authError:"Wrong Password"});
+            }
+
+        }
+        else {
+                res.render('admin_login.ejs', {authError:""});
+        }
+})
+
+
+app.all('/login', (req, res) => {
+    sess=req.session;
+ 
+    if((req.body.password || null) && (req.body.email || null))
+        {
+            db.collection('users').find({
+                    email: {  $eq: req.body.email } ,
+                    password: {  $eq: req.body.password }    
+                } ).toArray(function (err, result) {
+                    
+                    if (!err) {
+                        if(result.length>0) {
+                        buff("USER FOUND AND AUTHED");
+                        sess.auth="1"; //AUTH COMPLETED
+                        sess.authed_user=result[0]; 
+                        sess.authed_user.current_auth=sess.auth;
+                        res.redirect("/");
+                        }
+                        else {
+                            sess.auth="0";    
+                            sess.authed_user={};
+                            buff("Wrong credentials");   
+                            res.render('login.ejs', {authError:"Wrong credentials"});
+                        }
+            
+                    }
+                    else {
+                        res.send({ error: err });
+
+                    }
+                });
+
+        }
+        else {
+                res.render('login.ejs', {authError:""});
+        }
+
+
+     
+
+})
+
+
+
+
+
+
+app.get('/users', (req, res) => {
+
+    sess=req.session;
+   
+
+    res.render('users.ejs', {});
+     
+
+})
+
+
+
 app.get('/spotifycallback', (req, res) => {
+    sess=req.session;
 
-
-    spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
-        spotifyApi.setAccessToken(authInfo.body['access_token']);
-        spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
-        res.redirect('/');
-    });
+    if(spotifyApi.getAccessToken() ) {
+         sess.spotifyAuthed=true;
+         res.redirect('/');
+    }
+    else {
+        spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
+            spotifyApi.setAccessToken(authInfo.body['access_token']);
+            spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
+            sess.spotifyAuthed=true;
+            res.redirect('/');
+        });
+    }
 
 });
 
@@ -266,41 +366,41 @@ app.get('/spotifycallback', (req, res) => {
 
 
 
+
+
+
 app.get('/', (req, res) => {
+    sess=req.session;
 
-
-    //Ask for SPOT & List Bands 
-    //Place in DB like USER, EMAIL, TRIPS (dates, city, id, US or NO), Bands (ID)
-
-    //Get User. For each Trip in future fetch finding
-    // findEvents(settings.testBands);
-
+     
 
 
     modelCurrent.res = res;
-
  
-
+/*
     if (modelCurrent.tripitAccessGrantedNow) {
- 
+        buff("Trip");
         TripItClient.requestResource("/list/trip", "GET", modelCurrent.tripItAccessToken, modelCurrent.tripItAccessTokenSecret).then(function (results) {
             var response = JSON.parse(results[0]);
-            modelCurrent.tripitResult = response;
+            sess.tripitResult = response;
             res.redirect("/");
-            //modelCurrent.res.render('index.ejs', { auth_url: settings.spotifyApiUrl, tripitResult: modelCurrent.tripitResult, spotifyResult:modelCurrent.spotifyResult });
         });
         modelCurrent.tripitAccessGrantedNow = false;
         return false;
 
     } 
 
- 
+ */
+
     
+    res.render('index.ejs', {session:sess, auth_url: settings.spotifyApiUrl });
+  /*
     if (spotifyApi.getAccessToken() && typeof(modelCurrent.spotifyAccessGrantedNow)=="undefined") {
         modelCurrent.spotifyAccessGrantedNow = true; 
     }
 
     if (modelCurrent.spotifyAccessGrantedNow) {
+        buff("Spot");
         buff("getFollowedArtists");
         var andRelated = true;
         if (andRelated)
@@ -310,18 +410,88 @@ app.get('/', (req, res) => {
         modelCurrent.spotifyAccessGrantedNow = false;
         return false;    
     } 
- 
-    modelCurrent.res.render('index.ejs', { auth_url: settings.spotifyApiUrl, tripitResult: modelCurrent.tripitResult, spotifyResult:modelCurrent.spotifyResult });
+    buff("render");
+ var tripitResult=sess.tripitResult;
+ var spotifyResult=sess.spotifyResult;
 
-    // modelCurrent.res.render('index.ejs', {});
-     
+
+    res.render('index.ejs', {user:sess.authed_user, auth_url: settings.spotifyApiUrl, tripitResult: tripitResult, spotifyResult:spotifyResult });
+
+
+     */
 
 })
 
+ 
+
+app.get('/tripittrips', (req, res) => {
+    sess=req.session; 
+
+ 
+    TripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
+        var response = JSON.parse(results[0]);
+        
+         res.render('trips.ejs', {tripItResult:response});  
+        }).catch(function(reason) {
+            console.log(reason);
+            res.send({result:[], err:"App not authed in TripIt"});
+        });
+   
+}); 
 
 
+app.get('/getspotifyartists', (req, res) => {
+    sess=req.session;
+
+    if(spotifyApi.getAccessToken())
+    {
+    spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+        var found_artists = basicInfo.body.artists.items;
+        var all_artists;
+        Promise.all(found_artists.map(function (artist) {
+            return spotifyApi.getArtistRelatedArtists(artist.id);
+        })).then(function (allRelatedArtists) {
+            for (i = 0; i < found_artists.length; i++)
+                found_artists[i].related = allRelatedArtists[i].body.artists;
 
 
+            all_artists = found_artists;
+            all_artists.distinct_list = [];
+
+            for (i = 0; i < all_artists.length; i++) {
+                var artist = all_artists[i];
+                if (all_artists.distinct_list.indexOf(artist.name) < 0)
+                    all_artists.distinct_list.push(artist.name);
+                for (j = 0; j < artist.related.length; j++) {
+                    var related_artist = artist.related[j];
+                    if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
+                        all_artists.distinct_list.push(related_artist.name);
+                }
+
+            }
+            all_artists.distinct_list.sort(function (a, b) {
+                if (a < b) return -1;
+                if (a > b) return 1;
+                return 0;
+            })
+
+            buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
+             
+            //res.send({result:all_artists.distinct_list, err:""});
+            res.render('artists.ejs', {spotifyResult:all_artists.distinct_list});  
+            
+         });
+  
+    });     
+    }
+    else {
+        res.send({result:[], err:"App not authed in Spotify"});
+    }
+
+});
+
+
+ 
 function getFollowedArtistsAndRelated() {
     buff("*********************getFollowedArtistsAndRelated**************************");
     spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
@@ -356,7 +526,7 @@ function getFollowedArtistsAndRelated() {
 
             //buff(all_artists.distinct_list);
             buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
-            modelCurrent.spotifyResult=all_artists.distinct_list;
+            sess.spotifyResult=all_artists.distinct_list;
             modelCurrent.res.redirect("/");
              //findEvents(all_artists.distinct_list);
          });
@@ -1040,6 +1210,12 @@ function buff(object) {
         epicBuffer += "\n\r" + object;
 }
 
+
+function generatePass() {
+    return Math.random().toString(36).slice(-8);
+}
+
+ 
 
 function asyncExample() {
 
