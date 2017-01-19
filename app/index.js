@@ -178,6 +178,8 @@ var modelCurrent = {};
 
 var settings = {};
 
+settings.adminMail="amantels@gmail.com";
+
 settings.superSecretKey="Bfsd39_ersxddg";
 
 settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID" +
@@ -298,13 +300,13 @@ app.all('/admin_login', (req, res) => {
         else {
                 res.render('admin_login.ejs', {authError:""});
         }
-})
+})  
 
 
 app.all('/login', (req, res) => {
     sess=req.session;
- 
-    if((req.body.password || null) && (req.body.email || null))
+  
+    if((req.body.login || null) && (req.body.password || null) && (req.body.email || null))
         {
             db.collection('users').find({
                     email: {  $eq: req.body.email } ,
@@ -313,17 +315,28 @@ app.all('/login', (req, res) => {
                     
                     if (!err) {
                         if(result.length>0) {
-                        buff("USER FOUND AND AUTHED");
-                        sess.auth="1"; //AUTH COMPLETED
-                        sess.authed_user=result[0]; 
-                        sess.authed_user.current_auth=sess.auth;
-                        res.redirect("/");
+                        buff("USER FOUND");
+
+                        if(result[0].approved)
+                        {
+                            buff("USER AUTHED");
+                            sess.auth="1"; //AUTH COMPLETED
+                            sess.authed_user=result[0]; 
+                            sess.authed_user.current_auth=sess.auth;
+                            res.redirect("/");
+                        } else {
+                            sess.auth="0";    
+                            sess.authed_user={};
+                            buff("Not approved");   
+                            res.render('login.ejs', {authError:"User not approved",authSuccess:""})
+
+                        }
                         }
                         else {
                             sess.auth="0";    
                             sess.authed_user={};
                             buff("Wrong credentials");   
-                            res.render('login.ejs', {authError:"Wrong credentials"});
+                            res.render('login.ejs', {authError:"Wrong credentials",authSuccess:""});
                         }
             
                     }
@@ -334,8 +347,55 @@ app.all('/login', (req, res) => {
                 });
 
         }
+        else if((req.body.registration || null)  && (req.body.email || null))
+        {
+            db.collection('users').find({
+                    email: {  $eq: req.body.email }
+                } ).toArray(function (err, result) {
+                    
+                    if (!err) {
+                        if(result.length>0) {
+                            buff("USER FOUND");
+                            res.render('login.ejs', {authError:"EMAIL IN USE",authSuccess:""});
+                        }
+                        else {
+                            var new_user={};
+                            new_user.password=generatePass();
+                            new_user.active=1;
+                            new_user.approved=0;
+                            new_user.email=req.body.email;
+                            new_user.trips=[];
+                            new_user.bands=[];
+                            new_user.update=new Date().toString();
+                            db.collection('users').save(new_user, (err, result) => {
+                                if (err)
+                                    {
+                                       res.render('login.ejs', {authError:err,authSuccess:""});
+                                    }
+
+                                console.log('saved to database');
+
+                               var html='<html><body>Visit <a href="http://localhost:3000/user_activation" target="_blank"> here </a></body></html>';
+                                
+                                sendMail(settings.adminMail,"New registration on TravelPlay", html);
+                                
+
+                                res.render('login.ejs', {authError:"",authSuccess:"SUCCESS"});
+                            });         
+ 
+
+//                            
+                        }
+            
+                    }
+                    else {
+                        res.send({ error: err });
+                    }
+                });
+
+        }
         else {
-                res.render('login.ejs', {authError:""});
+                res.render('login.ejs', {authError:"",authSuccess:""});
         }
 
 
@@ -346,14 +406,69 @@ app.all('/login', (req, res) => {
 
 
 
+app.post("/approve_user",(req, res) => {
+    if((req.body.save || null) && (req.body.id || null) ) {
+        var approved=0;
+        if(req.body.approved)
+            approved=1;
+        var id=new ObjectID(req.body.id);
 
+               db.collection('users').update({ _id:id} , { $set: { approved : approved  }}
+               ,(err, result) => {
+                    if (err)
+                        {
+                            res.send({error:err});
+                        }
+
+                    console.log('saved to database');
+
+                    if((req.body.email || null) && approved) {
+                        var password=(req.body.password || null)
+                        var html='<html><body>You can now access TravelPlay with your email and password: '+password+' </body></html>';
+
+                        sendMail(req.body.email,"Approved on TravelPlay", html);
+                    }
+
+
+                    res.redirect("/users");
+                });
+    }
+
+});
 
 app.get('/users', (req, res) => {
 
     sess=req.session;
    
 
-    res.render('users.ejs', {});
+
+
+
+    db.collection('users').find().toArray(function (err, result) {
+            
+            if (!err) {
+
+                result.sort(function (a, b) {
+                if (a.approved > b.approved) {
+                    return 1;
+                }
+                if (a.approved < b.approved) {
+                    return -1;
+                }
+                return 0;
+                });
+
+                res.render('users.ejs', {result:result});
+
+
+
+
+            }
+            else {
+                res.send({ error: err });
+            }
+    });
+ 
      
 
 })
@@ -393,48 +508,11 @@ app.get('/', (req, res) => {
 
     modelCurrent.res = res;
  
-/*
-    if (modelCurrent.tripitAccessGrantedNow) {
-        buff("Trip");
-        TripItClient.requestResource("/list/trip", "GET", modelCurrent.tripItAccessToken, modelCurrent.tripItAccessTokenSecret).then(function (results) {
-            var response = JSON.parse(results[0]);
-            sess.tripitResult = response;
-            res.redirect("/");
-        });
-        modelCurrent.tripitAccessGrantedNow = false;
-        return false; 
 
-    }  
-
- */
 
     
     res.render('index.ejs', {session:sess, auth_url: settings.spotifyApiUrl });
-  /*
-    if (spotifyApi.getAccessToken() && typeof(modelCurrent.spotifyAccessGrantedNow)=="undefined") {
-        modelCurrent.spotifyAccessGrantedNow = true; 
-    }
-
-    if (modelCurrent.spotifyAccessGrantedNow) {
-        buff("Spot");
-        buff("getFollowedArtists");
-        var andRelated = true;
-        if (andRelated)
-            getFollowedArtistsAndRelated();
-        else
-            getFollowedArtists();
-        modelCurrent.spotifyAccessGrantedNow = false;
-        return false;    
-    } 
-    buff("render");
- var tripitResult=sess.tripitResult;
- var spotifyResult=sess.spotifyResult;
-
-
-    res.render('index.ejs', {user:sess.authed_user, auth_url: settings.spotifyApiUrl, tripitResult: tripitResult, spotifyResult:spotifyResult });
-
-
-     */
+  
 
 })
 
@@ -1164,6 +1242,40 @@ function findTicketMasterEuropeEventsStart(artistList, dates = "", city = "") {
 
 
 /*HELPER FUNCTIONS*/
+
+
+function sendMail(email,subject, html) {
+
+    var smtpConfig = {
+        host: 'smtp.yandex.ru',
+        port: 465,
+        secure: true, // use SSL
+        auth: {
+            user: 'order@muchstudio.ru',
+            pass: 'av4059'
+
+        }
+    };
+    var transporter = nodemailer.createTransport(smtpConfig);
+    var mailData = {
+        from: 'order@muchstudio.ru',
+        to: email,
+        subject: subject,
+        text: 'Only HTML here, sorry',
+        html: html
+    };
+
+    transporter.sendMail(mailData);
+
+    console.log('mail sent');
+    return true;
+
+};
+
+
+
+
+
 
 function makeRequest(url, params, callbackSuccess, callbackError) {
     //buff("making request to URL: "+url);

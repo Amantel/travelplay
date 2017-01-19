@@ -1,1 +1,26 @@
-USERS
+
+
+<% 
+if(result ) {
+    var checked="";
+    for(i=0; i<result.length; i++) {
+        checked="";
+        if(result[i].approved==1)
+            checked="checked";
+            
+    
+%>     
+    <form method="POST" action="/approve_user">
+    <input type="hidden" name="id" value="<%=result[i]._id%>">
+    <input type="hidden" name="email" value="<%=result[i].email%>">
+    <input type="hidden" name="password" value="<%=result[i].password%>">
+    <label><input type="checkbox" <%=checked%> name="approved" value="1"> <%=result[i].email%></label>
+    <input type="submit" name="save" value="save">
+
+    </form>
+<% 
+    }
+}
+%>
+
+ 
