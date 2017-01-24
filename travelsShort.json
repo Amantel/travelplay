@@ -1,0 +1,87 @@
+[
+	{
+		"city": "Inuvik",
+		"country": "Canada",
+		"date": "2017-06-26"
+	},
+	{
+		"city": "Lossiemouth",
+		"country": "United Kingdom",
+		"date": "2018-02-01"
+	},
+	{
+		"city": "Huntsville",
+		"country": "United States",
+		"date": "2018-10-17"
+	},
+	{
+		"city": "Aliano",
+		"country": "Italy",
+		"date": "2018-10-15"
+	},
+	{
+		"city": "Gasteiz",
+		"country": "Spain",
+		"date": "2018-07-21"
+	},
+	{
+		"city": "Épernay",
+		"country": "France",
+		"date": "2018-11-17"
+	},
+	{
+		"city": "Kirriemuir",
+		"country": "United Kingdom",
+		"date": "2017-12-02"
+	},
+	{
+		"city": "Onoz",
+		"country": "Belgium",
+		"date": "2017-03-02"
+	},
+	{
+		"city": "Galzignano Terme",
+		"country": "Italy",
+		"date": "2017-07-30"
+	},
+	{
+		"city": "Göteborg",
+		"country": "Sweden",
+		"date": "2018-10-25"
+	},
+	{
+		"city": "Halifax",
+		"country": "Canada",
+		"date": "2018-08-09"
+	},
+	{
+		"city": "Lublin",
+		"country": "Poland",
+		"date": "2017-08-10"
+	},
+	{
+		"city": "Gasteiz",
+		"country": "Spain",
+		"date": "2018-02-07"
+	},
+	{
+		"city": "Orvault",
+		"country": "France",
+		"date": "2017-05-14"
+	},
+	{
+		"city": "Stratford",
+		"country": "Canada",
+		"date": "2018-12-26"
+	},
+	{
+		"city": "Ebenthal in Kärnten",
+		"country": "Austria",
+		"date": "2017-03-28"
+	},
+	{
+		"city": "Fuenlabrada",
+		"country": "Spain",
+		"date": "2018-10-19"
+	}
+]

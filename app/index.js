@@ -8,6 +8,7 @@ const http = require('http');
 const https = require("https");
 const URIlib = require('./URI')
 const url = require('url');
+const fs = require('fs');
 
 const nodemailer = require('nodemailer');
 const later = require('later');
@@ -31,7 +32,7 @@ app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }, resave: tru
 
 
 var sess;
- 
+
 
 
 
@@ -86,7 +87,7 @@ MongoClient.connect(mongo_url, (err, database) => {
 
 
 
- 
+
 
 app.post('/save_user', (req, res) => {
     //check if old email
@@ -94,48 +95,46 @@ app.post('/save_user', (req, res) => {
 
     var json = req.body;
     json.email = json.email.trim();
-     //check if there is this email
+    //check if there is this email
     //db.users.find({active:{$eq:"1"}}).pretty()
     //
-    db.collection('users').find({ email: {  $eq: json.email } } ).toArray(function (err, result) {
-        
+    db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
+
         if (!err) {
             //console.log(result)
-            if(result.length>0) {
-               buff("There is this email");
-               json["_id"]=new ObjectID(result[0]._id);
-               db.collection('users').update({ _id:json["_id"]} , { $set: { trips : json.trips, bands:json.bands  }}
-               ,(err, result) => {
-                    if (err)
-                        {
-                            res.send({error:err});
+            if (result.length > 0) {
+                buff("There is this email");
+                json["_id"] = new ObjectID(result[0]._id);
+                db.collection('users').update({ _id: json["_id"] }, { $set: { trips: json.trips, bands: json.bands } }
+                    , (err, result) => {
+                        if (err) {
+                            res.send({ error: err });
                         }
+
+                        console.log('saved to database')
+                        res.send("OK");
+                    });
+
+
+            }
+            else {
+                buff("New User. No email found");
+                json.password = generatePass();
+                db.collection('users').save(json, (err, result) => {
+                    if (err) {
+                        res.send({ error: err });
+                    }
 
                     console.log('saved to database')
                     res.send("OK");
                 });
-  
-               
-            }
-            else {
-                buff("New User. No email found");   
-                json.password=generatePass();
-                db.collection('users').save(json, (err, result) => {
-                    if (err)
-                        {
-                            res.send({error:err});
-                        }
-
-                    console.log('saved to database')
-                    res.send("OK");
-                });                  
             }
 
 
 
 
-          
-                    
+
+
         }
         else {
             res.send({ error: err });
@@ -178,9 +177,9 @@ var modelCurrent = {};
 
 var settings = {};
 
-settings.adminMail="amantels@gmail.com";
+settings.adminMail = "amantels@gmail.com";
 
-settings.superSecretKey="Bfsd39_ersxddg";
+settings.superSecretKey = "Bfsd39_ersxddg";
 
 settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID" +
     "&location=Stockholm"
@@ -189,7 +188,7 @@ settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events
 settings.BandsInTownTimeOut = true;
 settings.BandsInTownTimeOutTime = 100;
 
- 
+
 settings.TicketMasterKey = "F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN";
 
 
@@ -256,7 +255,7 @@ app.get('/tripitrequesttoken', (req, res) => {
 
 
 app.get('/tripitcallback', (req, res) => {
-    var sess=req.session;
+    var sess = req.session;
     //res.send({oauth_token:req.query.oauth_token});
     var token = req.query.oauth_token,
         secret = requestTokenSecrets[token],
@@ -279,176 +278,169 @@ app.get('/tripitcallback', (req, res) => {
 
 
 app.all('/admin_login', (req, res) => {
-    sess=req.session;
+    sess = req.session;
 
-    
-    if(req.body.password || null)
-        {
-           
-  
-            if(req.body.password==settings.superSecretKey)
-            {
-                 sess.auth="2"; //AUTH COMPLETED
- 
 
-                 res.redirect('/users');
-            } else {
-                res.render('admin_login.ejs', {authError:"Wrong Password"});
-            }
+    if (req.body.password || null) {
 
+
+        if (req.body.password == settings.superSecretKey) {
+            sess.auth = "2"; //AUTH COMPLETED
+
+
+            res.redirect('/users');
+        } else {
+            res.render('admin_login.ejs', { authError: "Wrong Password" });
         }
-        else {
-                res.render('admin_login.ejs', {authError:""});
-        }
-})  
+
+    }
+    else {
+        res.render('admin_login.ejs', { authError: "" });
+    }
+})
 
 
 app.all('/login', (req, res) => {
-    sess=req.session;
-  
-    if((req.body.login || null) && (req.body.password || null) && (req.body.email || null))
-        {
-            db.collection('users').find({
-                    email: {  $eq: req.body.email } ,
-                    password: {  $eq: req.body.password }    
-                } ).toArray(function (err, result) {
-                    
-                    if (!err) {
-                        if(result.length>0) {
-                        buff("USER FOUND");
+    sess = req.session;
 
-                        if(result[0].approved)
-                        {
-                            buff("USER AUTHED");
-                            sess.auth="1"; //AUTH COMPLETED
-                            sess.authed_user=result[0]; 
-                            sess.authed_user.current_auth=sess.auth;
-                            res.redirect("/");
-                        } else {
-                            sess.auth="0";    
-                            sess.authed_user={};
-                            buff("Not approved");   
-                            res.render('login.ejs', {authError:"User not approved",authSuccess:""})
+    if ((req.body.login || null) && (req.body.password || null) && (req.body.email || null)) {
+        db.collection('users').find({
+            email: { $eq: req.body.email },
+            password: { $eq: req.body.password }
+        }).toArray(function (err, result) {
 
-                        }
-                        }
-                        else {
-                            sess.auth="0";    
-                            sess.authed_user={};
-                            buff("Wrong credentials");   
-                            res.render('login.ejs', {authError:"Wrong credentials",authSuccess:""});
-                        }
-            
-                    }
-                    else {
-                        res.send({ error: err });
+            if (!err) {
+                if (result.length > 0) {
+                    buff("USER FOUND");
+
+                    if (result[0].approved) {
+                        buff("USER AUTHED");
+                        sess.auth = "1"; //AUTH COMPLETED
+                        sess.authed_user = result[0];
+                        sess.authed_user.current_auth = sess.auth;
+                        res.redirect("/");
+                    } else {
+                        sess.auth = "0";
+                        sess.authed_user = {};
+                        buff("Not approved");
+                        res.render('login.ejs', { authError: "User not approved", authSuccess: "" })
 
                     }
-                });
+                }
+                else {
+                    sess.auth = "0";
+                    sess.authed_user = {};
+                    buff("Wrong credentials");
+                    res.render('login.ejs', { authError: "Wrong credentials", authSuccess: "" });
+                }
 
-        }
-        else if((req.body.registration || null)  && (req.body.email || null))
-        {
-            db.collection('users').find({
-                    email: {  $eq: req.body.email }
-                } ).toArray(function (err, result) {
-                    
-                    if (!err) {
-                        if(result.length>0) {
-                            buff("USER FOUND");
-                            res.render('login.ejs', {authError:"EMAIL IN USE",authSuccess:""});
+            }
+            else {
+                res.send({ error: err });
+
+            }
+        });
+
+    }
+    else if ((req.body.registration || null) && (req.body.email || null)) {
+        db.collection('users').find({
+            email: { $eq: req.body.email }
+        }).toArray(function (err, result) {
+
+            if (!err) {
+                if (result.length > 0) {
+                    buff("USER FOUND");
+                    res.render('login.ejs', { authError: "EMAIL IN USE", authSuccess: "" });
+                }
+                else {
+                    var new_user = {};
+                    new_user.password = generatePass();
+                    new_user.active = 1;
+                    new_user.approved = 0;
+                    new_user.email = req.body.email;
+                    new_user.trips = [];
+                    new_user.bands = [];
+                    new_user.update = new Date().toString();
+                    db.collection('users').save(new_user, (err, result) => {
+                        if (err) {
+                            res.render('login.ejs', { authError: err, authSuccess: "" });
                         }
-                        else {
-                            var new_user={};
-                            new_user.password=generatePass();
-                            new_user.active=1;
-                            new_user.approved=0;
-                            new_user.email=req.body.email;
-                            new_user.trips=[];
-                            new_user.bands=[];
-                            new_user.update=new Date().toString();
-                            db.collection('users').save(new_user, (err, result) => {
-                                if (err)
-                                    {
-                                       res.render('login.ejs', {authError:err,authSuccess:""});
-                                    }
 
-                                console.log('saved to database');
+                        console.log('saved to database');
 
-                               var html='<html><body>Visit <a href="http://localhost:3000/user_activation" target="_blank"> here </a></body></html>';
-                                
-                                sendMail(settings.adminMail,"New registration on TravelPlay", html);
-                                
+                        var html = '<html><body>Visit <a href="http://localhost:3000/user_activation" target="_blank"> here </a></body></html>';
 
-                                res.render('login.ejs', {authError:"",authSuccess:"SUCCESS"});
-                            });         
- 
-
-//                            
-                        }
-            
-                    }
-                    else {
-                        res.send({ error: err });
-                    }
-                });
-
-        }
-        else {
-                res.render('login.ejs', {authError:"",authSuccess:""});
-        }
+                        sendMail(settings.adminMail, "New registration on TravelPlay", html);
 
 
-     
+                        res.render('login.ejs', { authError: "", authSuccess: "SUCCESS" });
+                    });
+
+
+                    //                            
+                }
+
+            }
+            else {
+                res.send({ error: err });
+            }
+        });
+
+    }
+    else {
+        res.render('login.ejs', { authError: "", authSuccess: "" });
+    }
+
+
+
 
 })
 
 
 
 
-app.post("/approve_user",(req, res) => {
-    if((req.body.save || null) && (req.body.id || null) ) {
-        var approved=0;
-        if(req.body.approved)
-            approved=1;
-        var id=new ObjectID(req.body.id);
+app.post("/approve_user", (req, res) => {
+    if ((req.body.save || null) && (req.body.id || null)) {
+        var approved = 0;
+        if (req.body.approved)
+            approved = 1;
+        var id = new ObjectID(req.body.id);
 
-               db.collection('users').update({ _id:id} , { $set: { approved : approved  }}
-               ,(err, result) => {
-                    if (err)
-                        {
-                            res.send({error:err});
-                        }
+        db.collection('users').update({ _id: id }, { $set: { approved: approved } }
+            , (err, result) => {
+                if (err) {
+                    res.send({ error: err });
+                }
 
-                    console.log('saved to database');
+                console.log('saved to database');
 
-                    if((req.body.email || null) && approved) {
-                        var password=(req.body.password || null)
-                        var html='<html><body>You can now access TravelPlay with your email and password: '+password+' </body></html>';
+                if ((req.body.email || null) && approved) {
+                    var password = (req.body.password || null)
+                    var html = '<html><body>You can now access TravelPlay with your email and password: ' + password + ' </body></html>';
 
-                        sendMail(req.body.email,"Approved on TravelPlay", html);
-                    }
+                    sendMail(req.body.email, "Approved on TravelPlay", html);
+                }
 
 
-                    res.redirect("/users");
-                });
+                res.redirect("/users");
+            });
     }
 
 });
 
 app.get('/users', (req, res) => {
 
-    sess=req.session;
-   
+    sess = req.session;
+
 
 
 
 
     db.collection('users').find().toArray(function (err, result) {
-            
-            if (!err) {
 
-                result.sort(function (a, b) {
+        if (!err) {
+
+            result.sort(function (a, b) {
                 if (a.approved > b.approved) {
                     return 1;
                 }
@@ -456,37 +448,37 @@ app.get('/users', (req, res) => {
                     return -1;
                 }
                 return 0;
-                });
+            });
 
-                res.render('users.ejs', {result:result});
-
-
+            res.render('users.ejs', { result: result });
 
 
-            }
-            else {
-                res.send({ error: err });
-            }
+
+
+        }
+        else {
+            res.send({ error: err });
+        }
     });
- 
-     
+
+
 
 })
 
 
 
 app.get('/spotifycallback', (req, res) => {
-    sess=req.session;
+    sess = req.session;
 
-    if(spotifyApi.getAccessToken() ) {
-         sess.spotifyAuthed=true;
-         res.redirect('/');
+    if (spotifyApi.getAccessToken()) {
+        sess.spotifyAuthed = true;
+        res.redirect('/');
     }
     else {
         spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
             spotifyApi.setAccessToken(authInfo.body['access_token']);
             spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
-            sess.spotifyAuthed=true;
+            sess.spotifyAuthed = true;
             res.redirect('/');
         });
     }
@@ -501,100 +493,99 @@ app.get('/spotifycallback', (req, res) => {
 
 
 app.get('/', (req, res) => {
-    sess=req.session;
+    sess = req.session;
 
-     
+
 
 
     modelCurrent.res = res;
- 
 
 
-    
-    res.render('index.ejs', {session:sess, auth_url: settings.spotifyApiUrl });
-  
+
+
+    res.render('index.ejs', { session: sess, auth_url: settings.spotifyApiUrl });
+
 
 })
 
- 
+
 
 app.get('/tripittrips', (req, res) => {
-    sess=req.session; 
+    sess = req.session;
 
- 
+
     TripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
         var response = JSON.parse(results[0]);
-        var trips=[];
-        response.Trip.forEach(function(pre_trip){
-            var trip={};
-            trip.city=pre_trip.PrimaryLocationAddress.city.toLowerCase();
-            trip.start=pre_trip.start_date;
-            trip.end=pre_trip.end_date;
-            trip.country=pre_trip.PrimaryLocationAddress.country.toLowerCase();
+        var trips = [];
+        response.Trip.forEach(function (pre_trip) {
+            var trip = {};
+            trip.city = pre_trip.PrimaryLocationAddress.city.toLowerCase();
+            trip.start = pre_trip.start_date;
+            trip.end = pre_trip.end_date;
+            trip.country = pre_trip.PrimaryLocationAddress.country.toLowerCase();
             trips.push(trip);
         });
-        
-         res.render('trips.ejs', {tripItResult:trips});  
-        }).catch(function(reason) {
-            console.log(reason);
-            res.send({result:[], err:"App not authed in TripIt"});
-        });
-   
-}); 
+
+        res.render('trips.ejs', { tripItResult: trips });
+    }).catch(function (reason) {
+        console.log(reason);
+        res.send({ result: [], err: "App not authed in TripIt" });
+    });
+
+});
 
 
 app.get('/getspotifyartists', (req, res) => {
-    sess=req.session;
+    sess = req.session;
 
-    if(spotifyApi.getAccessToken()) 
-    {
-    spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
-        var found_artists = basicInfo.body.artists.items;
-        var all_artists; 
-        Promise.all(found_artists.map(function (artist) {
-            return spotifyApi.getArtistRelatedArtists(artist.id);
-        })).then(function (allRelatedArtists) {
-            for (i = 0; i < found_artists.length; i++)
-                found_artists[i].related = allRelatedArtists[i].body.artists; 
+    if (spotifyApi.getAccessToken()) {
+        spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+            var found_artists = basicInfo.body.artists.items;
+            var all_artists;
+            Promise.all(found_artists.map(function (artist) {
+                return spotifyApi.getArtistRelatedArtists(artist.id);
+            })).then(function (allRelatedArtists) {
+                for (i = 0; i < found_artists.length; i++)
+                    found_artists[i].related = allRelatedArtists[i].body.artists;
 
-   
-            all_artists = found_artists;
-            all_artists.distinct_list = [];
 
-            for (i = 0; i < all_artists.length; i++) {
-                var artist = all_artists[i];
-                if (all_artists.distinct_list.indexOf(artist.name) < 0)
-                    all_artists.distinct_list.push(artist.name);
-                for (j = 0; j < artist.related.length; j++) {
-                    var related_artist = artist.related[j];
-                    if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
-                        all_artists.distinct_list.push(related_artist.name);
+                all_artists = found_artists;
+                all_artists.distinct_list = [];
+
+                for (i = 0; i < all_artists.length; i++) {
+                    var artist = all_artists[i];
+                    if (all_artists.distinct_list.indexOf(artist.name) < 0)
+                        all_artists.distinct_list.push(artist.name);
+                    for (j = 0; j < artist.related.length; j++) {
+                        var related_artist = artist.related[j];
+                        if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
+                            all_artists.distinct_list.push(related_artist.name);
+                    }
+
                 }
+                all_artists.distinct_list.sort(function (a, b) {
+                    if (a < b) return -1;
+                    if (a > b) return 1;
+                    return 0;
+                })
 
-            }
-            all_artists.distinct_list.sort(function (a, b) {
-                if (a < b) return -1;
-                if (a > b) return 1;
-                return 0;
-            })
+                buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
 
-            buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
-             
-            //res.send({result:all_artists.distinct_list, err:""});
-            res.render('artists.ejs', {spotifyResult:all_artists.distinct_list});  
-            
-         });
-  
-    });     
+                //res.send({result:all_artists.distinct_list, err:""});
+                res.render('artists.ejs', { spotifyResult: all_artists.distinct_list });
+
+            });
+
+        });
     }
     else {
-        res.send({result:[], err:"App not authed in Spotify"});
+        res.send({ result: [], err: "App not authed in Spotify" });
     }
 
 });
 
 
- 
+
 function getFollowedArtistsAndRelated() {
     buff("*********************getFollowedArtistsAndRelated**************************");
     spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
@@ -629,12 +620,12 @@ function getFollowedArtistsAndRelated() {
 
             //buff(all_artists.distinct_list);
             buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
-            sess.spotifyResult=all_artists.distinct_list;
+            sess.spotifyResult = all_artists.distinct_list;
             modelCurrent.res.redirect("/");
-             //findEvents(all_artists.distinct_list);
-         });
-  
-    }); 
+            //findEvents(all_artists.distinct_list);
+        });
+
+    });
 }
 
 
@@ -1240,11 +1231,10 @@ function findTicketMasterEuropeEventsStart(artistList, dates = "", city = "") {
 
 
 
-
 /*HELPER FUNCTIONS*/
 
 
-function sendMail(email,subject, html) {
+function sendMail(email, subject, html) {
 
     var smtpConfig = {
         host: 'smtp.yandex.ru',
@@ -1352,7 +1342,7 @@ function generatePass() {
     return Math.random().toString(36).slice(-8);
 }
 
- 
+
 
 function asyncExample() {
 
@@ -1366,7 +1356,7 @@ function asyncExample() {
                 if (!error && response.statusCode == 200) {
                     if (totalEntries > 0) {
 
-                        callback(null, json.resultsPage.results.location[0].metroArea.id);
+                        callback(null, json.resultsPage.results.location[0].metroArea.id); //CHECK. JSON, not BODY???
                     } else {
                         callback("city not found", 0);
                     }
@@ -1390,3 +1380,147 @@ function asyncExample() {
     });
 
 }
+
+/*FAKE FUNCTIONS*/
+
+//- FOR TOP ALBUMS;
+//getTopAlbums(200);
+function getTopAlbums(n) {
+    var url = "https://itunes.apple.com/us/rss/topalbums/limit=" + n + "/json";
+    request(url, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var json = JSON.parse(body);
+            var artists = [];
+            json.feed.entry.forEach(function (entry) {
+                artists.push(entry["im:artist"].label);
+            });
+
+            artists = Array.from(new Set(artists));
+
+            fs.writeFile("../bands.json", artists, function (err) {
+                if (err) {
+                    return console.log(err);
+                }
+
+                console.log("The file was saved!");
+            });
+
+
+        }
+    })
+}
+
+//getTopAlbumsFromFile();
+
+function getTopAlbumsFromFile() {
+    var array = fs.readFileSync("bands.json").toString().split(',');
+    array=array.map(function(el,i){
+
+        return {"band": el.toLowerCase(), "additional_info": {"band_name_original":el} }
+
+        
+    });
+
+    var groupSize = Math.ceil(array.length / 5); //split to 5 users
+
+
+    var groups = array.map(function (item, index) {
+
+        return index % groupSize === 0 ? array.slice(index, index + groupSize) : null;
+    })
+        .filter(function (item) {
+            return item;
+
+        });
+    return groups;
+}
+
+
+
+//!!! Be careful with non UTF symbols Test Them
+//getTravelsFromFile();
+function getTravelsFromFile() {
+    var json = JSON.parse(fs.readFileSync("travelsShort.json").toString());
+ 
+
+    var trips = json.map(function (el, i) {
+        el.start = el.date;
+        delete el.date;
+        var date_start = new Date(el.start)
+        var date_end = new Date(date_start.setDate(date_start.getDate() + Math.round(Math.random() * 37 + 2)));
+        el.end = date_end.toISOString().substring(0, 10);
+        return el;
+    });
+
+    var groupSize = Math.ceil(trips.length / 5); //split to 5 users
+
+
+    var groups = trips.map(function (item, index) {
+
+        return index % groupSize === 0 ? trips.slice(index, index + groupSize) : null;
+    })
+        .filter(function (item) {
+            return item;
+
+        });
+   
+    return groups;
+
+}
+
+function isUS(country) {
+    country = country.toLowerCase();
+    if (country = "us" || country == "united states")
+        return true;
+    else
+        return false;
+
+}
+
+
+function getUsersFromFiles() {
+    var bandsGroups=getTopAlbumsFromFile();
+    var tripsGroups=getTravelsFromFile();
+
+ 
+    var users=tripsGroups.map(function(el,i){
+        var user={};
+        user.email = "amantels@gmail.com";
+        user.password = "D12345A";        
+        user.active = 1;        
+        user.approved = 1;        
+        user.updateDate = "Sun Jan 24 2017 17:19:17 GMT+0300 (Russia TZ 2 Standard Time)";
+        user.bands=bandsGroups[i];
+        user.trips=el;
+
+        //buff("***************");
+        //buff(user);
+        return user;
+
+    });
+    return users;
+
+}
+
+app.get('/save_user_special', (req, res) => {
+    var users=getUsersFromFiles();
+
+    async.map(users, function(user,callback) {
+        
+        db.collection('users').save(user, (err, result) => {
+            if (err) {
+                callback(err, "NOT OK");
+            }
+
+            console.log('saved to database')
+            callback(null, "OK");
+        });
+
+    }, function(err, results) {
+        
+        res.send("OK");
+    });
+
+})
+
+
