@@ -8,7 +8,7 @@ const http = require('http');
 const https = require("https");
 const URIlib = require('./URI')
 const url = require('url');
-const fs = require('fs');
+const fs = require('fs-extra');
 
 const nodemailer = require('nodemailer');
 const later = require('later');
@@ -78,84 +78,12 @@ var db;
 
 
 MongoClient.connect(mongo_url, (err, database) => {
-    if (err) return console.log(err)
+    if (err) return buff(err)
     db = database
     app.listen(3000, () => {
-        console.log('listening on 3000')
+        buff('listening on 3000')
     })
 })
-
-
-
-
-
-app.post('/save_user', (req, res) => {
-    //check if old email
-
-
-    var json = req.body;
-    json.email = json.email.trim();
-    //check if there is this email
-    //db.users.find({active:{$eq:"1"}}).pretty()
-    //
-    db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
-
-        if (!err) {
-            //console.log(result)
-            if (result.length > 0) {
-                buff("There is this email");
-                json["_id"] = new ObjectID(result[0]._id);
-                db.collection('users').update({ _id: json["_id"] }, { $set: { trips: json.trips, bands: json.bands } }
-                    , (err, result) => {
-                        if (err) {
-                            res.send({ error: err });
-                        }
-
-                        console.log('saved to database')
-                        res.send("OK");
-                    });
-
-
-            }
-            else {
-                buff("New User. No email found");
-                json.password = generatePass();
-                db.collection('users').save(json, (err, result) => {
-                    if (err) {
-                        res.send({ error: err });
-                    }
-
-                    console.log('saved to database')
-                    res.send("OK");
-                });
-            }
-
-
-
-
-
-
-        }
-        else {
-            res.send({ error: err });
-
-        }
-    });
-
-
-})
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -176,6 +104,8 @@ useModules.useEventful = false;
 var modelCurrent = {};
 
 var settings = {};
+
+settings.appUrl="http://localhost:3000/";
 
 settings.adminMail = "amantels@gmail.com";
 
@@ -234,6 +164,80 @@ settings.eventfulURL = "http://api.eventful.com/json/events/search?app_key=" + s
 
 
 settings.spotifyApiUrl = spotifyApi.createAuthorizeURL(scopes, state);
+
+
+
+
+
+
+app.post('/save_user', (req, res) => {
+    //check if old email
+
+
+    var json = req.body;
+    json.email = json.email.trim();
+    //check if there is this email
+    //db.users.find({active:{$eq:"1"}}).pretty()
+    //
+    db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
+
+        if (!err) {
+            //buff(result)
+            if (result.length > 0) {
+                buff("There is this email");
+                json["_id"] = new ObjectID(result[0]._id);
+                db.collection('users').update({ _id: json["_id"] }, { $set: { trips: json.trips, bands: json.bands } }
+                    , (err, result) => {
+                        if (err) {
+                            res.send({ error: err });
+                        }
+
+                        buff('saved to database')
+                        res.send("OK");
+                    });
+
+
+            }
+            else {
+                buff("New User. No email found");
+                json.password = generatePass();
+                db.collection('users').save(json, (err, result) => {
+                    if (err) {
+                        res.send({ error: err });
+                    }
+
+                    buff('saved to database')
+                    res.send("OK");
+                });
+            }
+
+
+
+
+
+
+        }
+        else {
+            res.send({ error: err });
+
+        }
+    });
+
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -366,9 +370,9 @@ app.all('/login', (req, res) => {
                             res.render('login.ejs', { authError: err, authSuccess: "" });
                         }
 
-                        console.log('saved to database');
+                        buff('saved to database');
 
-                        var html = '<html><body>Visit <a href="http://localhost:3000/user_activation" target="_blank"> here </a></body></html>';
+                        var html = '<html><body>Visit <a href="http://localhost:3000/users" target="_blank"> here </a></body></html>';
 
                         sendMail(settings.adminMail, "New registration on TravelPlay", html);
 
@@ -412,7 +416,7 @@ app.post("/approve_user", (req, res) => {
                     res.send({ error: err });
                 }
 
-                console.log('saved to database');
+                buff('saved to database');
 
                 if ((req.body.email || null) && approved) {
                     var password = (req.body.password || null)
@@ -491,6 +495,16 @@ app.get('/spotifycallback', (req, res) => {
 
 
 
+app.get('/index', (req, res) => {
+    sess = req.session;
+
+
+    modelCurrent.res = res;
+
+    res.render('index.ejs', { session: sess, auth_url: settings.spotifyApiUrl });
+
+
+})
 
 app.get('/', (req, res) => {
     sess = req.session;
@@ -528,7 +542,7 @@ app.get('/tripittrips', (req, res) => {
 
         res.render('trips.ejs', { tripItResult: trips });
     }).catch(function (reason) {
-        console.log(reason);
+        buff(reason);
         res.send({ result: [], err: "App not authed in TripIt" });
     });
 
@@ -780,7 +794,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray) {
             buff("Events: " + events.length);
             buff("*********************FINISHED WITH SUCCESS*********************");
 
-            //console.log(events);
+            //buff(events);
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
 
@@ -889,7 +903,7 @@ function findBandsinTownEvents(artistList, timeOut = true) {
             buff("Events: " + events.length);
             buff("*********************FINISHED WITH SUCCESS*********************");
 
-            //console.log(events);
+            //buff(events);
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
 
@@ -1001,7 +1015,7 @@ function findEventfulStart(data, url, artistList) {
                 buff("Events: " + events.length);
                 buff("*********************FINISHED WITH SUCCESS*********************");
 
-                //console.log(events);
+                //buff(events);
                 modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
 
@@ -1090,7 +1104,7 @@ function findTicketsTicketMaster(data, url, artistList) {
             buff("Events: " + events.length);
             buff("*********************FINISHED WITH SUCCESS*********************");
 
-            //console.log(events);
+            //buff(events);
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
 
@@ -1160,7 +1174,7 @@ function findTicketMasterEuropeEvents(pagesArray, artistList, dates = "", city =
             buff("Events: " + events.length);
             buff("*********************FINISHED WITH SUCCESS*********************");
 
-            //console.log(events);
+            //buff(events);
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
 
@@ -1221,6 +1235,229 @@ function findTicketMasterEuropeEventsStart(artistList, dates = "", city = "") {
 
 }
 
+app.get('/deactivate', (req, res) => {
+    sess = req.session;
+    if(sess.auth==1)
+        {
+            if(sess.authed_user) {
+                var id = new ObjectID(sess.authed_user._id);
+                buff(id);
+
+                db.collection('users').update({ _id: id }, { $set: { active: 0 } }
+                    , (err, result) => {
+                        if (err) {
+                            res.send({ error: err });
+                        }
+
+                        buff('deactivated')
+                        res.send("OK");
+                    });
+            }
+
+        } else {
+            res.redirect("/");
+        }
+    
+});
+
+app.get('/protected', (req, res) => {
+    sess = req.session;
+    var r=req.query.r || null;
+    
+    if(sess.auth>0)
+        if(r)
+            res.redirect("/"+r);
+        else        
+            res.send("authed");    
+    else   
+    {
+        //here we try auth
+        if ((req.query.code || null))
+        {
+            var code=req.query.code;
+            db.collection('users').find({
+                        code: { $eq: code }
+                    }).toArray(function (err, result) {
+
+                        if (!err) {
+                            if (result.length > 0) {
+                                buff("USER FOUND");
+
+                                if (result[0].approved) {
+                                    buff("USER AUTHED");
+                                    sess.auth = "1"; //AUTH COMPLETED
+                                    sess.authed_user = result[0];
+                                    sess.authed_user.current_auth = sess.auth;
+                                    if(r)
+                                        res.redirect("/"+r);
+                                    else        
+                                        res.send(sess.authed_user);   
+                                    
+                                } else {
+                                    sess.auth = "0";
+                                    sess.authed_user = {};
+                                    buff("Not approved");
+                                    if(r)
+                                        res.redirect("/"+r);
+                                    else        
+                                        res.send("Found but not approved");                                    
+                                }
+                            }
+                            else {
+                                sess.auth = "0";
+                                sess.authed_user = {};
+                                buff("Wrong credentials");
+                                if(r)
+                                    res.redirect("/"+r);
+                                else        
+                                    res.send("Not Found");                           
+                                
+                            }
+
+                        }
+                        else {
+                            res.send({ error: err });
+
+                        }
+                    });
+        }
+        else {
+            res.send("error - no auth");     
+        }
+            
+       
+    }    
+        
+ 
+    //unlogin        
+    sess.auth=0; 
+    sess.authed_user = {};
+
+
+});
+
+
+
+//SongKick for non US, Eventful & TicketMaster for US.
+function findEvents(user) {
+    var trips=user.trips || null;
+    var bands=user.bands || null;
+
+    if(!(trips & bands)) {
+        buff("nothing to search for");
+        return false;
+    }
+
+    buff("Trips: "+trips.length+" Bands: "+bands.length);
+
+    artistList=bands.map(function(el,i){
+        return el.band;
+    });
+    
+    if(artistList.length<20)
+    {
+        buff("bands to few for test");
+        return false;
+    }
+
+    trips.forEach(function (trip) {
+        var apiUrl="";
+        apiUrl="http://testurl.text/"+"?city="+trip.city+"&start="+trip.start+"&end="+trip.end;
+         
+        if(isUS(el.country)) {
+            //Eventful + Tickemaster
+             GetfakeCall(apiUrl,trip,artistList);
+            
+        } else {
+            //SongKick
+             GetfakeCall(apiUrl,trip,artistList);
+        }
+       
+       
+        
+
+
+    });
+
+}
+
+
+
+GetfakeCall("APIURL",{},[]);
+
+function GetfakeCall(apiUrl,trip,artistList) {
+    if(artistList.length==0) {
+        for(i=0;i<21;i++) {
+            artistList.push("band name X="+i);
+        }
+    }
+    //OK we have JSON with X (11-60) "events". Let us populate them.
+
+    var bandNameFound1=artistList[Math.floor(Math.random()*8)+1];
+    var bandNameFound2=artistList[Math.floor(Math.random()*10)+8];
+
+    var N=Math.round(Math.random()*50)+10;
+    var fakeEvents=[];
+    var foundEvents=[];
+    for(i=0;i<N;i++) {
+
+        var event={};
+        event.id=randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');               
+        event.text="RANDOM TEXT FOR TEST";
+
+        if(Math.floor(Math.random()*10)+1==10) {
+            
+            if(Math.round(Math.random())==1)
+                event.text=bandNameFound1;
+            else
+                event.text=bandNameFound2;    
+            foundEvents.push(event.text);    
+        }
+
+        event.date="RANDOM DATE FOR TEST";        
+        fakeEvents.push(event);   
+    }
+
+   // buff(fakeEvents);
+    // buff("***************************");
+    //buff(foundEvents);    
+    
+    var folder_name=new Date().toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_');
+    var dir="./tech/"+folder_name+"/";
+    fs.ensureDir(dir, function (err) {
+        if(err) {
+            buff(err) // => null  
+            return false;  
+        } else {
+            fs.writeFile(dir+"result.json", JSON.stringify(fakeEvents), function (err) {
+                if (err) {
+                    buff(err);
+                    return false;
+                }
+
+                //buff("The file was saved!");
+            });   
+            fs.writeFile(dir+"apiurl.json", apiUrl, function (err) {
+                if (err) {
+                    buff(err);
+                    return false;
+                }
+
+                //buff("The file was saved!");
+            });              
+            fs.writeFile(dir+"found.json", JSON.stringify(foundEvents), function (err) {
+                if (err) {
+                    buff(err);
+                    return false;
+                }
+
+               // buff("The file was saved!");
+            });                        
+        }
+    
+    
+    })
+    
 
 
 
@@ -1228,10 +1465,20 @@ function findTicketMasterEuropeEventsStart(artistList, dates = "", city = "") {
 
 
 
-
+}
 
 
 /*HELPER FUNCTIONS*/
+
+
+//saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ
+//buff(randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')); 
+function randomString(length, chars) {
+    var result = '';
+    for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+    return result;
+}
+
 
 
 function sendMail(email, subject, html) {
@@ -1241,14 +1488,14 @@ function sendMail(email, subject, html) {
         port: 465,
         secure: true, // use SSL
         auth: {
-            user: 'order@muchstudio.ru',
-            pass: 'av4059'
+            user: 'tp@muchstudio.ru',
+            pass: 'ojR5zSY3D0' 
 
         }
     };
     var transporter = nodemailer.createTransport(smtpConfig);
     var mailData = {
-        from: 'order@muchstudio.ru',
+        from: 'tp@muchstudio.ru',
         to: email,
         subject: subject,
         text: 'Only HTML here, sorry',
@@ -1257,7 +1504,7 @@ function sendMail(email, subject, html) {
 
     transporter.sendMail(mailData);
 
-    console.log('mail sent');
+    buff('mail sent');
     return true;
 
 };
@@ -1399,10 +1646,10 @@ function getTopAlbums(n) {
 
             fs.writeFile("../bands.json", artists, function (err) {
                 if (err) {
-                    return console.log(err);
+                    return buff(err);
                 }
 
-                console.log("The file was saved!");
+                buff("The file was saved!");
             });
 
 
@@ -1512,7 +1759,7 @@ app.get('/save_user_special', (req, res) => {
                 callback(err, "NOT OK");
             }
 
-            console.log('saved to database')
+            buff('saved to database')
             callback(null, "OK");
         });
 
@@ -1524,3 +1771,4 @@ app.get('/save_user_special', (req, res) => {
 })
 
 
+   
