@@ -81,9 +81,11 @@ MongoClient.connect(mongo_url, (err, database) => {
     if (err) return buff(err)
     db = database
     app.listen(3000, () => {
-        buff('listening on 3000')
+        buff('listening on 3000');
+        GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
+
     })
-})
+}) 
 
 
 
@@ -1291,7 +1293,8 @@ app.get('/protected', (req, res) => {
                                     if(r)
                                         res.redirect("/"+r);
                                     else        
-                                        res.send(sess.authed_user);   
+                                        //res.send(sess.authed_user);   
+                                        res.send(sess.authed_user.matches);   
                                     
                                 } else {
                                     sess.auth = "0";
@@ -1383,9 +1386,9 @@ function findEvents(user) {
 
 
 
-GetfakeCall("APIURL",{},[]);
+//GetfakeCall("APIURL",{},[],{});
 
-function GetfakeCall(apiUrl,trip,artistList) {
+function GetfakeCall(apiUrl,trip,artistList,user) {
     if(artistList.length==0) {
         for(i=0;i<21;i++) {
             artistList.push("band name X="+i);
@@ -1404,23 +1407,26 @@ function GetfakeCall(apiUrl,trip,artistList) {
         var event={};
         event.id=randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');               
         event.text="RANDOM TEXT FOR TEST";
+        event.date="RANDOM DATE FOR TEST";     
 
         if(Math.floor(Math.random()*10)+1==10) {
             
             if(Math.round(Math.random())==1)
                 event.text=bandNameFound1;
             else
-                event.text=bandNameFound2;    
-            foundEvents.push(event.text);    
+                event.text=bandNameFound2;   
+
+            foundEvents.push(event);    
         }
 
-        event.date="RANDOM DATE FOR TEST";        
+   
         fakeEvents.push(event);   
     }
-
+    if(foundEvents.length>0)
+        saveEvents(user,foundEvents);
    // buff(fakeEvents);
     // buff("***************************");
-    //buff(foundEvents);    
+    buff(foundEvents);    
     
     var folder_name=new Date().toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_');
     var dir="./tech/"+folder_name+"/";
@@ -1459,11 +1465,31 @@ function GetfakeCall(apiUrl,trip,artistList) {
     })
     
 
+}
 
+function saveEvents(user,foundEvents) {
+    var id = new ObjectID(user._id);
+    var code=user.code;
+    foundEvents=foundEvents.map(function(el,i){
+        var match={}; 
+        match.event=el;
+        match.date=new Date().toString();
+        return match;
+    });
+     
 
+    db.collection('users').update({ _id: id }, { $push: { matches:  { $each: foundEvents } } }
+        , (err, result) => {
+            if (err) {
+                buff(err);
+            }
 
+            buff('saved to database')
+            var html = '<html><body>Visit <a href="http://localhost:3000/protected?code='+code+'" target="_blank"> TravelPlay </a> for new matches</body></html>';
 
-
+            sendMail(settings.adminMail, "New matches on TravelPlay", html);
+        });
+ 
 
 }
 
