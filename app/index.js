@@ -82,12 +82,33 @@ MongoClient.connect(mongo_url, (err, database) => {
     db = database
     app.listen(3000, () => {
         buff('listening on 3000');
-        GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
+    //    GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
+   sheduledFind();
+                /*
+        db.collection('users').find(
+                    { active: { $eq: 1 } }
+                    , (err, result) => {
+                         result.forEach(function(user){
+                             buff(user.email);
+                         });
+                       
+                     });               
+               */
+            /*
+                db.collection('users').update(
+                    { active: { $eq: 1 } },  
+                    { $set: { code:randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') }} ,
+                    { multi: true }
+  
+                    , (err, result) => {
+                         
+                      //  buff(result);
+                     });        
+*/
 
     })
 }) 
-
-
+ 
 
 
 
@@ -179,7 +200,7 @@ app.post('/save_user', (req, res) => {
     var json = req.body;
     json.email = json.email.trim();
     //check if there is this email
-    //db.users.find({active:{$eq:"1"}}).pretty()
+    //db.users.find({active:{$eq:1}}).pretty()
     //
     db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
 
@@ -203,6 +224,7 @@ app.post('/save_user', (req, res) => {
             else {
                 buff("New User. No email found");
                 json.password = generatePass();
+                json.code =  randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
                 db.collection('users').save(json, (err, result) => {
                     if (err) {
                         res.send({ error: err });
@@ -1346,12 +1368,12 @@ function findEvents(user) {
     var trips=user.trips || null;
     var bands=user.bands || null;
 
-    if(!(trips & bands)) {
+    if(!trips || !bands) {
         buff("nothing to search for");
         return false;
     }
 
-    buff("Trips: "+trips.length+" Bands: "+bands.length);
+    //buff("Trips: "+trips.length+" Bands: "+bands.length);
 
     artistList=bands.map(function(el,i){
         return el.band;
@@ -1367,13 +1389,13 @@ function findEvents(user) {
         var apiUrl="";
         apiUrl="http://testurl.text/"+"?city="+trip.city+"&start="+trip.start+"&end="+trip.end;
          
-        if(isUS(el.country)) {
+        if(isUS(trip.country)) {
             //Eventful + Tickemaster
-             GetfakeCall(apiUrl,trip,artistList);
+             GetfakeCall(apiUrl,trip,artistList,user);
             
         } else {
             //SongKick
-             GetfakeCall(apiUrl,trip,artistList);
+             GetfakeCall(apiUrl,trip,artistList,user);
         }
        
        
@@ -1385,6 +1407,30 @@ function findEvents(user) {
 }
 
 
+function sheduledFind() {
+
+
+    //find all active users 
+
+//GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
+    //
+    db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
+
+        if (!err && (result.length > 0)) {
+            
+            result.forEach(function(user){
+ 
+                findEvents(user);
+            })
+             
+         }
+        else {
+             return buff(err);
+        }
+    });
+
+
+}
 
 //GetfakeCall("APIURL",{},[],{});
 
@@ -1423,10 +1469,10 @@ function GetfakeCall(apiUrl,trip,artistList,user) {
         fakeEvents.push(event);   
     }
     if(foundEvents.length>0)
-        saveEvents(user,foundEvents);
+        saveEvents(user,foundEvents,trip);
    // buff(fakeEvents);
     // buff("***************************");
-    buff(foundEvents);    
+    //buff(foundEvents);    
     
     var folder_name=new Date().toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_');
     var dir="./tech/"+folder_name+"/";
@@ -1467,25 +1513,31 @@ function GetfakeCall(apiUrl,trip,artistList,user) {
 
 }
 
-function saveEvents(user,foundEvents) {
+function saveEvents(user,foundEvents,trip) {
     var id = new ObjectID(user._id);
-    var code=user.code;
+    var code=user.code || "";
     foundEvents=foundEvents.map(function(el,i){
         var match={}; 
         match.event=el;
         match.date=new Date().toString();
         return match;
     });
-     
-
+ 
+ 
+ 
     db.collection('users').update({ _id: id }, { $push: { matches:  { $each: foundEvents } } }
         , (err, result) => {
             if (err) {
                 buff(err);
             }
+            
 
-            buff('saved to database')
-            var html = '<html><body>Visit <a href="http://localhost:3000/protected?code='+code+'" target="_blank"> TravelPlay </a> for new matches</body></html>';
+            //buff('saved to database')
+            var html = '<html><body>'
+            +'id = '+id
+            +' Visit <a href="http://localhost:3000/protected?code='+code+'" target="_blank"> TravelPlay </a> for new matches'
+            +' in '+trip.city+' city '            
+            +'</body></html>';
 
             sendMail(settings.adminMail, "New matches on TravelPlay", html);
         });
@@ -1530,7 +1582,7 @@ function sendMail(email, subject, html) {
 
     transporter.sendMail(mailData);
 
-    buff('mail sent');
+   // buff('mail sent');
     return true;
 
 };
