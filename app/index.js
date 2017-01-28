@@ -82,36 +82,14 @@ MongoClient.connect(mongo_url, (err, database) => {
     db = database
     app.listen(8001, () => {
         buff('listening on 8001');
-    //    GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
-   sheduledFind();
-  //later.setInterval(sheduledFind, later.parse.text('every 20 secs'));
-                /*
-        db.collection('users').find(
-                    { active: { $eq: 1 } }
-                    , (err, result) => {
-                         result.forEach(function(user){
-                             buff(user.email);
-                         });
-                       
-                     });               
-               */
-            /*
-                db.collection('users').update(
-                    { active: { $eq: 1 } },  
-                    { $set: { code:randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') }} ,
-                    { multi: true }
-  
-                    , (err, result) => {
-                         
-                      //  buff(result);
-                     });        
-*/
+        startServer();
+
 
     })
-}) 
- 
+})
 
- 
+
+
 
 
 
@@ -130,7 +108,7 @@ var modelCurrent = {};
 
 var settings = {};
 
-settings.appUrl="http://localhost:3000/";
+settings.appUrl = "http://localhost:3000/";
 
 settings.adminMail = "amantels@gmail.com";
 
@@ -191,7 +169,33 @@ settings.eventfulURL = "http://api.eventful.com/json/events/search?app_key=" + s
 settings.spotifyApiUrl = spotifyApi.createAuthorizeURL(scopes, state);
 
 
+function startServer() {
+    sheduledFind();
 
+    //    GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
+    //later.setInterval(sheduledFind, later.parse.text('every 20 secs'));
+    /*
+db.collection('users').find(
+        { active: { $eq: 1 } }
+        , (err, result) => {
+             result.forEach(function(user){
+                 buff(user.email);
+             });
+           
+         });               
+   */
+    /*
+        db.collection('users').update(
+            { active: { $eq: 1 } },  
+            { $set: { code:randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') }} ,
+            { multi: true }
+ 
+            , (err, result) => {
+                 
+              //  buff(result);
+             });        
+*/
+}
 
 
 
@@ -226,7 +230,7 @@ app.post('/save_user', (req, res) => {
             else {
                 buff("New User. No email found");
                 json.password = generatePass();
-                json.code =  randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                json.code = randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
                 db.collection('users').save(json, (err, result) => {
                     if (err) {
                         res.send({ error: err });
@@ -668,9 +672,9 @@ function getFollowedArtists() {
     });
 }
 
+/*
 
-
-function findEvents(artistList) {
+function findEventsOld(artistList) {
 
 
     if (useModules.useBandsInTown) {
@@ -707,8 +711,72 @@ function findEvents(artistList) {
 
 
 }
+*/
 
 
+
+function findSongKickEventsStart(apiUrl, trip, artistList, user, time) {
+
+    var cityName = encodeURI(trip.city);
+    //buff(cityName);
+
+
+    async.waterfall([
+
+        function (callback) {
+            var url = settings.SongKickLocationUrl.replace("CITY_NAME", cityName);
+            request(url, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var json = JSON.parse(body);
+                    var totalEntries = json.resultsPage.totalEntries;
+                    if (!totalEntries)
+                        totalEntries = 0;
+                    if (totalEntries > 0) {
+                        buff(cityName + "  " + json.resultsPage.results.location[0].metroArea.id)
+                        callback(null, json.resultsPage.results.location[0].metroArea.id);
+                    } else {
+                        buff(cityName + "  " + "city not found")
+                        callback("city not found", 0);
+                    }
+                }
+            })
+        },
+
+        function (cityID, callback) {
+            buff("*****>");
+            var url = settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", 1);
+            request(url, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var json = JSON.parse(body);
+                    var totalEntries = json.resultsPage.totalEntries;
+                    if (!totalEntries)
+                        totalEntries = 0;
+                    callback(null, totalEntries, cityID);
+                }
+            })
+
+        }
+
+    ], function (err, totalEntries, cityID) {
+        if (err) {
+            buff(err);
+        }
+        else {
+
+            buff("totalEntries " + totalEntries);
+            buff("cityID " + cityID);
+
+            var N = Math.ceil(totalEntries / 50);
+            var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
+            findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time);
+        }
+
+
+    });
+}
+
+
+/*
 function findSongKickEventsStart(artistList) {
     iteratorMarker = 0;
     if (!artistList)
@@ -767,6 +835,9 @@ function findSongKickEventsStart(artistList) {
 }
 
 
+
+
+
 function findSongKickEventsFinal(artistList, cityID, pagesArray) {
     var requestFunction = makeKickRequest;
     modelCurrent.KickcityID = cityID;
@@ -778,30 +849,34 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray) {
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
 
         } else {
+            var flattened=[];    
+            var events=[];
+            if(results.length>0) {
+                var flattened = results.reduce(function (a, b) {
+                    return a.concat(b);
+                });
+                //filter by dates
+                var events = flattened.filter(function (elem, i, array) {
+                    if (elem.event !== undefined && elem.event.start !== undefined) {
+                        return new Date(elem.event.start.date) >= new Date(settings.SongKickStartDate) && new Date(elem.event.start.date) <= new Date(settings.SongKickEndtDate);
+                    }
+                    return false;
 
-            var flattened = results.reduce(function (a, b) {
-                return a.concat(b);
-            });
-            //filter by dates
-            var events = flattened.filter(function (elem, i, array) {
-                if (elem.event !== undefined && elem.event.start !== undefined) {
-                    return new Date(elem.event.start.date) >= new Date(settings.SongKickStartDate) && new Date(elem.event.start.date) <= new Date(settings.SongKickEndtDate);
-                }
-                return false;
+                });
+                //filter by bands
+                var events = events.filter(function (elem, i, array) {
+                    if (elem.event_title != undefined) {
+                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                    }
+                    return false;
 
-            });
-            //filter by bands
-            var events = events.filter(function (elem, i, array) {
-                if (elem.event_title != undefined) {
-                    return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                }
-                return false;
+                });
 
-            });
-
+            }
             buff("Results: " + flattened.length);
             buff("Events: " + events.length);
             buff("*********************FINISHED WITH SUCCESS*********************");
+
 
             //buff(events);
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
@@ -809,6 +884,73 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray) {
 
         }
     });
+
+
+}
+
+*/
+
+function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time) {
+    async.map(pagesArray,
+        (function (pageNumber, callback) {
+            makeRequest(settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber)), { callback: callback }, findSongKickEventsPage, callbackErrorGeneral);
+        })
+        , function (err, results) {
+            if (err) {
+                buff("*********************FINISHED WITH ERROR**************************");
+                buff("iteratorMarker " + iteratorMarker);
+                buff(err);
+            } else {
+                var flattened = [];
+                var events = [];
+                if (results.length > 0) {
+
+                    var flattened = results.reduce(function (a, b) {
+                        return a.concat(b);
+                    });
+
+                    //here we ignore everything and just get few random events
+                    /*
+                    //filter by dates
+                    events = flattened.filter(function (elem, i, array) {
+                        if (elem.event !== undefined && elem.event.start !== undefined) {
+                            return new Date(elem.event.start.date) >= new Date(settings.SongKickStartDate) && new Date(elem.event.start.date) <= new Date(settings.SongKickEndtDate);
+                        }
+                        return false;
+    
+                    });
+                    //filter by bands
+                    events = events.filter(function (elem, i, array) {
+                        if (elem.event_title != undefined) {
+                            return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                        }
+                        return false;
+    
+                    });
+                    */
+
+                    var N = Math.floor(Math.random() * Math.min(10, flattened.length)) + 0;
+                    for (i = 0; i < N; i++) {
+                        var X = Math.floor(Math.random() * flattened.length) + 1;
+                        events.push(flattened[X]);
+                    }
+
+
+                }
+                buff("Results: " + flattened.length);
+                buff("Events: " + events.length);
+                buff("*********************FINISHED WITH SUCCESS*********************");
+
+                apiUrl = settings.SongKickUrl.replace("CITY_ID", cityID);
+                if (events.length > 0)
+                    saveEvents(user, events, trip); 
+
+                logEvents(time, user, trip, apiUrl, results, events);
+
+
+
+            }
+        });
 
 
 }
@@ -1246,101 +1388,98 @@ function findTicketMasterEuropeEventsStart(artistList, dates = "", city = "") {
 
 app.get('/deactivate', (req, res) => {
     sess = req.session;
-    if(sess.auth==1)
-        {
-            if(sess.authed_user) {
-                var id = new ObjectID(sess.authed_user._id);
-                buff(id);
+    if (sess.auth == 1) {
+        if (sess.authed_user) {
+            var id = new ObjectID(sess.authed_user._id);
+            buff(id);
 
-                db.collection('users').update({ _id: id }, { $set: { active: 0 } }
-                    , (err, result) => {
-                        if (err) {
-                            res.send({ error: err });
-                        }
+            db.collection('users').update({ _id: id }, { $set: { active: 0 } }
+                , (err, result) => {
+                    if (err) {
+                        res.send({ error: err });
+                    }
 
-                        buff('deactivated')
-                        res.send("OK");
-                    });
-            }
-
-        } else {
-            res.redirect("/");
+                    buff('deactivated')
+                    res.send("OK");
+                });
         }
-    
+
+    } else {
+        res.redirect("/");
+    }
+
 });
 
 app.get('/protected', (req, res) => {
     sess = req.session;
-    var r=req.query.r || null;
-    
-    if(sess.auth>0)
-        if(r)
-            res.redirect("/"+r);
-        else        
-            res.send("authed");    
-    else   
-    {
+    var r = req.query.r || null;
+
+    if (sess.auth > 0)
+        if (r)
+            res.redirect("/" + r);
+        else
+            res.send("authed");
+    else {
         //here we try auth
-        if ((req.query.code || null))
-        {
-            var code=req.query.code;
+        if ((req.query.code || null)) {
+            var code = req.query.code;
             db.collection('users').find({
-                        code: { $eq: code }
-                    }).toArray(function (err, result) {
+                code: { $eq: code }
+            }).toArray(function (err, result) {
 
-                        if (!err) {
-                            if (result.length > 0) {
-                                buff("USER FOUND");
+                if (!err) {
+                    if (result.length > 0) {
+                        buff("USER FOUND");
 
-                                if (result[0].approved) {
-                                    buff("USER AUTHED");
-                                    sess.auth = "1"; //AUTH COMPLETED
-                                    sess.authed_user = result[0];
-                                    sess.authed_user.current_auth = sess.auth;
-                                    if(r)
-                                        res.redirect("/"+r);
-                                    else        
-                                        //res.send(sess.authed_user);   
-                                        res.send(sess.authed_user.matches);   
-                                    
-                                } else {
-                                    sess.auth = "0";
-                                    sess.authed_user = {};
-                                    buff("Not approved");
-                                    if(r)
-                                        res.redirect("/"+r);
-                                    else        
-                                        res.send("Found but not approved");                                    
-                                }
-                            }
-                            else {
-                                sess.auth = "0";
-                                sess.authed_user = {};
-                                buff("Wrong credentials");
-                                if(r)
-                                    res.redirect("/"+r);
-                                else        
-                                    res.send("Not Found");                           
-                                
-                            }
+                        if (result[0].approved) {
+                            buff("USER AUTHED");
+                            sess.auth = "1"; //AUTH COMPLETED
+                            sess.authed_user = result[0];
+                            sess.authed_user.current_auth = sess.auth;
+                            if (r)
+                                res.redirect("/" + r);
+                            else
+                                //res.send(sess.authed_user);   
+                                res.send(sess.authed_user.matches);
 
+                        } else {
+                            sess.auth = "0";
+                            sess.authed_user = {};
+                            buff("Not approved");
+                            if (r)
+                                res.redirect("/" + r);
+                            else
+                                res.send("Found but not approved");
                         }
-                        else {
-                            res.send({ error: err });
+                    }
+                    else {
+                        sess.auth = "0";
+                        sess.authed_user = {};
+                        buff("Wrong credentials");
+                        if (r)
+                            res.redirect("/" + r);
+                        else
+                            res.send("Not Found");
 
-                        }
-                    });
+                    }
+
+                }
+                else {
+                    res.send({ error: err });
+
+                }
+            });
         }
         else {
-            res.send("error - no auth");     
+            res.send("error - no auth");
         }
-            
-       
-    }    
-        
- 
+
+
+    }
+
+
     //unlogin        
-    sess.auth=0; 
+    sess.auth = 0;
     sess.authed_user = {};
 
 
@@ -1349,69 +1488,65 @@ app.get('/protected', (req, res) => {
 
 
 //SongKick for non US, Eventful & TicketMaster for US.
-function findFakeEvents(user,time) {
-    var trips=user.trips || null;
-    var bands=user.bands || null;
+function findEvents(user, time) {
+    var trips = user.trips || null;
+    var bands = user.bands || null;
 
-    if(!trips || !bands) {
+    if (!trips || !bands) {
         buff("nothing to search for");
         return false;
     }
 
-    //buff("Trips: "+trips.length+" Bands: "+bands.length);
 
-    artistList=bands.map(function(el,i){
+    artistList = bands.map(function (el, i) {
         return el.band;
     });
-    
-    if(artistList.length<20)
-    {
+
+    if (artistList.length < 20) {
         buff("bands to few for test");
         return false;
     }
     trips.forEach(function (trip) {
-        var apiUrl="";
-        apiUrl="http://testurl.text/"+"?city="+trip.city+"&start="+trip.start+"&end="+trip.end;
-         
-        if(isUS(trip.country)) {
+        var apiUrl = "";
+
+        if (isUS(trip.country)) {
             //Eventful + Tickemaster
-             GetfakeCall(apiUrl,trip,artistList,user,time);
-            
+            //GetfakeCall(apiUrl,trip,artistList,user,time);
+
         } else {
             //SongKick
-             GetfakeCall(apiUrl,trip,artistList,user,time);
+            findSongKickEventsStart(apiUrl, trip, artistList, user, time);
+
+            //GetfakeCall(apiUrl,trip,artistList,user,time);
         }
-       
-       
-        
+
+
+
 
 
     });
 
 }
 
+
+
+
 function sheduledFind() {
 
-
-    //find all active users 
-
-//GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
-    //
-
-    var time=new Date();
+    var time = new Date();
 
     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
 
         if (!err && (result.length > 0)) {
-            
-            result.forEach(function(user){
- 
-                findFakeEvents(user,time);
+
+            result.forEach(function (user) {
+
+                findEvents(user, time);
             })
-             
-         }
+
+        }
         else {
-             return buff(err);
+            return buff(err);
         }
     });
 
@@ -1420,115 +1555,124 @@ function sheduledFind() {
 
 //GetfakeCall("APIURL",{},[],{});
 
-function GetfakeCall(apiUrl,trip,artistList,user,time) {
-    if(artistList.length==0) {
-        for(i=0;i<21;i++) {
-            artistList.push("band name X="+i);
+function GetfakeCall(apiUrl, trip, artistList, user, time) {
+    if (artistList.length == 0) {
+        for (i = 0; i < 21; i++) {
+            artistList.push("band name X=" + i);
         }
     }
     //OK we have JSON with X (11-60) "events". Let us populate them.
 
-    var bandNameFound1=artistList[Math.floor(Math.random()*8)+1];
-    var bandNameFound2=artistList[Math.floor(Math.random()*10)+8];
+    var bandNameFound1 = artistList[Math.floor(Math.random() * 8) + 1];
+    var bandNameFound2 = artistList[Math.floor(Math.random() * 10) + 8];
 
-    var N=Math.round(Math.random()*50)+10;
-    var fakeEvents=[];
-    var foundEvents=[];
-    for(i=0;i<N;i++) {
+    var N = Math.round(Math.random() * 50) + 10;
+    var fakeEvents = [];
+    var foundEvents = [];
+    for (i = 0; i < N; i++) {
 
-        var event={};
-        event.id=randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');               
-        event.text="RANDOM TEXT FOR TEST";
-        event.date="RANDOM DATE FOR TEST";     
+        var event = {};
+        event.id = randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        event.text = "RANDOM TEXT FOR TEST";
+        event.date = "RANDOM DATE FOR TEST";
 
-        if(Math.floor(Math.random()*10)+1==10) {
-            
-            if(Math.round(Math.random())==1)
-                event.text=bandNameFound1;
+        if (Math.floor(Math.random() * 10) + 1 == 10) {
+
+            if (Math.round(Math.random()) == 1)
+                event.text = bandNameFound1;
             else
-                event.text=bandNameFound2;   
+                event.text = bandNameFound2;
 
-            foundEvents.push(event);    
+            foundEvents.push(event);
         }
 
-   
-        fakeEvents.push(event);   
+
+        fakeEvents.push(event);
     }
-    if(foundEvents.length>0)
-        saveEvents(user,foundEvents,trip);
-   // buff(fakeEvents);
+    if (foundEvents.length > 0)
+        saveEvents(user, foundEvents, trip);
+
+    logEvents(time, user, trip, apiUrl, fakeEvents, foundEvents);
+    // buff(fakeEvents);
     // buff("***************************");
     //buff(foundEvents);    
-    
-    var folder_name=time.toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_')+"/"+user._id+"/"+"_"+foundEvents.length+"_"+trip.city+new Date().toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_');
-    var dir="./tech/"+folder_name+"/";
-    fs.ensureDir(dir, function (err) {
-        if(err) {
-            buff(err) // => null  
-            return false;  
-        } else {
-            fs.writeFile(dir+"result.json", JSON.stringify(fakeEvents), function (err) {
-                if (err) {
-                    buff(err);
-                    return false;
-                }
 
-                //buff("The file was saved!");
-            });   
-            fs.writeFile(dir+"apiurl.json", apiUrl, function (err) {
-                if (err) {
-                    buff(err);
-                    return false;
-                }
 
-                //buff("The file was saved!");
-            });             
 
-            fs.writeFile(dir+"found.json", JSON.stringify(foundEvents), function (err) {
-                if (err) {
-                    buff(err);
-                    return false;
-                }
-
-               // buff("The file was saved!");
-            });                        
-        }
-    
-    
-    })
-    
 
 }
 
-function saveEvents(user,foundEvents,trip) {
+function logEvents(time, user, trip, apiUrl, fakeEvents, foundEvents) {
+    //buff("logging");
+    var folder_name = time.toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
+    var dir = "./tech/" + folder_name + "/";
+    fs.ensureDir(dir, function (err) {
+        if (err) {
+            buff(err) // => null  
+            return false;
+        } else {
+            fs.writeFile(dir + "result.json", JSON.stringify(fakeEvents), function (err) {
+                if (err) {
+                    buff(err);
+                    return false;
+                }
+
+                //buff("The file was saved!");
+            });
+            fs.writeFile(dir + "apiurl.json", apiUrl, function (err) {
+                if (err) {
+                    buff(err);
+                    return false;
+                }
+
+                //buff("The file was saved!");
+            });
+
+            fs.writeFile(dir + "found.json", JSON.stringify(foundEvents), function (err) {
+                if (err) {
+                    buff(err);
+                    return false;
+                }
+
+                // buff("The file was saved!");
+            });
+        }
+
+
+    })
+}
+
+
+
+function saveEvents(user, foundEvents, trip) {
     var id = new ObjectID(user._id);
-    var code=user.code || "";
-    foundEvents=foundEvents.map(function(el,i){
-        var match={}; 
-        match.event=el;
-        match.date=new Date().toString();
+    var code = user.code || "";
+    foundEvents = foundEvents.map(function (el, i) {
+        var match = {};
+        match.event = el;
+        match.date = new Date().toString();
         return match;
     });
- 
- 
- 
-    db.collection('users').update({ _id: id }, { $push: { matches:  { $each: foundEvents } } }
+
+
+
+    db.collection('users').update({ _id: id }, { $push: { matches: { $each: foundEvents } } }
         , (err, result) => {
             if (err) {
                 buff(err);
             }
-            
+
 
             //buff('saved to database')
             var html = '<html><body>'
-            +'id = '+id
-            +' Visit <a href="http://localhost:3000/protected?code='+code+'" target="_blank"> TravelPlay </a> for new matches'
-            +' in '+trip.city+' city '            
-            +'</body></html>';
+                + 'id = ' + id
+                + ' Visit <a href="http://localhost:3000/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'
+                + ' in ' + trip.city + ' city '
+                + '</body></html>';
 
             sendMail(settings.adminMail, "New matches on TravelPlay", html);
         });
- 
+
 
 }
 
@@ -1554,7 +1698,7 @@ function sendMail(email, subject, html) {
         secure: true, // use SSL
         auth: {
             user: 'tp@muchstudio.ru',
-            pass: 'ojR5zSY3D0' 
+            pass: 'ojR5zSY3D0'
 
         }
     };
@@ -1569,7 +1713,7 @@ function sendMail(email, subject, html) {
 
     transporter.sendMail(mailData);
 
-   // buff('mail sent');
+    // buff('mail sent');
     return true;
 
 };
@@ -1726,11 +1870,11 @@ function getTopAlbums(n) {
 
 function getTopAlbumsFromFile() {
     var array = fs.readFileSync("bands.json").toString().split(',');
-    array=array.map(function(el,i){
+    array = array.map(function (el, i) {
 
-        return {"band": el.toLowerCase(), "additional_info": {"band_name_original":el} }
+        return { "band": el.toLowerCase(), "additional_info": { "band_name_original": el } }
 
-        
+
     });
 
     var groupSize = Math.ceil(array.length / 5); //split to 5 users
@@ -1753,7 +1897,7 @@ function getTopAlbumsFromFile() {
 //getTravelsFromFile();
 function getTravelsFromFile() {
     var json = JSON.parse(fs.readFileSync("travelsShort.json").toString());
- 
+
 
     var trips = json.map(function (el, i) {
         el.start = el.date;
@@ -1775,14 +1919,14 @@ function getTravelsFromFile() {
             return item;
 
         });
-   
+
     return groups;
 
 }
 
 function isUS(country) {
     country = country.toLowerCase();
-    if (country = "us" || country == "united states")
+    if (country == "us" || country == "united states")
         return true;
     else
         return false;
@@ -1791,19 +1935,19 @@ function isUS(country) {
 
 
 function getUsersFromFiles() {
-    var bandsGroups=getTopAlbumsFromFile();
-    var tripsGroups=getTravelsFromFile();
+    var bandsGroups = getTopAlbumsFromFile();
+    var tripsGroups = getTravelsFromFile();
 
- 
-    var users=tripsGroups.map(function(el,i){
-        var user={};
+
+    var users = tripsGroups.map(function (el, i) {
+        var user = {};
         user.email = "amantels@gmail.com";
-        user.password = "D12345A";        
-        user.active = 1;        
-        user.approved = 1;        
+        user.password = "D12345A";
+        user.active = 1;
+        user.approved = 1;
         user.updateDate = "Sun Jan 24 2017 17:19:17 GMT+0300 (Russia TZ 2 Standard Time)";
-        user.bands=bandsGroups[i];
-        user.trips=el;
+        user.bands = bandsGroups[i];
+        user.trips = el;
 
         //buff("***************");
         //buff(user);
@@ -1815,10 +1959,10 @@ function getUsersFromFiles() {
 }
 
 app.get('/save_user_special', (req, res) => {
-    var users=getUsersFromFiles();
+    var users = getUsersFromFiles();
 
-    async.map(users, function(user,callback) {
-        
+    async.map(users, function (user, callback) {
+
         db.collection('users').save(user, (err, result) => {
             if (err) {
                 callback(err, "NOT OK");
@@ -1828,12 +1972,12 @@ app.get('/save_user_special', (req, res) => {
             callback(null, "OK");
         });
 
-    }, function(err, results) {
-        
+    }, function (err, results) {
+
         res.send("OK");
     });
 
 })
 
 
-   
+
