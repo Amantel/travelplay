@@ -49,3 +49,4 @@ node_modules/
 node_modules/lodash/fp/pathEq.js
 npm-debug.log.1136748337
 tech/
+/nbproject/private/

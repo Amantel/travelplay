@@ -80,10 +80,11 @@ var db;
 MongoClient.connect(mongo_url, (err, database) => {
     if (err) return buff(err)
     db = database
-    app.listen(3000, () => {
-        buff('listening on 3000');
+    app.listen(8001, () => {
+        buff('listening on 8001');
     //    GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
    sheduledFind();
+  //later.setInterval(sheduledFind, later.parse.text('every 20 secs'));
                 /*
         db.collection('users').find(
                     { active: { $eq: 1 } }
@@ -110,6 +111,7 @@ MongoClient.connect(mongo_url, (err, database) => {
 }) 
  
 
+ 
 
 
 
@@ -521,29 +523,12 @@ app.get('/spotifycallback', (req, res) => {
 
 app.get('/index', (req, res) => {
     sess = req.session;
-
-
-    modelCurrent.res = res;
-
     res.render('index.ejs', { session: sess, auth_url: settings.spotifyApiUrl });
-
-
 })
 
 app.get('/', (req, res) => {
     sess = req.session;
-
-
-
-
-    modelCurrent.res = res;
-
-
-
-
     res.render('index.ejs', { session: sess, auth_url: settings.spotifyApiUrl });
-
-
 })
 
 
@@ -1364,7 +1349,7 @@ app.get('/protected', (req, res) => {
 
 
 //SongKick for non US, Eventful & TicketMaster for US.
-function findEvents(user) {
+function findFakeEvents(user,time) {
     var trips=user.trips || null;
     var bands=user.bands || null;
 
@@ -1384,18 +1369,17 @@ function findEvents(user) {
         buff("bands to few for test");
         return false;
     }
-
     trips.forEach(function (trip) {
         var apiUrl="";
         apiUrl="http://testurl.text/"+"?city="+trip.city+"&start="+trip.start+"&end="+trip.end;
          
         if(isUS(trip.country)) {
             //Eventful + Tickemaster
-             GetfakeCall(apiUrl,trip,artistList,user);
+             GetfakeCall(apiUrl,trip,artistList,user,time);
             
         } else {
             //SongKick
-             GetfakeCall(apiUrl,trip,artistList,user);
+             GetfakeCall(apiUrl,trip,artistList,user,time);
         }
        
        
@@ -1406,7 +1390,6 @@ function findEvents(user) {
 
 }
 
-
 function sheduledFind() {
 
 
@@ -1414,13 +1397,16 @@ function sheduledFind() {
 
 //GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
     //
+
+    var time=new Date();
+
     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
 
         if (!err && (result.length > 0)) {
             
             result.forEach(function(user){
  
-                findEvents(user);
+                findFakeEvents(user,time);
             })
              
          }
@@ -1434,7 +1420,7 @@ function sheduledFind() {
 
 //GetfakeCall("APIURL",{},[],{});
 
-function GetfakeCall(apiUrl,trip,artistList,user) {
+function GetfakeCall(apiUrl,trip,artistList,user,time) {
     if(artistList.length==0) {
         for(i=0;i<21;i++) {
             artistList.push("band name X="+i);
@@ -1474,7 +1460,7 @@ function GetfakeCall(apiUrl,trip,artistList,user) {
     // buff("***************************");
     //buff(foundEvents);    
     
-    var folder_name=new Date().toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_');
+    var folder_name=time.toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_')+"/"+user._id+"/"+"_"+foundEvents.length+"_"+trip.city+new Date().toISOString().slice(0,19).replace(/:/g, '_').replace(/-/g, '_');
     var dir="./tech/"+folder_name+"/";
     fs.ensureDir(dir, function (err) {
         if(err) {
@@ -1496,7 +1482,8 @@ function GetfakeCall(apiUrl,trip,artistList,user) {
                 }
 
                 //buff("The file was saved!");
-            });              
+            });             
+
             fs.writeFile(dir+"found.json", JSON.stringify(foundEvents), function (err) {
                 if (err) {
                     buff(err);

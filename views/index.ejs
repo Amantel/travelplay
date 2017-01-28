@@ -487,6 +487,7 @@ function eraseCookie(name) {
             }
             if(readCookie("tripItAuthTry")) {
                 $("#Tripit").click(); 
+                console.log("go tripit 1");
                 eraseCookie("tripItAuthTry");
             }
  
@@ -555,6 +556,7 @@ function eraseCookie(name) {
 
         $("#Tripit").click(function(e){
                     e.preventDefault();
+                    console.log("go trup")
                     var auth_url=$(this).attr("href");
                     $.ajax({
                             type: "GET",
