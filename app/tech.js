@@ -6,6 +6,7 @@ module.exports.sendMail=sendMail;
 module.exports.generatePass=generatePass;
 module.exports.logError=logError;
 module.exports.randomString=randomString;
+module.exports.isUS=isUS;
 
 const nodemailer = require('nodemailer');
 const fs = require('fs-extra');
@@ -15,6 +16,7 @@ const ObjectID = mongodb.ObjectID;
 
 /*Inner modules*/
 const server = require("./index");
+const settings = require("./settings");
 
 
 
@@ -39,16 +41,14 @@ function saveEvents(user, foundEvents, trip) {
             if (err) {
                 buff(err);
             }
-
-
             //buff('saved to database')
             var html = '<html><body>'
                 + 'id = ' + id
-                + ' Visit <a href="http://localhost:3000/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'
+                + ' Visit <a href="http://localhost:8001/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'
                 + ' in ' + trip.city + ' city '
                 + '</body></html>';
 
-            sendMail(server.settings.adminMail, "New matches on TravelPlay", html);
+            sendMail(settings.adminMail, "New matches on TravelPlay", html);
         });
 
 
@@ -156,4 +156,13 @@ function logError(err, result) {
 
 function generatePass() {
     return Math.random().toString(36).slice(-8);
+}
+
+function isUS(country) {
+    country = country.toLowerCase();
+    if (country == "us" || country == "united states")
+        return true;
+    else
+        return false;
+
 }

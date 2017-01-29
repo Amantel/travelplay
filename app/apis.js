@@ -1,21 +1,41 @@
-module.exports.findSongKickEvents = findSongKickEventsStart;
+module.exports.findSongKickEvents = findSongKickEvents_city;
+
 
 const request = require('request');
 const async = require('async');
 
+const SpotifyWebApi = require('spotify-web-api-node');
+
 /*Inner modules*/
 const tech = require("./tech");
 const server = require("./index");
+const settings = require("./settings");
 
 
-function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocationUrl) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function findSongKickEvents_city(apiUrl, trip, artistList, user, time,apiLocationUrl) {
 
     var cityName = encodeURI(trip.city);
 
 
 
     async.waterfall([
-
         function (callback) {
             var url = apiLocationUrl.replace("CITY_NAME", cityName);
 

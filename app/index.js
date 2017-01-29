@@ -1,6 +1,4 @@
 
-var epicBuffer = "";
-
 const express = require('express');
 const bodyParser = require('body-parser')
 
@@ -18,58 +16,25 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
 /*Inner modules*/
-const apis=require("./apis");
-const tech=require("./tech");
+const apis = require("./apis");
+const tech = require("./tech");
+const settings = require("./settings");
+const fakes = require("./fakes");
 
 
-const TripItApiClient = require("tripit-node");
-var TripItClient = new TripItApiClient("a90d6eda3798d491a24bb57fcaa5bb4cd10642e5", "9653c259420ba6c242527151175d01ded2765f5a");
-var requestTokenSecrets = {};
 
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('public'));
 app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }, resave: true, saveUninitialized: true }))
-
-
 var sess;
 
 
+ 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-var client_id = '75ff063399cf492199d40d630060fbce'; // Your client id
-var client_secret = 'a9b8d76f15ef497aa27b8596d9b372be'; // Your secret
-var redirect_uri = 'http://localhost:8001/spotifycallback'; // Your redirect uri
-
-
-
-
-var SpotifyWebApi = require('spotify-web-api-node');
-
-// credentials are optional
-var spotifyApi = new SpotifyWebApi({
-    clientId: client_id,
-    clientSecret: client_secret,
-    redirectUri: redirect_uri
-});
-var scopes = ['user-read-private', 'user-read-email', 'user-follow-read'];
-var state = 'test-state';
-
-
-const mongodb=require('mongodb');
+const mongodb = require('mongodb');
 
 const MongoClient = mongodb.MongoClient
 const ObjectID = mongodb.ObjectID;
@@ -81,143 +46,35 @@ var db;
 
 
 MongoClient.connect(mongo_url, (err, database) => {
-    if (err) return buff(err)
+    if (err) return console.log(err)
     db = database
     app.listen(8001, () => {
-    module.exports.app=app;
-    module.exports.db=db;
+        module.exports.app = app;
+        module.exports.db = db;
 
-        buff('listening on 8001');
-        //startServer();
+        console.log('listening on 8001');
+        //startServer(false);
     })
 })
+
+
+
+
+
+
  
-
-
-
-
-
-var useModules = {};
-useModules.useTripIt = true;
-useModules.useSpotify = true;
-
-useModules.useBandsInTown = false;
-useModules.useTicketMaster = false;
-useModules.useTicketMasterEurope = false;
-useModules.useSongKick = false;
-useModules.useEventful = false;
-
 
 var modelCurrent = {};
 
-var settings = {};
 
-settings.appUrl = "http://localhost:8001/";
-
-settings.adminMail = "amantels@gmail.com";
-
-settings.superSecretKey = "Bfsd39_ersxddg";
-
-settings.BandsInTownUrl = "http://api.bandsintown.com/artists/ARTIST_NAME/events/recommended.json?api_version=2.0&app_id=TRAVELPLAY_ID" +
-    "&location=Stockholm"
-    + "&radius=10&date=2017-01-01,2017-06-31";
-
-settings.BandsInTownTimeOut = true;
-settings.BandsInTownTimeOutTime = 100;
-
-
-settings.TicketMasterKey = "F2JzydFhRbFjtW3DG3lNQXjDNCzzZujN";
-
-
-settings.TicketMasterUrl = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=" + settings.TicketMasterKey
-    + "&startDateTime=2017-02-01T09:15:00Z&endDateTime=2017-02-28T20:15:00Z"
-    + "&size=20"
-    + "&city=New%20York"
-    + "&classificationId=KZFzniwnSyZfZ7v7nJ";
-
-
-settings.TicketMasterEuropeRows = 20;
-settings.TicketMasterEuropeUrl = "https://livenation-test.apigee.net/mfxapi-stage/events?apikey=" + settings.TicketMasterKey
-    + "&eventdate_from=2016-01-01T10:00:00Z"
-    + "&rows=" + settings.TicketMasterEuropeRows
-    + "&domain_ids=sweden"
-    + "&category_ids=10001";
-
-
-
-settings.SongKickKey = "7czFd6q870oymybH";
-
-settings.SongKickUrl = "http://api.songkick.com/api/3.0/metro_areas/"
-    + "CITY_ID" //Stockholm 32252
-    + "/calendar.json"
-    + "?apikey=" + settings.SongKickKey
-    + "&page=PAGE_NUMBER";
-
-
-settings.SongKickLocationUrl = "http://api.songkick.com/api/3.0/search/locations.json"
-    + "?query=CITY_NAME" //Stockholm
-    + "&apikey=" + settings.SongKickKey;
-
-settings.SongKickStartDate = "2017-01-01";
-settings.SongKickEndtDate = "2017-06-30";
-
-settings.testBands = ["rage", "accept", "voltaire", "metallica", "tessa lark", "insurance test 3", "perry", "anthrax", "sing-a-long"];
-
-settings.tripItCallback = "http://localhost:8001/tripitcallback";
-
-
-settings.eventfulApiKey = "XTVn27FZsPVWTKdx";
-settings.eventfulURL = "http://api.eventful.com/json/events/search?app_key=" + settings.eventfulApiKey + "&location=Stockholm&date=2017010100-2017068001&category=music&page_size=20"; //250
-
-
-settings.spotifyApiUrl = spotifyApi.createAuthorizeURL(scopes, state);
-
-
-module.exports.settings=settings;
-
-
-function startServer() {
-     sheduledFind();
-    /*
-      var textSched = later.parse.text('every 5 min');
-console.log(textSched);
-       textSched = later.parse.text('every 60 min');
-console.log(textSched);
- textSched = later.parse.text('every 60 mins');
-console.log(textSched);
- textSched = later.parse.text('every 50 mins');
-console.log(textSched);
- textSched = later.parse.text('every 60 mins');
-console.log(textSched);
- textSched = later.parse.text('every 8 h');
-console.log(textSched);
-*/
- //   sheduledFind();
-   // later.setInterval(sheduledFind, later.parse.text('every 1 h'));
-
-    //    GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
-    //
-    /*
-db.collection('users').find(
-        { active: { $eq: 1 } }
-        , (err, result) => {
-             result.forEach(function(user){
-                 buff(user.email);
-             });
-           
-         });               
-   */
-    /*
-        db.collection('users').update(
-            { active: { $eq: 1 } },  
-            { $set: { code:randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') }} ,
-            { multi: true }
  
-            , (err, result) => {
-                 
-              //  buff(result);
-             });        
-*/
+
+function startServer(doSchedule) {
+    if (!doSchedule) {
+        ScheduledFind();
+    } else {
+        later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
+    }
 }
 
 
@@ -234,9 +91,9 @@ app.post('/save_user', (req, res) => {
     db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
 
         if (!err) {
-            //buff(result)
+            //console.log(result)
             if (result.length > 0) {
-                buff("There is this email");
+                console.log("There is this email");
                 json["_id"] = new ObjectID(result[0]._id);
                 db.collection('users').update({ _id: json["_id"] }, { $set: { trips: json.trips, bands: json.bands } }
                     , (err, result) => {
@@ -244,14 +101,14 @@ app.post('/save_user', (req, res) => {
                             res.send({ error: err });
                         }
 
-                        buff('saved to database')
+                        console.log('saved to database')
                         res.send("OK");
                     });
 
 
             }
             else {
-                buff("New User. No email found");
+                console.log("New User. No email found");
                 json.password = generatePass();
                 json.code = randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
                 db.collection('users').save(json, (err, result) => {
@@ -259,7 +116,7 @@ app.post('/save_user', (req, res) => {
                         res.send({ error: err });
                     }
 
-                    buff('saved to database')
+                    console.log('saved to database')
                     res.send("OK");
                 });
             }
@@ -286,22 +143,13 @@ app.post('/save_user', (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
 app.get('/tripitrequesttoken', (req, res) => {
-
-    TripItClient.getRequestToken().then(function (results) {
+    var sess = req.session;
+    settings.tripItClient.getRequestToken().then(function (results) {
         var token = results[0],
             secret = results[1];
-        requestTokenSecrets[token] = secret;
-        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" + settings.tripItCallback;
+        sess.requestTokenSecrets[token] = secret;
+        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" +settings.appUrl+ settings.tripItCallback;
 
         res.redirect(requestUrl);
     }, function (error) {
@@ -311,13 +159,13 @@ app.get('/tripitrequesttoken', (req, res) => {
 });
 
 
-app.get('/tripitcallback', (req, res) => {
+app.get('/'+settings.tripItCallback, (req, res) => {
     var sess = req.session;
     //res.send({oauth_token:req.query.oauth_token});
     var token = req.query.oauth_token,
-        secret = requestTokenSecrets[token],
+        secret = sess.requestTokenSecrets[token],
         verifier = null;
-    TripItClient.getAccessToken(token, secret, verifier).then(function (results) {
+    settings.tripItClient.getAccessToken(token, secret, verifier).then(function (results) {
         var accessToken = results[0],
             accessTokenSecret = results[1];
 
@@ -368,10 +216,10 @@ app.all('/login', (req, res) => {
 
             if (!err) {
                 if (result.length > 0) {
-                    buff("USER FOUND");
+                    console.log("USER FOUND");
 
                     if (result[0].approved) {
-                        buff("USER AUTHED");
+                        console.log("USER AUTHED");
                         sess.auth = "1"; //AUTH COMPLETED
                         sess.authed_user = result[0];
                         sess.authed_user.current_auth = sess.auth;
@@ -379,7 +227,7 @@ app.all('/login', (req, res) => {
                     } else {
                         sess.auth = "0";
                         sess.authed_user = {};
-                        buff("Not approved");
+                        console.log("Not approved");
                         res.render('login.ejs', { authError: "User not approved", authSuccess: "" })
 
                     }
@@ -387,7 +235,7 @@ app.all('/login', (req, res) => {
                 else {
                     sess.auth = "0";
                     sess.authed_user = {};
-                    buff("Wrong credentials");
+                    console.log("Wrong credentials");
                     res.render('login.ejs', { authError: "Wrong credentials", authSuccess: "" });
                 }
 
@@ -406,7 +254,7 @@ app.all('/login', (req, res) => {
 
             if (!err) {
                 if (result.length > 0) {
-                    buff("USER FOUND");
+                    console.log("USER FOUND");
                     res.render('login.ejs', { authError: "EMAIL IN USE", authSuccess: "" });
                 }
                 else {
@@ -423,7 +271,7 @@ app.all('/login', (req, res) => {
                             res.render('login.ejs', { authError: err, authSuccess: "" });
                         }
 
-                        buff('saved to database');
+                        console.log('saved to database');
 
                         var html = '<html><body>Visit <a href="http://localhost:8001/users" target="_blank"> here </a></body></html>';
 
@@ -469,7 +317,7 @@ app.post("/approve_user", (req, res) => {
                     res.send({ error: err });
                 }
 
-                buff('saved to database');
+                console.log('saved to database');
 
                 if ((req.body.email || null) && approved) {
                     var password = (req.body.password || null)
@@ -527,14 +375,14 @@ app.get('/users', (req, res) => {
 app.get('/spotifycallback', (req, res) => {
     sess = req.session;
 
-    if (spotifyApi.getAccessToken()) {
+    if (settings.spotifyApi.getAccessToken()) {
         sess.spotifyAuthed = true;
         res.redirect('/');
     }
     else {
-        spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
-            spotifyApi.setAccessToken(authInfo.body['access_token']);
-            spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
+        settings.spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
+            settings.spotifyApi.setAccessToken(authInfo.body['access_token']);
+            settings.spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
             sess.spotifyAuthed = true;
             res.redirect('/');
         });
@@ -562,9 +410,7 @@ app.get('/', (req, res) => {
 
 app.get('/tripittrips', (req, res) => {
     sess = req.session;
-
-
-    TripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
+    settings.tripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
         var response = JSON.parse(results[0]);
         var trips = [];
         response.Trip.forEach(function (pre_trip) {
@@ -578,7 +424,7 @@ app.get('/tripittrips', (req, res) => {
 
         res.render('trips.ejs', { tripItResult: trips });
     }).catch(function (reason) {
-        buff(reason);
+        console.log(reason);
         res.send({ result: [], err: "App not authed in TripIt" });
     });
 
@@ -588,12 +434,12 @@ app.get('/tripittrips', (req, res) => {
 app.get('/getspotifyartists', (req, res) => {
     sess = req.session;
 
-    if (spotifyApi.getAccessToken()) {
-        spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+    if (settings.spotifyApi.getAccessToken()) {
+        settings.spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
             var found_artists = basicInfo.body.artists.items;
             var all_artists;
             Promise.all(found_artists.map(function (artist) {
-                return spotifyApi.getArtistRelatedArtists(artist.id);
+                return settings.spotifyApi.getArtistRelatedArtists(artist.id);
             })).then(function (allRelatedArtists) {
                 for (i = 0; i < found_artists.length; i++)
                     found_artists[i].related = allRelatedArtists[i].body.artists;
@@ -619,7 +465,7 @@ app.get('/getspotifyartists', (req, res) => {
                     return 0;
                 })
 
-                buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
+                console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
 
                 //res.send({result:all_artists.distinct_list, err:""});
                 res.render('artists.ejs', { spotifyResult: all_artists.distinct_list });
@@ -637,12 +483,12 @@ app.get('/getspotifyartists', (req, res) => {
 
 
 function getFollowedArtistsAndRelated() {
-    buff("*********************getFollowedArtistsAndRelated**************************");
-    spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+    console.log("*********************getFollowedArtistsAndRelated**************************");
+    settings.spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
         var found_artists = basicInfo.body.artists.items;
         var all_artists;
         Promise.all(found_artists.map(function (artist) {
-            return spotifyApi.getArtistRelatedArtists(artist.id);
+            return settings.spotifyApi.getArtistRelatedArtists(artist.id);
         })).then(function (allRelatedArtists) {
             for (i = 0; i < found_artists.length; i++)
                 found_artists[i].related = allRelatedArtists[i].body.artists;
@@ -668,8 +514,8 @@ function getFollowedArtistsAndRelated() {
                 return 0;
             })
 
-            //buff(all_artists.distinct_list);
-            buff("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
+            //console.log(all_artists.distinct_list);
+            console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
             sess.spotifyResult = all_artists.distinct_list;
             modelCurrent.res.redirect("/");
             //findEvents(all_artists.distinct_list);
@@ -681,15 +527,15 @@ function getFollowedArtistsAndRelated() {
 
 
 function getFollowedArtists() {
-    buff("*********************getFollowedArtists**************************");
+    console.log("*********************getFollowedArtists**************************");
 
-    spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+    settings.spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
         var found_artists = basicInfo.body.artists.items;
         var all_artists;
 
         all_artists = found_artists;
         all_artists.distinct_list = all_artists.map(function (elem) { return elem.name.toLowerCase() });
-        buff("Followed (c) Spotify: " + all_artists.distinct_list.length);
+        console.log("Followed (c) Spotify: " + all_artists.distinct_list.length);
 
         //findEvents(all_artists.distinct_list);
     });
@@ -701,34 +547,34 @@ function findEventsOld(artistList) {
 
 
     if (useModules.useBandsInTown) {
-        buff("*********************BandsInTown**************************");
+        console.log("*********************BandsInTown**************************");
         findBandsinTownEvents(artistList, settings.BandsInTownTimeOut);
 
     }
     else if (useModules.useTicketMaster) {
-        buff("*********************TicketMaster**************************");
+        console.log("*********************TicketMaster**************************");
         makeRequest(settings.TicketMasterUrl, artistList, findTicketsTicketMaster, callbackErrorGeneral);
 
     }
     else if (useModules.useTicketMasterEurope) {
-        buff("*********************TicketMasterEurope**************************");
+        console.log("*********************TicketMasterEurope**************************");
         findTicketMasterEuropeEventsStart(artistList, "", "");
 
 
 
     }
     else if (useModules.useSongKick) {
-        buff("*********************SongKick**************************");
+        console.log("*********************SongKick**************************");
         findSongKickEventsStart(artistList);
 
     }
     else if (useModules.useEventful) {
-        buff("*********************Eventful**************************");
+        console.log("*********************Eventful**************************");
         makeRequest(settings.eventfulURL, artistList, findEventfulStart, callbackErrorGeneral);
 
     }
     else {
-        buff("*********************No Event Source**************************");
+        console.log("*********************No Event Source**************************");
         modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
     }
 
@@ -738,151 +584,12 @@ function findEventsOld(artistList) {
 
 
 
-function findSongKickEventsTotal(data) {
-    var json = JSON.parse(data);
-    var totalEntries = json.resultsPage.totalEntries;
-    if (!totalEntries)
-        totalEntries = 0;
-    return totalEntries;
-}
-
-function getSongKickEventsCity(data) {
-    var json = JSON.parse(data);
-    var totalEntries = json.resultsPage.totalEntries;
-    if (!totalEntries)
-        totalEntries = 0;
-    if (totalEntries > 0) {
-        return json.resultsPage.results.location[0].metroArea.id;
-    } else {
-        return 0;
-    }
-}
-
-
-
-function makeKickRequest(pageNumber, callback) {
-    var cityID = modelCurrent.KickcityID;
-    makeRequest(settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber)), { callback: callback }, findSongKickEventsPage, callbackErrorGeneral);
-}
-
-function findSongKickEventsPage(data) {
-
-    var foundEvents = [];
-    var json = JSON.parse(data);
-
-
-    //buff("data");
-    //buff(json.length);
-
-    //HERE BE SOME ERROR CATCHING
-    foundEvents = json.resultsPage.results.event.filter(function (elem, i, array) {
-        return elem.performance.length > 0;
-    }).map(function (elem) {
-        return { "event_title": elem.performance[0].displayName, "event": elem };
-    });
-
-    return foundEvents;
-}
 
 
 
 
 
-function findBandsinTownEvents(artistList, timeOut = true) {
-    iteratorMarker = 0;
-    if (!artistList)
-        artistList = ["rage"]; //dummy list
 
-    var requestFunction;
-    if (timeOut)
-        requestFunction = makeBandRequestTimeOut;
-    else
-        requestFunction = makeBandRequest;
-
-    //Serial
-    async.mapSeries(artistList, requestFunction, function (err, results) {
-        //True async    
-        //async.map(artistList, requestFunction, function (err, results) {
-        if (err) {
-            buff("*********************FINISHED WITH ERROR**************************");
-            buff("iteratorMarker " + iteratorMarker);
-            buff(err);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-        } else {
-            var events = results.filter(function (elem, i, array) {
-                return elem.length > 0;
-            });
-            //remove inner arrays
-            events = events.map(function (elem) {
-                return elem[0];
-            });
-
-
-            //Filter with unique IDs
-            uniqueIds = [];
-            events = events.filter(function (elem, i, array) {
-                if (uniqueIds.indexOf(elem.event.id) >= 0)
-                    return false;
-                else
-                    uniqueIds.push(elem.event.id);
-                return true;
-            });
-
-
-
-
-            buff("Results: " + results.length);
-            buff("Events: " + events.length);
-            buff("*********************FINISHED WITH SUCCESS*********************");
-
-            //buff(events);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
-        }
-    });
-
-
-}
-function makeBandRequest(artistName, callback) { //callback is callback for async
-    //buff("Searching for "+artistName);    
-    makeRequest(settings.BandsInTownUrl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackErrorGeneral);
-
-}
-
-
-function makeBandRequestTimeOut(artistName, callback) {
-
-    setTimeout(function () {
-        //buff("Searching for "+artistName);    
-        makeRequest(settings.BandsInTownUrl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackErrorGeneral);
-    }, Math.random() * settings.BandsInTownTimeOutTime);
-}
-
-
-function findBrandsinTownEvent(data) { //sync function
-
-    var foundEvents = [];
-    var json = JSON.parse(data);
-
-    iteratorMarker++
-
-    //buff("data");
-    //buff(json.length);
-
-    if (json && json.length > 0 && (typeof (json.errors) == "undefined")) {
-        foundEvents = json.map(function (elem) {
-            return { "event_title": elem.title, "event": elem };
-        });
-    } else {
-        if (typeof (json) == "object" && json.errors && json.errors.length > 0) {
-            //If error return immediately
-            return json.errors[0]; //if not UNKNOWN ARTIST! TODO
-        }
-    }
-    return foundEvents;
-}
 
 
 
@@ -900,8 +607,8 @@ function findEventfulEventsPage(data) {
     var json = JSON.parse(data);
 
 
-    //buff("data");
-    //buff(json.length);
+    //console.log("data");
+    //console.log(json.length);
 
     //HERE BE SOME ERROR CATCHING
     foundEvents = json.events.event.map(function (elem) {
@@ -925,9 +632,9 @@ function findEventfulStart(data, url, artistList) {
 
         async.map(pagesArray, makeEventfulRequest, function (err, results) {
             if (err) {
-                buff("*********************FINISHED WITH ERROR**************************");
-                buff("iteratorMarker " + iteratorMarker);
-                buff(err);
+                console.log("*********************FINISHED WITH ERROR**************************");
+                console.log("iteratorMarker " + iteratorMarker);
+                console.log(err);
                 modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
 
             } else {
@@ -944,11 +651,11 @@ function findEventfulStart(data, url, artistList) {
 
                 });
 
-                buff("Results: " + flattened.length);
-                buff("Events: " + events.length);
-                buff("*********************FINISHED WITH SUCCESS*********************");
+                console.log("Results: " + flattened.length);
+                console.log("Events: " + events.length);
+                console.log("*********************FINISHED WITH SUCCESS*********************");
 
-                //buff(events);
+                //console.log(events);
                 modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
 
@@ -963,16 +670,16 @@ function findEventfulStart(data, url, artistList) {
 }
 
 function findEventfulFinish(eventsArray, artistList) {
-    buff("Eventful Finish");
+    console.log("Eventful Finish");
     if (eventsArray.length == 0)
         modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
     else {
-        buff("Total " + eventsArray.event.length);
+        console.log("Total " + eventsArray.event.length);
 
         foundEvents = eventsArray.event.map(function (elem) {
             return { "event_title": elem.title, "event": elem };
         });
-        buff("Total foundEvents " + foundEvents.length);
+        console.log("Total foundEvents " + foundEvents.length);
         var events = foundEvents.filter(function (elem, i, array) {
             if (elem.event_title != undefined) {
                 return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
@@ -980,7 +687,7 @@ function findEventfulFinish(eventsArray, artistList) {
             return false;
 
         });
-        buff("Events " + events.length);
+        console.log("Events " + events.length);
         modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
     }
@@ -997,11 +704,11 @@ function findTicketsTicketMaster(data, url, artistList) {
 
 
     var json = JSON.parse(data);
-    buff("Results: " + json._embedded.events.length);
-    buff("Total: " + json.page.totalElements);
+    console.log("Results: " + json._embedded.events.length);
+    console.log("Total: " + json.page.totalElements);
     if (json.page.totalElements < 1) {
-        buff("*********************FINISHED WITH SUCCESS*********************");
-        buff("*********************ZERO EVENTS FOUND*********************");
+        console.log("*********************FINISHED WITH SUCCESS*********************");
+        console.log("*********************ZERO EVENTS FOUND*********************");
 
         modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
 
@@ -1014,9 +721,9 @@ function findTicketsTicketMaster(data, url, artistList) {
 
     async.map(pagesArray, makeTicketMasterRequest, function (err, results) {
         if (err) {
-            buff("*********************FINISHED WITH ERROR**************************");
-            buff("iteratorMarker " + iteratorMarker);
-            buff(err);
+            console.log("*********************FINISHED WITH ERROR**************************");
+            console.log("iteratorMarker " + iteratorMarker);
+            console.log(err);
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
 
         } else {
@@ -1033,11 +740,11 @@ function findTicketsTicketMaster(data, url, artistList) {
 
             });
 
-            buff("Results: " + flattened.length);
-            buff("Events: " + events.length);
-            buff("*********************FINISHED WITH SUCCESS*********************");
+            console.log("Results: " + flattened.length);
+            console.log("Events: " + events.length);
+            console.log("*********************FINISHED WITH SUCCESS*********************");
 
-            //buff(events);
+            //console.log(events);
             modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
 
 
@@ -1059,8 +766,8 @@ function findTicketMasterPage(data) {
     var json = JSON.parse(data);
 
 
-    //buff("data");
-    //buff(json.length);
+    //console.log("data");
+    //console.log(json.length);
 
     //HERE BE SOME ERROR CATCHING
     foundEvents = json._embedded.events.map(function (elem) {
@@ -1075,105 +782,12 @@ function findTicketMasterPage(data) {
 
 
 
-function findTicketMasterEuropeEvents(pagesArray, artistList, dates = "", city = "") {
-
-
-    async.map(pagesArray, (pageNumber, callback) => {
-        makeRequest(settings.TicketMasterEuropeUrl + "&start=" + pageNumber, { callback: callback }, (data) => {
-            return foundEvents = JSON.parse(data).events.map(function (elem) {
-                return { "event_title": elem.name, "event": elem };
-            });
-        }, callbackErrorGeneral);
-    }, function (err, results) {
-        if (err) {
-            buff("*********************FINISHED WITH ERROR**************************");
-            buff(err);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-        } else {
-            var flattened = results.reduce(function (a, b) {
-                return a.concat(b);
-            });
-            //filter by bands
-            var events = flattened.filter(function (elem, i, array) {
-                if (elem.event_title != undefined) {
-                    return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                }
-                return false;
-
-            });
-
-            buff("Results: " + flattened.length);
-            buff("Events: " + events.length);
-            buff("*********************FINISHED WITH SUCCESS*********************");
-
-            //buff(events);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
-        }
-    });
-
-}
-
-
-
-
-
-
-function findTicketMasterEuropeEventsStart(artistList, dates = "", city = "") {
-
-    //1 CHANGE URL WITH DATE AND CITY 
-    //----
-
-    async.waterfall([
-        //2 GET TOTAL ITEMS           
-        function (callback) {
-            var url = settings.TicketMasterEuropeUrl;
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    if (JSON.parse(body).pagination.total > 0) {
-                        callback(null, JSON.parse(body).pagination.total);
-                    } else {
-                        //ZERO EVENTS FOUND
-                        modelCurrent.res.render('index.ejs', { result: { "events": [] } });
-                        return false;
-                    }
-                } else {
-                    if (error)
-                        callback(error, 0);
-                    else if (response.statusCode != 200)
-                        callback("statusCode = " + response.statusCode, 0);
-                }
-            })
-        }
-        //GET EVENTS
-    ], function (err, totalEntries) {
-        if (!err) {
-
-            var N = Math.ceil(totalEntries / settings.TicketMasterEuropeRows);
-            var pagesArray = Array(N * 1).fill(0).map((e, i) => i * settings.TicketMasterEuropeRows);
-
-            findTicketMasterEuropeEvents(pagesArray, artistList, dates, city);
-
-
-        } else {
-            buff("ERROR");
-            buff(err);
-        }
-
-
-    });
-
-
-}
-
 app.get('/deactivate', (req, res) => {
     sess = req.session;
     if (sess.auth == 1) {
         if (sess.authed_user) {
             var id = new ObjectID(sess.authed_user._id);
-            buff(id);
+            console.log(id);
 
             db.collection('users').update({ _id: id }, { $set: { active: 0 } }
                 , (err, result) => {
@@ -1181,7 +795,7 @@ app.get('/deactivate', (req, res) => {
                         res.send({ error: err });
                     }
 
-                    buff('deactivated')
+                    console.log('deactivated')
                     res.send("OK");
                 });
         }
@@ -1195,13 +809,13 @@ app.get('/deactivate', (req, res) => {
 app.get('/protected', (req, res) => {
     sess = req.session;
     var r = req.query.r || null;
- 
+
 
     if (sess.auth > 0)
         if (r)
             res.redirect("/" + r);
         else {
-            res.send("authed");            
+            res.send("authed");
         }
     else {
         //here we try auth
@@ -1213,10 +827,10 @@ app.get('/protected', (req, res) => {
 
                 if (!err) {
                     if (result.length > 0) {
-                        buff("USER FOUND");
+                        console.log("USER FOUND");
 
                         if (result[0].approved) {
-                            buff("USER AUTHED");
+                            console.log("USER AUTHED");
                             sess.auth = "1"; //AUTH COMPLETED
                             sess.authed_user = result[0];
                             sess.authed_user.current_auth = sess.auth;
@@ -1225,12 +839,12 @@ app.get('/protected', (req, res) => {
                             else
                                 //res.send(sess.authed_user);   
                                 res.send(sess.authed_user.matches);
-                                console.log(sess.authed_user.matches.length);
+                            console.log(sess.authed_user.matches.length);
 
                         } else {
                             sess.auth = "0";
                             sess.authed_user = {};
-                            buff("Not approved");
+                            console.log("Not approved");
                             if (r)
                                 res.redirect("/" + r);
                             else
@@ -1240,7 +854,7 @@ app.get('/protected', (req, res) => {
                     else {
                         sess.auth = "0";
                         sess.authed_user = {};
-                        buff("Wrong credentials");
+                        console.log("Wrong credentials");
                         if (r)
                             res.redirect("/" + r);
                         else
@@ -1278,7 +892,7 @@ function findEvents(user, time) {
     var bands = user.bands || null;
 
     if (!trips || !bands) {
-        buff("nothing to search for");
+        console.log("nothing to search for");
         return false;
     }
 
@@ -1288,7 +902,7 @@ function findEvents(user, time) {
     });
 
     if (artistList.length < 20) {
-        buff("bands to few for test");
+        console.log("bands to few for test");
         return false;
     }
     trips.forEach(function (trip) {
@@ -1300,7 +914,7 @@ function findEvents(user, time) {
 
         } else {
             //SongKick
-            apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time,settings.SongKickLocationUrl);
+            apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
 
             //GetfakeCall(apiUrl,trip,artistList,user,time);
         }
@@ -1316,7 +930,7 @@ function findEvents(user, time) {
 
 
 
-function sheduledFind() {
+function ScheduledFind() {
 
     var time = new Date();
 
@@ -1331,61 +945,14 @@ function sheduledFind() {
 
         }
         else {
-            return buff(err);
+            return console.log(err);
         }
     });
 
 
 }
 
-//GetfakeCall("APIURL",{},[],{});
-
-function GetfakeCall(apiUrl, trip, artistList, user, time) {
-    if (artistList.length == 0) {
-        for (i = 0; i < 21; i++) {
-            artistList.push("band name X=" + i);
-        }
-    }
-    //OK we have JSON with X (11-60) "events". Let us populate them.
-
-    var bandNameFound1 = artistList[Math.floor(Math.random() * 8) + 1];
-    var bandNameFound2 = artistList[Math.floor(Math.random() * 10) + 8];
-
-    var N = Math.round(Math.random() * 50) + 10;
-    var fakeEvents = [];
-    var foundEvents = [];
-    for (i = 0; i < N; i++) {
-
-        var event = {};
-        event.id = randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-        event.text = "RANDOM TEXT FOR TEST";
-        event.date = "RANDOM DATE FOR TEST";
-
-        if (Math.floor(Math.random() * 10) + 1 == 10) {
-
-            if (Math.round(Math.random()) == 1)
-                event.text = bandNameFound1;
-            else
-                event.text = bandNameFound2;
-
-            foundEvents.push(event);
-        }
-
-
-        fakeEvents.push(event);
-    }
-    if (foundEvents.length > 0)
-        saveEvents(user, foundEvents, trip);
-
-    logEvents(time, user, trip, apiUrl, fakeEvents, foundEvents);
-    // buff(fakeEvents);
-    // buff("***************************");
-    //buff(foundEvents);    
-
-
-
-
-}
+ 
 
 
 
@@ -1393,7 +960,7 @@ function GetfakeCall(apiUrl, trip, artistList, user, time) {
 
 
 //saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ
-//buff(randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')); 
+//console.log(randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')); 
 function randomString(length, chars) {
     var result = '';
     for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
@@ -1425,7 +992,7 @@ function sendMail(email, subject, html) {
 
     transporter.sendMail(mailData);
 
-    // buff('mail sent');
+    // console.log('mail sent');
     return true;
 
 };
@@ -1436,7 +1003,7 @@ function sendMail(email, subject, html) {
 
 
 function makeRequest(url, params, callbackSuccess, callbackError) {
-    //buff("making request to URL: "+url);
+    //console.log("making request to URL: "+url);
 
     //gather httpParams start
     var url_instance = new URIlib.URI(url);
@@ -1469,169 +1036,8 @@ function makeRequest(url, params, callbackSuccess, callbackError) {
 
 }
 
-
-
-
-function callbackErrorGeneral(e) {
-    buff("Callback Error:");
-    buff(e);
-}
-
-
-
-
-
-
-
-
-
-function logError(err, result) {
-    if (err) {
-        buff("");
-        buff("Error: ");
-        buff(err);
-        console.trace();
-        buff("");
-    }
-}
-
-
-
-function buff(object) {
-    console.log(object);
-    if (object && typeof (object) != "string")
-        epicBuffer += "\n\r" + object.toString();
-    else
-        epicBuffer += "\n\r" + object;
-}
-
-
-function generatePass() {
-    return Math.random().toString(36).slice(-8);
-}
-
-
  
-/*FAKE FUNCTIONS*/
 
-//- FOR TOP ALBUMS;
-//getTopAlbums(200);
-function getTopAlbums(n) {
-    var url = "https://itunes.apple.com/us/rss/topalbums/limit=" + n + "/json";
-    request(url, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            var json = JSON.parse(body);
-            var artists = [];
-            json.feed.entry.forEach(function (entry) {
-                artists.push(entry["im:artist"].label);
-            });
-
-            artists = Array.from(new Set(artists));
-
-            fs.writeFile("../bands.json", artists, function (err) {
-                if (err) {
-                    return buff(err);
-                }
-
-                buff("The file was saved!");
-            });
-
-
-        }
-    })
-}
-
-//getTopAlbumsFromFile();
-
-function getTopAlbumsFromFile() {
-    var array = fs.readFileSync("bands.json").toString().split(',');
-    array = array.map(function (el, i) {
-
-        return { "band": el.toLowerCase(), "additional_info": { "band_name_original": el } }
-
-
-    });
-
-    var groupSize = Math.ceil(array.length / 5); //split to 5 users
-
-
-    var groups = array.map(function (item, index) {
-
-        return index % groupSize === 0 ? array.slice(index, index + groupSize) : null;
-    })
-        .filter(function (item) {
-            return item;
-
-        });
-    return groups;
-}
-
-
-
-//!!! Be careful with non UTF symbols Test Them
-//getTravelsFromFile();
-function getTravelsFromFile() {
-    var json = JSON.parse(fs.readFileSync("travelsShort.json").toString());
-
-
-    var trips = json.map(function (el, i) {
-        el.start = el.date;
-        delete el.date;
-        var date_start = new Date(el.start)
-        var date_end = new Date(date_start.setDate(date_start.getDate() + Math.round(Math.random() * 37 + 2)));
-        el.end = date_end.toISOString().substring(0, 10);
-        return el;
-    });
-
-    var groupSize = Math.ceil(trips.length / 5); //split to 5 users
-
-
-    var groups = trips.map(function (item, index) {
-
-        return index % groupSize === 0 ? trips.slice(index, index + groupSize) : null;
-    })
-        .filter(function (item) {
-            return item;
-
-        });
-
-    return groups;
-
-}
-
-function isUS(country) {
-    country = country.toLowerCase();
-    if (country == "us" || country == "united states")
-        return true;
-    else
-        return false;
-
-}
-
-
-function getUsersFromFiles() {
-    var bandsGroups = getTopAlbumsFromFile();
-    var tripsGroups = getTravelsFromFile();
-
-
-    var users = tripsGroups.map(function (el, i) {
-        var user = {};
-        user.email = "amantels@gmail.com";
-        user.password = "D12345A";
-        user.active = 1;
-        user.approved = 1;
-        user.updateDate = "Sun Jan 24 2017 17:19:17 GMT+0300 (Russia TZ 2 Standard Time)";
-        user.bands = bandsGroups[i];
-        user.trips = el;
-
-        //buff("***************");
-        //buff(user);
-        return user;
-
-    });
-    return users;
-
-}
 
 app.get('/save_user_special', (req, res) => {
     var users = getUsersFromFiles();
@@ -1643,7 +1049,7 @@ app.get('/save_user_special', (req, res) => {
                 callback(err, "NOT OK");
             }
 
-            buff('saved to database')
+            console.log('saved to database')
             callback(null, "OK");
         });
 
