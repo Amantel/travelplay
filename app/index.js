@@ -8,9 +8,7 @@ const http = require('http');
 const https = require("https");
 const URIlib = require('./URI')
 const url = require('url');
-const fs = require('fs-extra');
 
-const nodemailer = require('nodemailer');
 const later = require('later');
 
 const request = require('request');
@@ -18,6 +16,10 @@ const async = require('async');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+
+/*Inner modules*/
+const apis=require("./apis");
+const tech=require("./tech");
 
 
 const TripItApiClient = require("tripit-node");
@@ -50,7 +52,7 @@ var sess;
 
 var client_id = '75ff063399cf492199d40d630060fbce'; // Your client id
 var client_secret = 'a9b8d76f15ef497aa27b8596d9b372be'; // Your secret
-var redirect_uri = 'http://localhost:3000/spotifycallback'; // Your redirect uri
+var redirect_uri = 'http://localhost:8001/spotifycallback'; // Your redirect uri
 
 
 
@@ -67,10 +69,11 @@ var scopes = ['user-read-private', 'user-read-email', 'user-follow-read'];
 var state = 'test-state';
 
 
+const mongodb=require('mongodb');
 
+const MongoClient = mongodb.MongoClient
+const ObjectID = mongodb.ObjectID;
 
-const MongoClient = require('mongodb').MongoClient
-var ObjectID = require('mongodb').ObjectID;
 
 var mongo_url = "mongodb://root:1234@ds111589.mlab.com:11589/travel_play";
 
@@ -81,13 +84,14 @@ MongoClient.connect(mongo_url, (err, database) => {
     if (err) return buff(err)
     db = database
     app.listen(8001, () => {
+    module.exports.app=app;
+    module.exports.db=db;
+
         buff('listening on 8001');
-        startServer();
-
-
+        //startServer();
     })
 })
-
+ 
 
 
 
@@ -108,7 +112,7 @@ var modelCurrent = {};
 
 var settings = {};
 
-settings.appUrl = "http://localhost:3000/";
+settings.appUrl = "http://localhost:8001/";
 
 settings.adminMail = "amantels@gmail.com";
 
@@ -159,21 +163,40 @@ settings.SongKickEndtDate = "2017-06-30";
 
 settings.testBands = ["rage", "accept", "voltaire", "metallica", "tessa lark", "insurance test 3", "perry", "anthrax", "sing-a-long"];
 
-settings.tripItCallback = "http://localhost:3000/tripitcallback";
+settings.tripItCallback = "http://localhost:8001/tripitcallback";
 
 
 settings.eventfulApiKey = "XTVn27FZsPVWTKdx";
-settings.eventfulURL = "http://api.eventful.com/json/events/search?app_key=" + settings.eventfulApiKey + "&location=Stockholm&date=2017010100-2017063000&category=music&page_size=20"; //250
+settings.eventfulURL = "http://api.eventful.com/json/events/search?app_key=" + settings.eventfulApiKey + "&location=Stockholm&date=2017010100-2017068001&category=music&page_size=20"; //250
 
 
 settings.spotifyApiUrl = spotifyApi.createAuthorizeURL(scopes, state);
 
 
+module.exports.settings=settings;
+
+
 function startServer() {
-    sheduledFind();
+     sheduledFind();
+    /*
+      var textSched = later.parse.text('every 5 min');
+console.log(textSched);
+       textSched = later.parse.text('every 60 min');
+console.log(textSched);
+ textSched = later.parse.text('every 60 mins');
+console.log(textSched);
+ textSched = later.parse.text('every 50 mins');
+console.log(textSched);
+ textSched = later.parse.text('every 60 mins');
+console.log(textSched);
+ textSched = later.parse.text('every 8 h');
+console.log(textSched);
+*/
+ //   sheduledFind();
+   // later.setInterval(sheduledFind, later.parse.text('every 1 h'));
 
     //    GetfakeCall("APIURL",{},[],{_id:"588738df79ec3c0b3409d8ef",code:"saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ"});
-    //later.setInterval(sheduledFind, later.parse.text('every 20 secs'));
+    //
     /*
 db.collection('users').find(
         { active: { $eq: 1 } }
@@ -394,7 +417,7 @@ app.all('/login', (req, res) => {
                     new_user.email = req.body.email;
                     new_user.trips = [];
                     new_user.bands = [];
-                    new_user.update = new Date().toString();
+                    new_user.update = new Date();
                     db.collection('users').save(new_user, (err, result) => {
                         if (err) {
                             res.render('login.ejs', { authError: err, authSuccess: "" });
@@ -402,7 +425,7 @@ app.all('/login', (req, res) => {
 
                         buff('saved to database');
 
-                        var html = '<html><body>Visit <a href="http://localhost:3000/users" target="_blank"> here </a></body></html>';
+                        var html = '<html><body>Visit <a href="http://localhost:8001/users" target="_blank"> here </a></body></html>';
 
                         sendMail(settings.adminMail, "New registration on TravelPlay", html);
 
@@ -713,247 +736,6 @@ function findEventsOld(artistList) {
 }
 */
 
-
-
-function findSongKickEventsStart(apiUrl, trip, artistList, user, time) {
-
-    var cityName = encodeURI(trip.city);
-    //buff(cityName);
-
-
-    async.waterfall([
-
-        function (callback) {
-            var url = settings.SongKickLocationUrl.replace("CITY_NAME", cityName);
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    var json = JSON.parse(body);
-                    var totalEntries = json.resultsPage.totalEntries;
-                    if (!totalEntries)
-                        totalEntries = 0;
-                    if (totalEntries > 0) {
-                        buff(cityName + "  " + json.resultsPage.results.location[0].metroArea.id)
-                        callback(null, json.resultsPage.results.location[0].metroArea.id);
-                    } else {
-                        buff(cityName + "  " + "city not found")
-                        callback("city not found", 0);
-                    }
-                }
-            })
-        },
-
-        function (cityID, callback) {
-            buff("*****>");
-            var url = settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", 1);
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    var json = JSON.parse(body);
-                    var totalEntries = json.resultsPage.totalEntries;
-                    if (!totalEntries)
-                        totalEntries = 0;
-                    callback(null, totalEntries, cityID);
-                }
-            })
-
-        }
-
-    ], function (err, totalEntries, cityID) {
-        if (err) {
-            buff(err);
-        }
-        else {
-
-            buff("totalEntries " + totalEntries);
-            buff("cityID " + cityID);
-
-            var N = Math.ceil(totalEntries / 50);
-            var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
-            findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time);
-        }
-
-
-    });
-}
-
-
-/*
-function findSongKickEventsStart(artistList) {
-    iteratorMarker = 0;
-    if (!artistList)
-        artistList = ["rage"];
-
-
-
-
-    var cityName = "Stockholm";
-    buff("cityName " + cityName);
-
-
-    async.waterfall([
-
-        function (callback) {
-            var url = settings.SongKickLocationUrl.replace("CITY_NAME", cityName);
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    var json = JSON.parse(body);
-                    var totalEntries = json.resultsPage.totalEntries;
-                    if (!totalEntries)
-                        totalEntries = 0;
-                    if (totalEntries > 0) {
-
-                        callback(null, json.resultsPage.results.location[0].metroArea.id);
-                    } else {
-                        callback("city not found", 0);
-                    }
-                }
-            })
-        },
-
-        function (cityID, callback) {
-            var url = settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", 1);
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    var json = JSON.parse(body);
-                    var totalEntries = json.resultsPage.totalEntries;
-                    if (!totalEntries)
-                        totalEntries = 0;
-                    callback(null, totalEntries, cityID);
-                }
-            })
-
-        }
-
-    ], function (err, totalEntries, cityID) {
-        buff("totalEntries " + totalEntries);
-        buff("cityID " + cityID);
-
-        var N = Math.ceil(totalEntries / 50);
-        var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
-        findSongKickEventsFinal(artistList, cityID, pagesArray);
-
-    });
-}
-
-
-
-
-
-function findSongKickEventsFinal(artistList, cityID, pagesArray) {
-    var requestFunction = makeKickRequest;
-    modelCurrent.KickcityID = cityID;
-    async.map(pagesArray, requestFunction, function (err, results) {
-        if (err) {
-            buff("*********************FINISHED WITH ERROR**************************");
-            buff("iteratorMarker " + iteratorMarker);
-            buff(err);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-        } else {
-            var flattened=[];    
-            var events=[];
-            if(results.length>0) {
-                var flattened = results.reduce(function (a, b) {
-                    return a.concat(b);
-                });
-                //filter by dates
-                var events = flattened.filter(function (elem, i, array) {
-                    if (elem.event !== undefined && elem.event.start !== undefined) {
-                        return new Date(elem.event.start.date) >= new Date(settings.SongKickStartDate) && new Date(elem.event.start.date) <= new Date(settings.SongKickEndtDate);
-                    }
-                    return false;
-
-                });
-                //filter by bands
-                var events = events.filter(function (elem, i, array) {
-                    if (elem.event_title != undefined) {
-                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                    }
-                    return false;
-
-                });
-
-            }
-            buff("Results: " + flattened.length);
-            buff("Events: " + events.length);
-            buff("*********************FINISHED WITH SUCCESS*********************");
-
-
-            //buff(events);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
-        }
-    });
-
-
-}
-
-*/
-
-function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time) {
-    async.map(pagesArray,
-        (function (pageNumber, callback) {
-            makeRequest(settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber)), { callback: callback }, findSongKickEventsPage, callbackErrorGeneral);
-        })
-        , function (err, results) {
-            if (err) {
-                buff("*********************FINISHED WITH ERROR**************************");
-                buff("iteratorMarker " + iteratorMarker);
-                buff(err);
-            } else {
-                var flattened = [];
-                var events = [];
-                if (results.length > 0) {
-
-                    var flattened = results.reduce(function (a, b) {
-                        return a.concat(b);
-                    });
-
-                    //here we ignore everything and just get few random events
-                    /*
-                    //filter by dates
-                    events = flattened.filter(function (elem, i, array) {
-                        if (elem.event !== undefined && elem.event.start !== undefined) {
-                            return new Date(elem.event.start.date) >= new Date(settings.SongKickStartDate) && new Date(elem.event.start.date) <= new Date(settings.SongKickEndtDate);
-                        }
-                        return false;
-    
-                    });
-                    //filter by bands
-                    events = events.filter(function (elem, i, array) {
-                        if (elem.event_title != undefined) {
-                            return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                        }
-                        return false;
-    
-                    });
-                    */
-
-                    var N = Math.floor(Math.random() * Math.min(10, flattened.length)) + 0;
-                    for (i = 0; i < N; i++) {
-                        var X = Math.floor(Math.random() * flattened.length) + 1;
-                        events.push(flattened[X]);
-                    }
-
-
-                }
-                buff("Results: " + flattened.length);
-                buff("Events: " + events.length);
-                buff("*********************FINISHED WITH SUCCESS*********************");
-
-                apiUrl = settings.SongKickUrl.replace("CITY_ID", cityID);
-                if (events.length > 0)
-                    saveEvents(user, events, trip); 
-
-                logEvents(time, user, trip, apiUrl, results, events);
-
-
-
-            }
-        });
-
-
-}
 
 
 function findSongKickEventsTotal(data) {
@@ -1413,12 +1195,14 @@ app.get('/deactivate', (req, res) => {
 app.get('/protected', (req, res) => {
     sess = req.session;
     var r = req.query.r || null;
+ 
 
     if (sess.auth > 0)
         if (r)
             res.redirect("/" + r);
-        else
-            res.send("authed");
+        else {
+            res.send("authed");            
+        }
     else {
         //here we try auth
         if ((req.query.code || null)) {
@@ -1441,6 +1225,7 @@ app.get('/protected', (req, res) => {
                             else
                                 //res.send(sess.authed_user);   
                                 res.send(sess.authed_user.matches);
+                                console.log(sess.authed_user.matches.length);
 
                         } else {
                             sess.auth = "0";
@@ -1515,7 +1300,7 @@ function findEvents(user, time) {
 
         } else {
             //SongKick
-            findSongKickEventsStart(apiUrl, trip, artistList, user, time);
+            apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time,settings.SongKickLocationUrl);
 
             //GetfakeCall(apiUrl,trip,artistList,user,time);
         }
@@ -1602,79 +1387,6 @@ function GetfakeCall(apiUrl, trip, artistList, user, time) {
 
 }
 
-function logEvents(time, user, trip, apiUrl, fakeEvents, foundEvents) {
-    //buff("logging");
-    var folder_name = time.toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
-    var dir = "./tech/" + folder_name + "/";
-    fs.ensureDir(dir, function (err) {
-        if (err) {
-            buff(err) // => null  
-            return false;
-        } else {
-            fs.writeFile(dir + "result.json", JSON.stringify(fakeEvents), function (err) {
-                if (err) {
-                    buff(err);
-                    return false;
-                }
-
-                //buff("The file was saved!");
-            });
-            fs.writeFile(dir + "apiurl.json", apiUrl, function (err) {
-                if (err) {
-                    buff(err);
-                    return false;
-                }
-
-                //buff("The file was saved!");
-            });
-
-            fs.writeFile(dir + "found.json", JSON.stringify(foundEvents), function (err) {
-                if (err) {
-                    buff(err);
-                    return false;
-                }
-
-                // buff("The file was saved!");
-            });
-        }
-
-
-    })
-}
-
-
-
-function saveEvents(user, foundEvents, trip) {
-    var id = new ObjectID(user._id);
-    var code = user.code || "";
-    foundEvents = foundEvents.map(function (el, i) {
-        var match = {};
-        match.event = el;
-        match.date = new Date().toString();
-        return match;
-    });
-
-
-
-    db.collection('users').update({ _id: id }, { $push: { matches: { $each: foundEvents } } }
-        , (err, result) => {
-            if (err) {
-                buff(err);
-            }
-
-
-            //buff('saved to database')
-            var html = '<html><body>'
-                + 'id = ' + id
-                + ' Visit <a href="http://localhost:3000/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'
-                + ' in ' + trip.city + ' city '
-                + '</body></html>';
-
-            sendMail(settings.adminMail, "New matches on TravelPlay", html);
-        });
-
-
-}
 
 
 /*HELPER FUNCTIONS*/
@@ -1799,44 +1511,7 @@ function generatePass() {
 }
 
 
-
-function asyncExample() {
-
-
-
-    async.waterfall([
-
-        function (callback) {
-            var url = settings.SongKickLocationUrl.replace("CITY_NAME", cityName);
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    if (totalEntries > 0) {
-
-                        callback(null, json.resultsPage.results.location[0].metroArea.id); //CHECK. JSON, not BODY???
-                    } else {
-                        callback("city not found", 0);
-                    }
-                }
-            })
-        },
-
-        function (cityID, callback) {
-            var url = settings.SongKickUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", 1);
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    callback(null, totalEntries, cityID);
-                }
-            })
-
-        }
-
-    ], function (err, totalEntries, cityID) {
-        findSongKickEventsFinal(artistList, cityID, pagesArray);
-
-    });
-
-}
-
+ 
 /*FAKE FUNCTIONS*/
 
 //- FOR TOP ALBUMS;
