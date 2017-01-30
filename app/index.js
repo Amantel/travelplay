@@ -49,12 +49,19 @@ var db;
 
 MongoClient.connect(mongo_url, (err, database) => {
     if (err) return console.log(err)
-    db = database
+    db = database;
+
+
     app.listen(8001, () => {
         module.exports.app = app;
         module.exports.db = db;
 
         console.log('listening on 8001');
+
+        tech.addIdsToTrips();
+
+
+
         //startServer(false);
     })
 })

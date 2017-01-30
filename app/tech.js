@@ -7,6 +7,7 @@ module.exports.generatePass=generatePass;
 module.exports.logError=logError;
 module.exports.randomString=randomString;
 module.exports.isUS=isUS;
+module.exports.addIdsToTrips=addIdsToTrips;
 
 const nodemailer = require('nodemailer');
 const fs = require('fs-extra');
@@ -95,6 +96,35 @@ function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents) {
     })
 }
 
+
+function addIdsToTrips() {
+         server.db.collection('users').find().toArray(function (err, result) {
+
+            if (!err) {
+                    for(i=0;i<result.length;i++) {
+                        id = new ObjectID(result[i]._id);
+                        var trips=result[i].trips;
+                        trips=trips.map(function(el,i){
+                            trip=el;
+                            if(!el.id)
+                                trip.id=randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                            return trip;
+                        });                        
+
+                        server.db.collection('users').update({ _id: id }, { $set: { trips: trips } }
+                            , (err, result) => {
+                                if (err) {
+                                    console.log(err);
+                                }
+
+                                console.log('updated database')
+                                
+                            });
+
+                    }
+            }
+        });
+}
 
 
 
