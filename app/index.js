@@ -57,11 +57,7 @@ MongoClient.connect(mongo_url, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on 8001');
-
-        tech.addIdsToTrips();
-
-
-
+     
         //startServer(false);
     })
 })
