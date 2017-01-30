@@ -207,3 +207,193 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 
 
+
+
+
+
+
+
+
+
+
+function makeEventfulRequest(pageNumber, callback) {
+    makeRequest(settings.eventfulURL + "&page_number=" + pageNumber, { callback: callback }, findEventfulEventsPage, callbackErrorGeneral);
+}
+
+function findEventfulEventsPage(data) {
+
+    var foundEvents = [];
+    var json = JSON.parse(data);
+
+
+    //console.log("data");
+    //console.log(json.length);
+
+    //HERE BE SOME ERROR CATCHING
+    foundEvents = json.events.event.map(function (elem) {
+        return { "event_title": elem.title, "event": elem };
+    });
+
+    return foundEvents;
+}
+
+
+function findEventfulStart(data, url, artistList) {
+    var json = JSON.parse(data);
+    var pages = json.page_count;
+
+    if (pages && pages == 1)
+        findEventfulFinish(json.events, artistList);
+    if (!pages)
+        findEventfulFinish([], artistList);
+    if (pages > 1) {
+        var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
+
+        async.map(pagesArray, makeEventfulRequest, function (err, results) {
+            if (err) {
+                console.log("*********************FINISHED WITH ERROR**************************");
+                console.log("iteratorMarker " + iteratorMarker);
+                console.log(err);
+                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
+
+            } else {
+                var flattened = results.reduce(function (a, b) {
+                    return a.concat(b);
+                });
+
+                //filter by bands
+                var events = flattened.filter(function (elem, i, array) {
+                    if (elem.event_title != undefined) {
+                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                    }
+                    return false;
+
+                });
+
+                console.log("Results: " + flattened.length);
+                console.log("Events: " + events.length);
+                console.log("*********************FINISHED WITH SUCCESS*********************");
+
+                //console.log(events);
+                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+
+
+            }
+        });
+
+    }
+
+
+
+
+}
+
+function findEventfulFinish(eventsArray, artistList) {
+    console.log("Eventful Finish");
+    if (eventsArray.length == 0)
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
+    else {
+        console.log("Total " + eventsArray.event.length);
+
+        foundEvents = eventsArray.event.map(function (elem) {
+            return { "event_title": elem.title, "event": elem };
+        });
+        console.log("Total foundEvents " + foundEvents.length);
+        var events = foundEvents.filter(function (elem, i, array) {
+            if (elem.event_title != undefined) {
+                return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+            }
+            return false;
+
+        });
+        console.log("Events " + events.length);
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+
+    }
+
+}
+
+
+
+
+
+
+
+function findTicketsTicketMaster(data, url, artistList) {
+
+
+    var json = JSON.parse(data);
+    console.log("Results: " + json._embedded.events.length);
+    console.log("Total: " + json.page.totalElements);
+    if (json.page.totalElements < 1) {
+        console.log("*********************FINISHED WITH SUCCESS*********************");
+        console.log("*********************ZERO EVENTS FOUND*********************");
+
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
+
+        return false;
+    }
+
+
+    var pages = json.page.totalPages;
+    var pagesArray = Array(pages * 1).fill(0).map((e, i) => i);
+
+    async.map(pagesArray, makeTicketMasterRequest, function (err, results) {
+        if (err) {
+            console.log("*********************FINISHED WITH ERROR**************************");
+            console.log("iteratorMarker " + iteratorMarker);
+            console.log(err);
+            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
+
+        } else {
+            var flattened = results.reduce(function (a, b) {
+                return a.concat(b);
+            });
+
+            //filter by bands
+            var events = flattened.filter(function (elem, i, array) {
+                if (elem.event_title != undefined) {
+                    return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                }
+                return false;
+
+            });
+
+            console.log("Results: " + flattened.length);
+            console.log("Events: " + events.length);
+            console.log("*********************FINISHED WITH SUCCESS*********************");
+
+            //console.log(events);
+            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+
+
+        }
+    });
+
+}
+
+
+
+function makeTicketMasterRequest(pageNumber, callback) {
+    makeRequest(settings.TicketMasterUrl + "&page=" + pageNumber, { callback: callback }, findTicketMasterPage, callbackErrorGeneral);
+}
+
+
+
+function findTicketMasterPage(data) {
+    var foundEvents = [];
+    var json = JSON.parse(data);
+
+
+    //console.log("data");
+    //console.log(json.length);
+
+    //HERE BE SOME ERROR CATCHING
+    foundEvents = json._embedded.events.map(function (elem) {
+        return { "event_title": elem.name, "event": elem };
+    });
+
+    return foundEvents;
+}
+
+

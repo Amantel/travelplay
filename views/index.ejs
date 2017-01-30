@@ -78,6 +78,35 @@
                         }
                    
                           %>
+                    <%
+                    if(tripItResult) { 
+                    var trips=tripItResult;
+                    
+                    
+
+                    for(i=0;i<trips.length; i++) {  
+                        var trip=trips[i];
+                    %>
+                    
+                        <div class="trip" data-trip>
+                            <label for="trip_<%=i%>">
+                                <input type="checkbox"  data-trip_active
+                                    checked="checked" id="trip_<%=i%>" />
+                                    <span class="trip_city_text"><%=trip.city%></span> 
+                                    <span class="trip_country_text"><%=trip.country%></span> 
+                                    <span class="trip_start_text"><%=trip.start%></span> 
+                                    <span class="trip_start_text"><%=trip.end%></span> 
+                                    </label>
+                            <input type="hidden" data-trip_city value="<%= trip.city%>">
+                            <input type="hidden" data-trip_country value="<%= trip.country  %>">
+                            <input type="hidden" data-trip_start value="<%= trip.start%>">
+                            <input type="hidden" data-trip_end value="<%= trip.end%>">
+                        </div>
+
+                        <%
+                    }
+                    }
+                        %>                          
 
 
 
@@ -125,7 +154,25 @@
 
 
                               <% }   %>
+                                <%
+                                if(spotifyResult) { 
+                                bands=spotifyResult;
 
+                                for(i=0;i<bands.length; i++) {
+                                    var band=bands[i];
+                                %>
+                                        <div class="band" data-band>
+                                            <label for="band_<%=i%>">
+                                                <input type="checkbox" data-band_active class="band_active"
+                                                checked="checked" id="band_<%=i%>" value="<%=band%>"  />
+                                                <%=band%>
+                                    </label>
+                                        </div>
+
+
+                                    <% }  
+                                    
+                                } %>
 
               
                     </div>
@@ -480,18 +527,7 @@ function eraseCookie(name) {
 
     $(function () {
 
-        function start() {
-            if(readCookie("spotifyAuthTry")) {
-                $("#Spotify").click(); 
-                eraseCookie("spotifyAuthTry");
-            }
-            if(readCookie("tripItAuthTry")) {
-                $("#Tripit").click(); 
-                console.log("go tripit 1");
-                eraseCookie("tripItAuthTry");
-            }
  
-        }
 
 
          
@@ -529,7 +565,7 @@ function eraseCookie(name) {
                 alert("One field is empty");
             }
         });
-
+/*
         $("#Spotify").click(function(e){
             e.preventDefault();
             var auth_url=$(this).attr("href");
@@ -540,12 +576,10 @@ function eraseCookie(name) {
                     //console.log(data);
                     var result=data.responseText;
                     if(data.responseJSON && data.responseJSON.err) {
-                        createCookie("spotifyAuthTry",1,1);
                         window.location.replace(auth_url);
                     } else {
                         //console.log(result);
                         $("[data-bands]").html(result);
-                        eraseCookie("spotifyAuthTry");
                     }
 
                 },
@@ -553,7 +587,8 @@ function eraseCookie(name) {
             });            
 
         })
-
+        */
+/*
         $("#Tripit").click(function(e){
                     e.preventDefault();
                     console.log("go trup")
@@ -577,7 +612,7 @@ function eraseCookie(name) {
                             dataType: 'json'
                         });            
        })
-
+*/
 
         $("#brb").click(function (e) {
             e.preventDefault();
@@ -664,7 +699,7 @@ function eraseCookie(name) {
 
         })
 
-                start();  
+             // start();  
 
     });
 

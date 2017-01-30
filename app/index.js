@@ -22,6 +22,8 @@ const settings = require("./settings");
 const fakes = require("./fakes");
 
 
+var SpotifyWebApi = require('spotify-web-api-node');
+var tripItApiClient = require("tripit-node");
 
 
 const app = express();
@@ -141,44 +143,7 @@ app.post('/save_user', (req, res) => {
 
 
 
-
-
-app.get('/tripitrequesttoken', (req, res) => {
-    var sess = req.session;
-    settings.tripItClient.getRequestToken().then(function (results) {
-        var token = results[0],
-            secret = results[1];
-        sess.requestTokenSecrets[token] = secret;
-        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" +settings.appUrl+ settings.tripItCallback;
-
-        res.redirect(requestUrl);
-    }, function (error) {
-        res.send(error);
-    });
-
-});
-
-
-app.get('/'+settings.tripItCallback, (req, res) => {
-    var sess = req.session;
-    //res.send({oauth_token:req.query.oauth_token});
-    var token = req.query.oauth_token,
-        secret = sess.requestTokenSecrets[token],
-        verifier = null;
-    settings.tripItClient.getAccessToken(token, secret, verifier).then(function (results) {
-        var accessToken = results[0],
-            accessTokenSecret = results[1];
-
-        sess.tripItAccessToken = accessToken;
-        sess.tripItAccessTokenSecret = accessTokenSecret;
-
-        res.redirect("/");
-
-    }, function (error) {
-        res.send(error);
-    });
-
-});
+ 
 
 
 
@@ -336,11 +301,6 @@ app.post("/approve_user", (req, res) => {
 app.get('/users', (req, res) => {
 
     sess = req.session;
-
-
-
-
-
     db.collection('users').find().toArray(function (err, result) {
 
         if (!err) {
@@ -358,8 +318,6 @@ app.get('/users', (req, res) => {
             res.render('users.ejs', { result: result });
 
 
-
-
         }
         else {
             res.send({ error: err });
@@ -372,29 +330,9 @@ app.get('/users', (req, res) => {
 
 
 
-app.get('/spotifycallback', (req, res) => {
-    sess = req.session;
 
-    if (settings.spotifyApi.getAccessToken()) {
-        sess.spotifyAuthed = true;
-        res.redirect('/');
-    }
-    else {
-        settings.spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
-            settings.spotifyApi.setAccessToken(authInfo.body['access_token']);
-            settings.spotifyApi.setRefreshToken(authInfo.body['refresh_token']);
-            sess.spotifyAuthed = true;
-            res.redirect('/');
-        });
-    }
-
-});
-
-
-
-
-
-
+ 
+ 
 
 app.get('/index', (req, res) => {
     sess = req.session;
@@ -403,11 +341,81 @@ app.get('/index', (req, res) => {
 
 app.get('/', (req, res) => {
     sess = req.session;
-    res.render('index.ejs', { session: sess, auth_url: settings.spotifyApiUrl });
+    res.render('index.ejs', { session: sess, 
+        auth_url: settings.spotifyApiUrl, 
+        spotifyResult:sess.spotifyResult,
+        tripItResult:sess.tripItResult
+     });
 })
 
 
+ 
+app.get('/tripitrequesttoken', (req, res) => {
+    var sess = req.session;
+ 
 
+
+    settings.tripItClient.getRequestToken().then(function (results) {
+       
+        var token = results[0],
+            secret = results[1];
+        if(typeof(sess.requestTokenSecrets)=="undefined")    
+            sess.requestTokenSecrets={};
+        sess.requestTokenSecrets[token] = secret;
+        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" +settings.appUrl+ settings.tripItCallback;
+        res.redirect(requestUrl);
+    }, function (error) {
+        res.send(error);
+    });
+
+}); 
+ 
+
+app.get('/'+settings.tripItCallback, (req, res) => {
+    var sess = req.session;
+    //res.send({oauth_token:req.query.oauth_token});
+    var token = req.query.oauth_token,
+        secret = sess.requestTokenSecrets[token],
+        verifier = null;
+    settings.tripItClient.getAccessToken(token, secret, verifier).then(function (results) {
+        var accessToken = results[0],
+            accessTokenSecret = results[1];
+        sess.tripItAccessToken = accessToken;
+        sess.tripItAccessTokenSecret = accessTokenSecret;
+
+
+        settings.tripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
+            var response = JSON.parse(results[0]);
+            var trips = [];
+            response.Trip.forEach(function (pre_trip) {
+                var trip = {};
+                trip.city = pre_trip.PrimaryLocationAddress.city.toLowerCase();
+                trip.start = pre_trip.start_date;
+                trip.end = pre_trip.end_date;
+                trip.country = pre_trip.PrimaryLocationAddress.country.toLowerCase();
+                trips.push(trip);
+            });
+
+//            res.render('trips.ejs', { tripItResult: trips });
+            sess.tripItResult=trips;
+            res.redirect("/");
+        }).catch(function (reason) {
+            console.log(reason);
+            //res.send({ result: [], err: "App not authed in TripIt" });
+             res.redirect("/");
+        });
+
+
+        //res.redirect("/");
+
+    }, function (error) {
+       // res.send(error);
+       console.log(error);
+       res.redirect("/");
+    });
+
+});
+/*
 app.get('/tripittrips', (req, res) => {
     sess = req.session;
     settings.tripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
@@ -429,17 +437,93 @@ app.get('/tripittrips', (req, res) => {
     });
 
 });
+*/
 
 
+
+app.get('/spotifycallback', (req, res) => {
+    sess = req.session;
+
+    if(sess.spotifyAuthed) {
+        res.redirect('/');
+    }
+    else {
+        settings.spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
+            sess.spotifyAccessToken=authInfo.body['access_token'];
+            sess.spotifyAuthed = true;
+
+     var localSpotifyApi = new SpotifyWebApi({
+        accessToken : sess.spotifyAccessToken
+        }); 
+
+
+        localSpotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+            var found_artists = basicInfo.body.artists.items;
+            var all_artists; 
+            Promise.all(found_artists.map(function (artist) {
+                return localSpotifyApi.getArtistRelatedArtists(artist.id);
+            })).then(function (allRelatedArtists) {
+                for (i = 0; i < found_artists.length; i++)
+                    found_artists[i].related = allRelatedArtists[i].body.artists;
+
+
+                all_artists = found_artists;
+                all_artists.distinct_list = [];
+
+                for (i = 0; i < all_artists.length; i++) {
+                    var artist = all_artists[i];
+                    if (all_artists.distinct_list.indexOf(artist.name) < 0)
+                        all_artists.distinct_list.push(artist.name);
+                    for (j = 0; j < artist.related.length; j++) {
+                        var related_artist = artist.related[j];
+                        if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
+                            all_artists.distinct_list.push(related_artist.name);
+                    }
+
+                }
+                all_artists.distinct_list.sort(function (a, b) {
+                    if (a < b) return -1;
+                    if (a > b) return 1;
+                    return 0;
+                })
+
+                console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
+
+                //res.send({result:all_artists.distinct_list, err:""});
+                sess.spotifyResult=all_artists.distinct_list;
+                res.redirect('/');
+            });
+
+        });
+
+            
+        });
+    }
+
+});
+
+
+
+  
+
+/*
 app.get('/getspotifyartists', (req, res) => {
     sess = req.session;
 
-    if (settings.spotifyApi.getAccessToken()) {
-        settings.spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+    if (sess.spotifyAuthed && sess.spotifyAccessToken) {
+
+
+
+        var localSpotifyApi = new SpotifyWebApi({
+        accessToken : sess.spotifyAccessToken
+        }); 
+
+
+        localSpotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
             var found_artists = basicInfo.body.artists.items;
-            var all_artists;
+            var all_artists; 
             Promise.all(found_artists.map(function (artist) {
-                return settings.spotifyApi.getArtistRelatedArtists(artist.id);
+                return localSpotifyApi.getArtistRelatedArtists(artist.id);
             })).then(function (allRelatedArtists) {
                 for (i = 0; i < found_artists.length; i++)
                     found_artists[i].related = allRelatedArtists[i].body.artists;
@@ -479,307 +563,7 @@ app.get('/getspotifyartists', (req, res) => {
     }
 
 });
-
-
-
-function getFollowedArtistsAndRelated() {
-    console.log("*********************getFollowedArtistsAndRelated**************************");
-    settings.spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
-        var found_artists = basicInfo.body.artists.items;
-        var all_artists;
-        Promise.all(found_artists.map(function (artist) {
-            return settings.spotifyApi.getArtistRelatedArtists(artist.id);
-        })).then(function (allRelatedArtists) {
-            for (i = 0; i < found_artists.length; i++)
-                found_artists[i].related = allRelatedArtists[i].body.artists;
-
-
-            all_artists = found_artists;
-            all_artists.distinct_list = [];
-
-            for (i = 0; i < all_artists.length; i++) {
-                var artist = all_artists[i];
-                if (all_artists.distinct_list.indexOf(artist.name) < 0)
-                    all_artists.distinct_list.push(artist.name);
-                for (j = 0; j < artist.related.length; j++) {
-                    var related_artist = artist.related[j];
-                    if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
-                        all_artists.distinct_list.push(related_artist.name);
-                }
-
-            }
-            all_artists.distinct_list.sort(function (a, b) {
-                if (a < b) return -1;
-                if (a > b) return 1;
-                return 0;
-            })
-
-            //console.log(all_artists.distinct_list);
-            console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
-            sess.spotifyResult = all_artists.distinct_list;
-            modelCurrent.res.redirect("/");
-            //findEvents(all_artists.distinct_list);
-        });
-
-    });
-}
-
-
-
-function getFollowedArtists() {
-    console.log("*********************getFollowedArtists**************************");
-
-    settings.spotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
-        var found_artists = basicInfo.body.artists.items;
-        var all_artists;
-
-        all_artists = found_artists;
-        all_artists.distinct_list = all_artists.map(function (elem) { return elem.name.toLowerCase() });
-        console.log("Followed (c) Spotify: " + all_artists.distinct_list.length);
-
-        //findEvents(all_artists.distinct_list);
-    });
-}
-
-/*
-
-function findEventsOld(artistList) {
-
-
-    if (useModules.useBandsInTown) {
-        console.log("*********************BandsInTown**************************");
-        findBandsinTownEvents(artistList, settings.BandsInTownTimeOut);
-
-    }
-    else if (useModules.useTicketMaster) {
-        console.log("*********************TicketMaster**************************");
-        makeRequest(settings.TicketMasterUrl, artistList, findTicketsTicketMaster, callbackErrorGeneral);
-
-    }
-    else if (useModules.useTicketMasterEurope) {
-        console.log("*********************TicketMasterEurope**************************");
-        findTicketMasterEuropeEventsStart(artistList, "", "");
-
-
-
-    }
-    else if (useModules.useSongKick) {
-        console.log("*********************SongKick**************************");
-        findSongKickEventsStart(artistList);
-
-    }
-    else if (useModules.useEventful) {
-        console.log("*********************Eventful**************************");
-        makeRequest(settings.eventfulURL, artistList, findEventfulStart, callbackErrorGeneral);
-
-    }
-    else {
-        console.log("*********************No Event Source**************************");
-        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
-    }
-
-
-}
 */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function makeEventfulRequest(pageNumber, callback) {
-    makeRequest(settings.eventfulURL + "&page_number=" + pageNumber, { callback: callback }, findEventfulEventsPage, callbackErrorGeneral);
-}
-
-function findEventfulEventsPage(data) {
-
-    var foundEvents = [];
-    var json = JSON.parse(data);
-
-
-    //console.log("data");
-    //console.log(json.length);
-
-    //HERE BE SOME ERROR CATCHING
-    foundEvents = json.events.event.map(function (elem) {
-        return { "event_title": elem.title, "event": elem };
-    });
-
-    return foundEvents;
-}
-
-
-function findEventfulStart(data, url, artistList) {
-    var json = JSON.parse(data);
-    var pages = json.page_count;
-
-    if (pages && pages == 1)
-        findEventfulFinish(json.events, artistList);
-    if (!pages)
-        findEventfulFinish([], artistList);
-    if (pages > 1) {
-        var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
-
-        async.map(pagesArray, makeEventfulRequest, function (err, results) {
-            if (err) {
-                console.log("*********************FINISHED WITH ERROR**************************");
-                console.log("iteratorMarker " + iteratorMarker);
-                console.log(err);
-                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-            } else {
-                var flattened = results.reduce(function (a, b) {
-                    return a.concat(b);
-                });
-
-                //filter by bands
-                var events = flattened.filter(function (elem, i, array) {
-                    if (elem.event_title != undefined) {
-                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                    }
-                    return false;
-
-                });
-
-                console.log("Results: " + flattened.length);
-                console.log("Events: " + events.length);
-                console.log("*********************FINISHED WITH SUCCESS*********************");
-
-                //console.log(events);
-                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
-            }
-        });
-
-    }
-
-
-
-
-}
-
-function findEventfulFinish(eventsArray, artistList) {
-    console.log("Eventful Finish");
-    if (eventsArray.length == 0)
-        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
-    else {
-        console.log("Total " + eventsArray.event.length);
-
-        foundEvents = eventsArray.event.map(function (elem) {
-            return { "event_title": elem.title, "event": elem };
-        });
-        console.log("Total foundEvents " + foundEvents.length);
-        var events = foundEvents.filter(function (elem, i, array) {
-            if (elem.event_title != undefined) {
-                return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-            }
-            return false;
-
-        });
-        console.log("Events " + events.length);
-        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-    }
-
-}
-
-
-
-
-
-
-
-function findTicketsTicketMaster(data, url, artistList) {
-
-
-    var json = JSON.parse(data);
-    console.log("Results: " + json._embedded.events.length);
-    console.log("Total: " + json.page.totalElements);
-    if (json.page.totalElements < 1) {
-        console.log("*********************FINISHED WITH SUCCESS*********************");
-        console.log("*********************ZERO EVENTS FOUND*********************");
-
-        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
-
-        return false;
-    }
-
-
-    var pages = json.page.totalPages;
-    var pagesArray = Array(pages * 1).fill(0).map((e, i) => i);
-
-    async.map(pagesArray, makeTicketMasterRequest, function (err, results) {
-        if (err) {
-            console.log("*********************FINISHED WITH ERROR**************************");
-            console.log("iteratorMarker " + iteratorMarker);
-            console.log(err);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-        } else {
-            var flattened = results.reduce(function (a, b) {
-                return a.concat(b);
-            });
-
-            //filter by bands
-            var events = flattened.filter(function (elem, i, array) {
-                if (elem.event_title != undefined) {
-                    return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                }
-                return false;
-
-            });
-
-            console.log("Results: " + flattened.length);
-            console.log("Events: " + events.length);
-            console.log("*********************FINISHED WITH SUCCESS*********************");
-
-            //console.log(events);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
-        }
-    });
-
-}
-
-
-
-function makeTicketMasterRequest(pageNumber, callback) {
-    makeRequest(settings.TicketMasterUrl + "&page=" + pageNumber, { callback: callback }, findTicketMasterPage, callbackErrorGeneral);
-}
-
-
-
-function findTicketMasterPage(data) {
-    var foundEvents = [];
-    var json = JSON.parse(data);
-
-
-    //console.log("data");
-    //console.log(json.length);
-
-    //HERE BE SOME ERROR CATCHING
-    foundEvents = json._embedded.events.map(function (elem) {
-        return { "event_title": elem.name, "event": elem };
-    });
-
-    return foundEvents;
-}
-
-
-
-
 
 
 app.get('/deactivate', (req, res) => {
@@ -954,93 +738,11 @@ function ScheduledFind() {
 
  
 
-
-
-/*HELPER FUNCTIONS*/
-
-
-//saJQKcJuLFAdAklGOrtmzjFNj5q5D6IJ
-//console.log(randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')); 
-function randomString(length, chars) {
-    var result = '';
-    for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
-    return result;
-}
-
-
-
-function sendMail(email, subject, html) {
-
-    var smtpConfig = {
-        host: 'smtp.yandex.ru',
-        port: 465,
-        secure: true, // use SSL
-        auth: {
-            user: 'tp@muchstudio.ru',
-            pass: 'ojR5zSY3D0'
-
-        }
-    };
-    var transporter = nodemailer.createTransport(smtpConfig);
-    var mailData = {
-        from: 'tp@muchstudio.ru',
-        to: email,
-        subject: subject,
-        text: 'Only HTML here, sorry',
-        html: html
-    };
-
-    transporter.sendMail(mailData);
-
-    // console.log('mail sent');
-    return true;
-
-};
-
-
-
-
-
-
-function makeRequest(url, params, callbackSuccess, callbackError) {
-    //console.log("making request to URL: "+url);
-
-    //gather httpParams start
-    var url_instance = new URIlib.URI(url);
-    var transport = (url_instance.getScheme() || "").toLowerCase() === "https" ? https : http;
-    var queryParams = url_instance.parseQuery();
-    var httpParams = {
-        host: url_instance.getAuthority(),
-        headers: { 'user-agent': 'Mozilla/5.0' }
-    }
-    httpParams.path = (url_instance.getPath() || "") + "?" + queryParams.toString();
-    //gather httpParams end
-
-
-
-    var transpot_info = transport.get(httpParams, function (result) {
-        var data = "";
-        result.on("data", function (chunk) {
-            data += chunk;
-        }).on("end", function () {
-            var result = callbackSuccess(data, url, params); //sync function - do something with data (like get city)
-            if (params && typeof (params.callback) == "function") { //if we need async callback - pass result here
-                var err = null;
-                if (typeof (result) == "string")
-                    err = result;
-                params.callback(err, result);
-            }
-        })
-
-    }).on('error', function (e) { callbackError(e, url, params) });
-
-}
-
  
 
 
 app.get('/save_user_special', (req, res) => {
-    var users = getUsersFromFiles();
+    var users = fakes.getUsersFromFiles();
 
     async.map(users, function (user, callback) {
 
