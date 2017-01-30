@@ -13,7 +13,7 @@ const request = require('request');
 const async = require('async');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
-const session = require('express-session');
+const session = require('express-session'); 
 
 /*Inner modules*/
 const apis = require("./apis");
@@ -90,15 +90,39 @@ app.post('/save_user', (req, res) => {
     //check if there is this email
     //db.users.find({active:{$eq:1}}).pretty()
     //
-    db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
+    //if there is no ID in trips, let's add it here;
+    json.trips=json.trips.map(function(el,i){
+        trip=el;
+        if(!el.id)
+            trip.id=tech.randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        return trip;
+    });
+    if(!json.user_id) 
+    {
+        db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
 
-        if (!err) {
-            //console.log(result)
-            if (result.length > 0) {
-                console.log("There is this email");
-                json["_id"] = new ObjectID(result[0]._id);
-                db.collection('users').update({ _id: json["_id"] }, { $set: { trips: json.trips, bands: json.bands } }
-                    , (err, result) => {
+            if (!err) {
+                //console.log(result)
+                if (result.length > 0) {
+                    console.log("We already have this email, so let us update first with it");
+                    json["_id"] = new ObjectID(result[0]._id);
+                    db.collection('users').update({ _id: json["_id"] }, { $set: { trips: json.trips, bands: json.bands } }
+                        , (err, result) => {
+                            if (err) {
+                                res.send({ error: err });
+                            }
+
+                            console.log('saved to database')
+                            res.send("OK");
+                        });
+
+
+                }
+                else {
+                    console.log("New User. No email found");
+                    json.password = generatePass();
+                    json.code = randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                    db.collection('users').save(json, (err, result) => {
                         if (err) {
                             res.send({ error: err });
                         }
@@ -106,35 +130,27 @@ app.post('/save_user', (req, res) => {
                         console.log('saved to database')
                         res.send("OK");
                     });
-
+                }
 
             }
             else {
-                console.log("New User. No email found");
-                json.password = generatePass();
-                json.code = randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-                db.collection('users').save(json, (err, result) => {
-                    if (err) {
-                        res.send({ error: err });
-                    }
+                res.send({ error: err });
 
-                    console.log('saved to database')
-                    res.send("OK");
-                });
             }
+        });
+    } else {
 
+        db.collection('users').update({ _id: new ObjectID(json.user_id) }, { $set: { trips: json.trips, bands: json.bands } }
+            , (err, result) => {
+                if (err) {
+                    res.send({ error: err });
+                }
+                console.log(result);
+                console.log('saved to database')
+                res.send("OK");
+            });
 
-
-
-
-
-        }
-        else {
-            res.send({ error: err });
-
-        }
-    });
-
+    }
 
 })
 
@@ -362,7 +378,7 @@ app.get('/tripitrequesttoken', (req, res) => {
         if(typeof(sess.requestTokenSecrets)=="undefined")    
             sess.requestTokenSecrets={};
         sess.requestTokenSecrets[token] = secret;
-        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" +settings.appUrl+ settings.tripItCallback;
+        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" +settings.appUrl+ "tripitcallback";
         res.redirect(requestUrl);
     }, function (error) {
         res.send(error);
@@ -371,7 +387,7 @@ app.get('/tripitrequesttoken', (req, res) => {
 }); 
  
 
-app.get('/'+settings.tripItCallback, (req, res) => {
+app.get('/tripitcallback', (req, res) => {
     var sess = req.session;
     //res.send({oauth_token:req.query.oauth_token});
     var token = req.query.oauth_token,
@@ -396,48 +412,22 @@ app.get('/'+settings.tripItCallback, (req, res) => {
                 trips.push(trip);
             });
 
-//            res.render('trips.ejs', { tripItResult: trips });
             sess.tripItResult=trips;
             res.redirect("/");
         }).catch(function (reason) {
             console.log(reason);
-            //res.send({ result: [], err: "App not authed in TripIt" });
              res.redirect("/");
         });
 
 
-        //res.redirect("/");
 
     }, function (error) {
-       // res.send(error);
        console.log(error);
        res.redirect("/");
     });
 
 });
-/*
-app.get('/tripittrips', (req, res) => {
-    sess = req.session;
-    settings.tripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
-        var response = JSON.parse(results[0]);
-        var trips = [];
-        response.Trip.forEach(function (pre_trip) {
-            var trip = {};
-            trip.city = pre_trip.PrimaryLocationAddress.city.toLowerCase();
-            trip.start = pre_trip.start_date;
-            trip.end = pre_trip.end_date;
-            trip.country = pre_trip.PrimaryLocationAddress.country.toLowerCase();
-            trips.push(trip);
-        });
-
-        res.render('trips.ejs', { tripItResult: trips });
-    }).catch(function (reason) {
-        console.log(reason);
-        res.send({ result: [], err: "App not authed in TripIt" });
-    });
-
-});
-*/
+ 
 
 
 
@@ -509,68 +499,7 @@ app.get('/spotifycallback', (req, res) => {
 });
 
 
-
-  
-
-/*
-app.get('/getspotifyartists', (req, res) => {
-    sess = req.session;
-
-    if (sess.spotifyAuthed && sess.spotifyAccessToken) {
-
-
-
-        var localSpotifyApi = new SpotifyWebApi({
-        accessToken : sess.spotifyAccessToken
-        }); 
-
-
-        localSpotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
-            var found_artists = basicInfo.body.artists.items;
-            var all_artists; 
-            Promise.all(found_artists.map(function (artist) {
-                return localSpotifyApi.getArtistRelatedArtists(artist.id);
-            })).then(function (allRelatedArtists) {
-                for (i = 0; i < found_artists.length; i++)
-                    found_artists[i].related = allRelatedArtists[i].body.artists;
-
-
-                all_artists = found_artists;
-                all_artists.distinct_list = [];
-
-                for (i = 0; i < all_artists.length; i++) {
-                    var artist = all_artists[i];
-                    if (all_artists.distinct_list.indexOf(artist.name) < 0)
-                        all_artists.distinct_list.push(artist.name);
-                    for (j = 0; j < artist.related.length; j++) {
-                        var related_artist = artist.related[j];
-                        if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
-                            all_artists.distinct_list.push(related_artist.name);
-                    }
-
-                }
-                all_artists.distinct_list.sort(function (a, b) {
-                    if (a < b) return -1;
-                    if (a > b) return 1;
-                    return 0;
-                })
-
-                console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
-
-                //res.send({result:all_artists.distinct_list, err:""});
-                res.render('artists.ejs', { spotifyResult: all_artists.distinct_list });
-
-            });
-
-        });
-    }
-    else {
-        res.send({ result: [], err: "App not authed in Spotify" });
-    }
-
-});
-*/
-
+ 
 
 app.get('/deactivate', (req, res) => {
     sess = req.session;

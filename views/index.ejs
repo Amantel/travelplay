@@ -31,9 +31,13 @@
                             <h2>
                                 HELLO AUTHED USER
                             </h2>
+                            <small><%=session.authed_user._id%></small>
+                             <input type="hidden" data-user_id value="<%=session.authed_user._id%>">
+    
+                             
                             <% } %>
 
-
+                            <a href="/login" id="" class="button red_button">Login</a>
 
                 </div> 
             </div>
@@ -76,10 +80,20 @@
                                      <span class="trip_start_text"><%=trip.start%></span> 
                                      <span class="trip_start_text"><%=trip.end%></span> 
                                      </label>
+
+
                                 <input type="hidden" data-trip_city value="<%= trip.city%>">
                                 <input type="hidden" data-trip_country value="<%= trip.country  %>">
                                 <input type="hidden" data-trip_start value="<%= trip.start%>">
                                 <input type="hidden" data-trip_end value="<%= trip.end%>">
+                                <%
+                                if(trip.id) {
+                                %> 
+                                <input type="hidden" data-trip_id value="<%= trip.id%>">
+                                <%
+                                }
+                                %>
+                                                        
                             </div>
 
                             <%
@@ -97,9 +111,9 @@
                         <div class="hidden" data-show_content>
                             <div data-add_trip_form>
                                 <label><input class="" value="" data-new_city> City</label> <br>
+                                <label><input class="" value="" data-new_country> Country</label> <br>
                                 <label><input class="" value="" data-new_start> Start date</label><br>
                                 <label><input class="" value="" data-new_end> End date</label><br>
-                                <label><input type="checkbox" class="" value="" data-new_us>  US?</label><br>
                                 <a href="#" id="more_trips" class="button red_button">Add a trip</a>
                             </div>
 
@@ -455,37 +469,49 @@ function eraseCookie(name) {
 }
 
 
-        function createTrip(city, start, end, US, i) {
-            return '                   <div class="trip" data-trip>'
-                + '                                <label for="trip_' + i + '">'
-                + '                                    <input type="checkbox"  data-trip_active'
-                + '                                     checked="checked" id="trip_' + i + '" />'
-                + '                                     <span class="trip_city_text">' + city + '</span> '
-                + '                                     <span class="trip_start_text">' + start + '</span> '
-                + '                                     <span class="trip_start_text">' + end + '</span> '
-                + '                                     </label>'
-                + '                                <input type="hidden" data-trip_city value="' + city + '">'
-                + '                                <input type="hidden" data-trip_us value="' + US + '">'
-                + '                                <input type="hidden" data-trip_start value="' + start + '">'
-                + '                                <input type="hidden" data-trip_end value="' + end + '">'
-                + '                            </div>'
-                + '';
-        }
-
-        function createBand(band, i) {
-
-
-            return '<div class="band" data-band>'
-                + '<label for="band_' + i + '">'
-                + '             <input type="checkbox" data-band_active class="band_active"'
-                + '              checked="checked" id="band_' + i + '" value="' + band + '"  />'
-                + '             ' + band + ''
-                + ' </label>'
-                + ' </div>';
+function randomString(length, chars) {
+//randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');     
+    var result = '';
+    for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+    return result;
+}
 
 
 
-        }
+
+function createTrip(city, start, end, country, i,id) {
+    return '                   <div class="trip" data-trip>'
+        + '                                <label for="trip_' + i + '">'
+        + '                                    <input type="checkbox"  data-trip_active'
+        + '                                     checked="checked" id="trip_' + i + '" />'
+        + '                                     <span class="trip_city_text">' + city + '</span> '
+        + '                                     <span class="trip_country_text">' + country + '</span> '
+        + '                                     <span class="trip_start_text">' + start + '</span> '
+        + '                                     <span class="trip_start_text">' + end + '</span> '
+        + '                                     </label>'
+        + '                                <input type="hidden" data-trip_city value="' + city + '">'
+        + '                                <input type="hidden" data-trip_country value="' + country + '">'
+        + '                                <input type="hidden" data-trip_start value="' + start + '">'
+        + '                                <input type="hidden" data-trip_end value="' + end + '">'
+        + '                                <input type="hidden" data-trip_id value="' + id + '">'                
+        + '                            </div>'
+        + '';
+}
+
+function createBand(band, i) {
+
+
+    return '<div class="band" data-band>'
+        + '<label for="band_' + i + '">'
+        + '             <input type="checkbox" data-band_active class="band_active"'
+        + '              checked="checked" id="band_' + i + '" value="' + band + '"  />'
+        + '             ' + band + ''
+        + ' </label>'
+        + ' </div>';
+
+
+
+}
 
 
 
@@ -514,70 +540,20 @@ function eraseCookie(name) {
         $("#more_trips").click(function (e) {
             e.preventDefault();
             var city = $("[data-new_city]").val();
+            var country = $("[data-new_country]").val();
             var start = $("[data-new_start]").val();
             var end = $("[data-new_end]").val();
-            var us = 0;
 
-            if ($("[data-new_city]").is(":checked"))
-                us = 1;
             //check all;
-            var check = city && start && end;
+            var check = city && country && start && end;
             if (check) {
-                var trip = createTrip(city, start, end, us, $("[data-trip]").length + 1);
+                var trip = createTrip(city, start, end, country, $("[data-trip]").length + 1,randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'));
                 $('[data-trips]').prepend(trip);
             } else {
                 alert("One field is empty");
             }
         });
-/*
-        $("#Spotify").click(function(e){
-            e.preventDefault();
-            var auth_url=$(this).attr("href");
-           $.ajax({
-                type: "GET",
-                url: "/getspotifyartists",
-                complete: function (data) {
-                    //console.log(data);
-                    var result=data.responseText;
-                    if(data.responseJSON && data.responseJSON.err) {
-                        window.location.replace(auth_url);
-                    } else {
-                        //console.log(result);
-                        $("[data-bands]").html(result);
-                    }
-
-                },
-                dataType: 'json'
-            });            
-
-        })
-        */
-/*
-        $("#Tripit").click(function(e){
-                    e.preventDefault();
-                    console.log("go trup")
-                    var auth_url=$(this).attr("href");
-                    $.ajax({
-                            type: "GET",
-                            url: "/tripittrips",
-                            complete: function (data) {
-                                //console.log(data);
-                                var result=data.responseText;
-                                if(data.responseJSON && data.responseJSON.err) {
-                                     createCookie("tripItAuthTry",1,1);
-                                    window.location.replace(auth_url);
-                                } else {
-                                    //console.log(result);
-                                    $("[data-trips]").html(result);
-                                    eraseCookie("tripItAuthTry");
-                                }
-
-                            },
-                            dataType: 'json'
-                        });            
-       })
-*/
-
+ 
         $("#brb").click(function (e) {
             e.preventDefault();
             var form = $(this).parents("form");
@@ -598,10 +574,12 @@ function eraseCookie(name) {
                     trip.country = el.find("[data-trip_country]").val();
                     trip.start = el.find("[data-trip_start]").val();
                     trip.end = el.find("[data-trip_end]").val();
+                    if(el.find("[data-trip_id]").length>0)
+                        trip.id = el.find("[data-trip_id]").val();
                     trips.push(trip);
                 }
             });
-            rbody.trips = trips;
+            rbody.trips = trips; 
 
             var bandForms = form.find("[data-band]");
 
@@ -616,6 +594,10 @@ function eraseCookie(name) {
 
  
             rbody.bands = bands;
+
+            rbody.user_id=false;
+            if($("[data-user_id]").length>0 && $("[data-user_id]").val()!="")
+                rbody.user_id=$("[data-user_id]").val();
             console.log(rbody);
 
             $.ajax({
@@ -663,8 +645,7 @@ function eraseCookie(name) {
 
         })
 
-             // start();  
-
+ 
     });
 
 
