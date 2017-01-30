@@ -490,7 +490,13 @@ app.get('/spotifycallback', (req, res) => {
                 console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
 
                 //res.send({result:all_artists.distinct_list, err:""});
-                sess.spotifyResult=all_artists.distinct_list;
+                sess.spotifyResult=all_artists.distinct_list.map(function(el,i){
+                    return {band:el.toLowerCase(),  "additional_info": {
+                        "band_name_original": el
+                    }}
+                }); 
+                
+                ;
                 res.redirect('/');
             });
 

@@ -51,8 +51,16 @@
                            && typeof(session.auth)!="undefined"  
                            && typeof(session.authed_user)!="authed_user"  
                            && session.auth==1) 
-                         trips=session.authed_user.trips;
+                         trips=trips.concat(session.authed_user.trips);
+
+
+                    if(tripItResult)
+                        trips=trips.concat(tripItResult);
+
                         %>
+
+
+
  
                         <%
                         for(i=0;i<trips.length; i++) {  
@@ -78,35 +86,7 @@
                         }
                    
                           %>
-                    <%
-                    if(tripItResult) { 
-                    var trips=tripItResult;
-                    
-                    
-
-                    for(i=0;i<trips.length; i++) {  
-                        var trip=trips[i];
-                    %>
-                    
-                        <div class="trip" data-trip>
-                            <label for="trip_<%=i%>">
-                                <input type="checkbox"  data-trip_active
-                                    checked="checked" id="trip_<%=i%>" />
-                                    <span class="trip_city_text"><%=trip.city%></span> 
-                                    <span class="trip_country_text"><%=trip.country%></span> 
-                                    <span class="trip_start_text"><%=trip.start%></span> 
-                                    <span class="trip_start_text"><%=trip.end%></span> 
-                                    </label>
-                            <input type="hidden" data-trip_city value="<%= trip.city%>">
-                            <input type="hidden" data-trip_country value="<%= trip.country  %>">
-                            <input type="hidden" data-trip_start value="<%= trip.start%>">
-                            <input type="hidden" data-trip_end value="<%= trip.end%>">
-                        </div>
-
-                        <%
-                    }
-                    }
-                        %>                          
+                                       
 
 
 
@@ -139,7 +119,9 @@
                            && typeof(session.auth)!="undefined"  
                            && typeof(session.authed_user)!="authed_user"  
                            && session.auth==1) 
-                                                bands=session.authed_user.bands;            
+                    bands=bands.concat(session.authed_user.bands);  
+                   if(spotifyResult)               
+                   bands=bands.concat(spotifyResult);  
                      
                              for(i=0;i<bands.length; i++) {
                                 var band=bands[i].band;
@@ -154,25 +136,7 @@
 
 
                               <% }   %>
-                                <%
-                                if(spotifyResult) { 
-                                bands=spotifyResult;
-
-                                for(i=0;i<bands.length; i++) {
-                                    var band=bands[i];
-                                %>
-                                        <div class="band" data-band>
-                                            <label for="band_<%=i%>">
-                                                <input type="checkbox" data-band_active class="band_active"
-                                                checked="checked" id="band_<%=i%>" value="<%=band%>"  />
-                                                <%=band%>
-                                    </label>
-                                        </div>
-
-
-                                    <% }  
-                                    
-                                } %>
+                      
 
               
                     </div>
