@@ -28,10 +28,13 @@ const settings = require("./settings");
 function saveEvents(user, foundEvents, trip) {
     var id = new ObjectID(user._id);
     var code = user.code || "";
+    var tripid=trip.id || 0;
+        
     foundEvents = foundEvents.map(function (el, i) {
         var match = {};
         match.event = el;
         match.date = new Date().toString();
+        match.trip_id=tripid;
         return match;
     });
 
@@ -45,6 +48,7 @@ function saveEvents(user, foundEvents, trip) {
             //buff('saved to database')
             var html = '<html><body>'
                 + 'id = ' + id
+                + 'tripid = ' + tripid                
                 + ' Visit <a href="http://localhost:8001/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'
                 + ' in ' + trip.city + ' city '
                 + '</body></html>';

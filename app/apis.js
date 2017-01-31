@@ -1,4 +1,4 @@
-module.exports.findSongKickEvents = findSongKickEvents_city;
+module.exports.findSongKickEvents = findSongKickEventsStart;
 
 
 const request = require('request');
@@ -29,7 +29,7 @@ const settings = require("./settings");
 
 
 
-function findSongKickEvents_city(apiUrl, trip, artistList, user, time,apiLocationUrl) {
+function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocationUrl) {
 
     var cityName = encodeURI(trip.city);
 
@@ -80,7 +80,7 @@ function findSongKickEvents_city(apiUrl, trip, artistList, user, time,apiLocatio
                 } else {
                     tech.logError(err);
                     tech.logError(response);
-                    callback("city finding error", 0);
+                    callback("city finding error in Songkick primary search", 0);
 
                 }
             });
@@ -154,8 +154,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         return a.concat(b);
                     });
 
-                    //here we ignore everything and just get few random events
-                    /*
+                    
                     //filter by dates
                     events = flattened.filter(function (elem, i, array) {
                         if (elem.event !== undefined && elem.event.start !== undefined) {
@@ -172,24 +171,26 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         return false;
     
                     });
-                    */
+                 
 
+                    /*
+                    TESTS
                     var N = Math.floor(Math.random() * Math.min(10, flattened.length)) + 0;
                     for (i = 0; i < N; i++) {
                         var X = Math.floor(Math.random() * flattened.length) + 1;
                         events.push(flattened[X]);
                     } 
-
+                    */
 
                 }
                 console.log("Results: " + flattened.length);
                 console.log("Events: " + events.length);
                 console.log("*********************FINISHED WITH SUCCESS*********************");
 
-                                if (events.length > 0)
-                                    tech.saveEvents(user, events, trip); 
-                
-                                tech.logEvents(time, user, trip, apiUrl, results, events);
+                if (events.length > 0)
+                    tech.saveEvents(user, events, trip); 
+
+                tech.logEvents(time, user, trip, apiUrl, results, events);
 
 
 
@@ -204,6 +205,157 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 
 
+
+
+function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
+     var cityName = encodeURI(trip.city);
+     var start=trip.start.replace("-","").replace("-","")+"00";
+     var end=trip.end.replace("-","").replace("-","")+"00";
+
+    apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", trip.start).replace("DATE_END", trip.end);
+
+
+    async.waterfall([
+        function (callback) {
+            var url = apiUrl;
+
+            request(url, function (err, response, body) {
+                if (!err && response.statusCode == 200) {
+                    var json = JSON.parse(body);
+
+                    if(!json.page_count) {
+                        tech.logError(json);                    
+                        callback("error in eventful primary search in json", 0);
+                    }
+                    else {
+                        callback(null, json.page_count,json.events);
+                    }
+                } else {
+                    tech.logError(err);
+                    tech.logError(response);
+                    callback("error in eventful primary search", 0);
+
+                }
+            });
+        }
+
+    ], function (err, pages, events) {
+        if (err) {
+            console.log("*********************FINISHED WITH ERROR**************************");
+            console.log("findEventfulEventsStart error");
+            console.log(err);
+        }
+        else {
+            findSongKickEventsFinal(pages,events, apiUrl, trip, artistList, user, time);
+        }
+
+
+    });
+}
+
+
+ 
+
+
+
+function findSongKickEventsFinal(pages, events, apiUrl, trip, artistList, user, time) {
+ 
+        if (!pages)
+            pages=0;
+            
+        var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
+
+        async.map(pagesArray, 
+        
+         (function (pageNumber, callback) {
+            var url = apiUrl + "&page_number=" + pageNumber;
+
+            request(url, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var foundEvents = [];
+                    var json = JSON.parse(body);
+                    if (!json) {
+                        callback("find Eventful events error inner", 0);
+                    } else {
+                        foundEvents = json.resultsPage.results.event.map(function (elem) {
+                             return { "event_title": elem.title, "event": elem };
+                        });
+
+                        callback(null, foundEvents);
+                    }
+                } else {
+                    tech.logError(err);
+                    tech.logError(response);
+                    callback("find Eventful events error", 0);
+
+                }
+            });
+
+
+        })       
+        
+        , function (err, results) {
+            if (err) {
+                console.log("*********************FINISHED WITH ERROR**************************");
+                console.log(err);
+            } else {
+                var flattened = results.reduce(function (a, b) {
+                    return a.concat(b);
+                });
+
+                //filter by bands
+                var events = flattened.filter(function (elem, i, array) {
+                    if (elem.event_title != undefined) {
+                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                    }
+                    return false;
+                });
+
+                console.log("Results: " + flattened.length);
+                console.log("Events: " + events.length);
+                console.log("*********************FINISHED WITH SUCCESS*********************");
+
+                if (events.length > 0)
+                    tech.saveEvents(user, events, trip); 
+
+                tech.logEvents(time, user, trip, apiUrl, results, events);
+
+
+
+            }
+        });
+
+    
+
+
+
+
+}
+
+function findEventfulFinish(eventsArray, artistList) {
+    console.log("Eventful Finish");
+    if (eventsArray.length == 0)
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
+    else {
+        console.log("Total " + eventsArray.event.length);
+
+        foundEvents = eventsArray.event.map(function (elem) {
+            return { "event_title": elem.title, "event": elem };
+        });
+        console.log("Total foundEvents " + foundEvents.length);
+        var events = foundEvents.filter(function (elem, i, array) {
+            if (elem.event_title != undefined) {
+                return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+            }
+            return false;
+
+        });
+        console.log("Events " + events.length);
+        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
+
+    }
+
+}
 
 
 
@@ -235,82 +387,6 @@ function findEventfulEventsPage(data) {
     });
 
     return foundEvents;
-}
-
-
-function findEventfulStart(data, url, artistList) {
-    var json = JSON.parse(data);
-    var pages = json.page_count;
-
-    if (pages && pages == 1)
-        findEventfulFinish(json.events, artistList);
-    if (!pages)
-        findEventfulFinish([], artistList);
-    if (pages > 1) {
-        var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
-
-        async.map(pagesArray, makeEventfulRequest, function (err, results) {
-            if (err) {
-                console.log("*********************FINISHED WITH ERROR**************************");
-                console.log("iteratorMarker " + iteratorMarker);
-                console.log(err);
-                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-            } else {
-                var flattened = results.reduce(function (a, b) {
-                    return a.concat(b);
-                });
-
-                //filter by bands
-                var events = flattened.filter(function (elem, i, array) {
-                    if (elem.event_title != undefined) {
-                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                    }
-                    return false;
-
-                });
-
-                console.log("Results: " + flattened.length);
-                console.log("Events: " + events.length);
-                console.log("*********************FINISHED WITH SUCCESS*********************");
-
-                //console.log(events);
-                modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
-            }
-        });
-
-    }
-
-
-
-
-}
-
-function findEventfulFinish(eventsArray, artistList) {
-    console.log("Eventful Finish");
-    if (eventsArray.length == 0)
-        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
-    else {
-        console.log("Total " + eventsArray.event.length);
-
-        foundEvents = eventsArray.event.map(function (elem) {
-            return { "event_title": elem.title, "event": elem };
-        });
-        console.log("Total foundEvents " + foundEvents.length);
-        var events = foundEvents.filter(function (elem, i, array) {
-            if (elem.event_title != undefined) {
-                return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-            }
-            return false;
-
-        });
-        console.log("Events " + events.length);
-        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-    }
-
 }
 
 
