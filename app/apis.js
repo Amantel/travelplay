@@ -1,5 +1,7 @@
 module.exports.findSongKickEvents = findSongKickEventsStart;
 module.exports.findEventfulEvents = findEventfulEventsStart;
+module.exports.findTicketMasterEvents = findEventsTicketMasterStart;
+
 
 
 const request = require('request');
@@ -273,7 +275,7 @@ function findEventfulFinish(pages, events, apiUrl, trip, artistList, user, time)
                 if (!error && response.statusCode == 200) {
                     var foundEvents = [];
                     var json = JSON.parse(body);
-                    if (!json) {
+                    if (!json || !json.events ||json.events.event) {
                         callback("find Eventful events error inner", 0);
                     } else {
                         foundEvents = json.events.event.map(function (elem) {
@@ -338,81 +340,141 @@ function findEventfulFinish(pages, events, apiUrl, trip, artistList, user, time)
  
 
 
-function findTicketsTicketMaster(data, url, artistList) {
 
 
-    var json = JSON.parse(data);
-    console.log("Results: " + json._embedded.events.length);
-    console.log("Total: " + json.page.totalElements);
-    if (json.page.totalElements < 1) {
-        console.log("*********************FINISHED WITH SUCCESS*********************");
-        console.log("*********************ZERO EVENTS FOUND*********************");
+ 
 
-        modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": [] } });
+function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
+     var cityName = encodeURI(trip.city);
+     var start=trip.start+"T00:00:00Z";
+     var end=trip.end+"T00:00:00Z";
+     apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", trip.start).replace("DATE_END", trip.end);
 
-        return false;
-    }
+     async.waterfall([
+        function (callback) {
+            var url = apiUrl;
 
+            request(url, function (err, response, body) {
+                if (!err && response.statusCode == 200) {
+                    var json = JSON.parse(body);
+ 
+                    if(!json.page) {
+                        tech.logError(json);                    
+                        callback("error in ticketmaster primary search in json", 0);
+                    }
+                    else {
+                        callback(null, json.page.totalPages,json._embedded.events);
+                    }
+                } else {
+                    tech.logError(err);
+                    tech.logError(response);
+                    callback("error in ticketmaster primary search", 0);
 
-    var pages = json.page.totalPages;
-    var pagesArray = Array(pages * 1).fill(0).map((e, i) => i);
+                }
+            });
+        }
 
-    async.map(pagesArray, makeTicketMasterRequest, function (err, results) {
+    ], function (err, pages, events) {
         if (err) {
             console.log("*********************FINISHED WITH ERROR**************************");
-            console.log("iteratorMarker " + iteratorMarker);
+            console.log("findEventfulEventsStart error");
             console.log(err);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "error": err } });
-
-        } else {
-            var flattened = results.reduce(function (a, b) {
-                return a.concat(b);
-            });
-
-            //filter by bands
-            var events = flattened.filter(function (elem, i, array) {
-                if (elem.event_title != undefined) {
-                    return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                }
-                return false;
-
-            });
-
-            console.log("Results: " + flattened.length);
-            console.log("Events: " + events.length);
-            console.log("*********************FINISHED WITH SUCCESS*********************");
-
-            //console.log(events);
-            modelCurrent.res.render('index.ejs', { auth_url: modelCurrent.authorizeURL, result: { "events": events } });
-
-
         }
+        else {
+            findTicketMasterFinish(pages,events, apiUrl, trip, artistList, user, time);
+        }
+
+
     });
-
 }
 
 
+ 
 
-function makeTicketMasterRequest(pageNumber, callback) {
-    makeRequest(settings.TicketMasterUrl + "&page=" + pageNumber, { callback: callback }, findTicketMasterPage, callbackErrorGeneral);
+
+
+function findTicketMasterFinish(pages, events, apiUrl, trip, artistList, user, time) {
+ 
+        if (!pages)
+            pages=0;
+            
+        var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
+
+        async.map(pagesArray, 
+ 
+         (function (pageNumber, callback) {
+            var url = apiUrl + "&page=" + pageNumber;
+
+            request(url, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var foundEvents = [];
+                    var json = JSON.parse(body);
+                    if (!json || !json._embedded || json._embedded.events) {
+                        callback("find Ticketmaster events error inner", 0);
+                    } else {
+  
+
+                        foundEvents = json._embedded.events.map(function (elem) {
+                            return { "event_title": elem.name, "event": elem };
+                        });                        
+
+                        callback(null, foundEvents);
+                    }
+                } else {
+                    tech.logError(err);
+                    tech.logError(response);
+                    callback("find Ticketmaster events error", 0);
+
+                }
+            });
+
+
+        })       
+        
+        , function (err, results) {
+            if (err) {
+                console.log("*********************FINISHED WITH ERROR**************************");
+                console.log(err);
+            } else {
+                var flattened = [];
+                var events = [];
+                if(results.length>0)
+                {
+
+                    var flattened = results.reduce(function (a, b) {
+                        return a.concat(b);
+                    });
+
+                    //filter by bands
+                    var events = flattened.filter(function (elem, i, array) {
+                        if (elem.event_title != undefined) {
+                            return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                        }
+                        return false;
+
+                    });
+
+                }
+                console.log("Results: " + flattened.length);
+                console.log("Events: " + events.length);
+                console.log("*********************FINISHED WITH SUCCESS*********************");
+
+                if (events.length > 0)
+                    tech.saveEvents(user, events, trip); 
+
+                tech.logEvents(time, user, trip, apiUrl, results, events);
+
+
+
+            }
+        });
+
+    
+
+
+
+
 }
+ 
 
-
-
-function findTicketMasterPage(data) {
-    var foundEvents = [];
-    var json = JSON.parse(data);
-
-
-    //console.log("data");
-    //console.log(json.length);
-
-    //HERE BE SOME ERROR CATCHING
-    foundEvents = json._embedded.events.map(function (elem) {
-        return { "event_title": elem.name, "event": elem };
-    });
-
-    return foundEvents;
-}
-
-
+ 

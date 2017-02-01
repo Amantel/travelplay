@@ -58,10 +58,10 @@ MongoClient.connect(mongo_url, (err, database) => {
 
         console.log('listening on 8001');
      
-        startServer(false);
+         startServer(false);
     })
 })
-
+ 
 
 
 
@@ -606,6 +606,41 @@ app.get('/protected', (req, res) => {
 
 });
 
+ 
+
+ 
+
+
+app.get('/save_user_special', (req, res) => {
+    var users = fakes.getUsersFromFiles();
+
+    async.map(users, function (user, callback) {
+
+        db.collection('users').save(user, (err, result) => {
+            if (err) {
+                callback(err, "NOT OK");
+            }
+
+            console.log('saved to database')
+            callback(null, "OK");
+        });
+
+    }, function (err, results) {
+
+        res.send("OK");
+    });
+
+})
+
+
+
+
+
+
+
+/**************/
+
+
 
 
 //SongKick for non US, Eventful & TicketMaster for US.
@@ -635,13 +670,11 @@ function findEvents(user, time) {
             //GetfakeCall(apiUrl,trip,artistList,user,time);
  
             apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
-
+            apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
+            
         } else {
             //SongKick
-           // console.log("SongKick");
-           // apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
-
-            //GetfakeCall(apiUrl,trip,artistList,user,time);
+            apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
         }
 
 
@@ -676,32 +709,3 @@ function ScheduledFind() {
 
 
 }
-
- 
-
- 
-
-
-app.get('/save_user_special', (req, res) => {
-    var users = fakes.getUsersFromFiles();
-
-    async.map(users, function (user, callback) {
-
-        db.collection('users').save(user, (err, result) => {
-            if (err) {
-                callback(err, "NOT OK");
-            }
-
-            console.log('saved to database')
-            callback(null, "OK");
-        });
-
-    }, function (err, results) {
-
-        res.send("OK");
-    });
-
-})
-
-
-
