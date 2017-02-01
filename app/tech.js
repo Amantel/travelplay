@@ -60,9 +60,9 @@ function saveEvents(user, foundEvents, trip) {
 }
 
 
-function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents) {
+function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents,apiName) {
     //buff("logging");
-    var folder_name = time.toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
+    var folder_name = time.toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "/" + apiName + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
     var dir = "./tech/" + folder_name + "/";
     fs.ensureDir(dir, function (err) {
         if (err) {

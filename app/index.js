@@ -26,12 +26,15 @@ var SpotifyWebApi = require('spotify-web-api-node');
 var tripItApiClient = require("tripit-node");
 
 
+
 const app = express();
+app.set('views', __dirname+"/../views");
+app.set('trust proxy', 'loopback')
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(express.static('public'));
+//app.use(express.static('public'));
+app.use(express.static(__dirname + '/../public'));
 app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }, resave: true, saveUninitialized: true }))
 var sess;
-
 
  
 
@@ -70,8 +73,7 @@ MongoClient.connect(mongo_url, (err, database) => {
 
  
 
-var modelCurrent = {};
-
+ 
 
  
 
@@ -352,12 +354,15 @@ app.get('/users', (req, res) => {
 
 
  
- 
+
 
 app.get('/index', (req, res) => {
     sess = req.session;
-    res.render('index.ejs', { session: sess, auth_url: settings.spotifyApiUrl });
-})
+    res.render('index.ejs', { session: sess, 
+        auth_url: settings.spotifyApiUrl, 
+        spotifyResult:sess.spotifyResult,
+        tripItResult:sess.tripItResult
+     });})
 
 app.get('/', (req, res) => {
     sess = req.session;

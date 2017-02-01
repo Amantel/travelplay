@@ -184,7 +184,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
 
-                tech.logEvents(time, user, trip, apiUrl, results, events);
+                tech.logEvents(time, user, trip, apiUrl, results, events,"songkick");
 
 
 
@@ -203,7 +203,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
 
-     artistList.push("gabrielle marlena");
+     //artistList.push("gabrielle marlena");
      var cityName = encodeURI(trip.city);
      var start=trip.start.replace("-","").replace("-","")+"00";
      var end=trip.end.replace("-","").replace("-","")+"00";
@@ -211,7 +211,7 @@ function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
       async.waterfall([
         function (callback) {
             var url = apiUrl;
-console.log(url);
+ 
             request(url, function (err, response, body) {
                 if (!err && response.statusCode == 200) {
                     var json = JSON.parse(body);
@@ -251,7 +251,8 @@ console.log(url);
 
 
 function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
- 
+    //artistList.push("Shake and Sing with Suzi Shelton".toLowerCase());
+    //artistList.push("Baelfire".toLowerCase());
         if (!pages)
             pages=0;
             
@@ -302,19 +303,20 @@ function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
 
                     //filter by bands
                     var events = flattened.filter(function (elem, i, array) {
+                        console.log(i+")"+elem.event_title.toLowerCase());
                         if (elem.event_title != undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
                         }
                         return false;
                     });
                 }
-                console.log(trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
- /*
+                //console.log(trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
+ 
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
 
-                tech.logEvents(time, user, trip, apiUrl, results, events);
-*/
+                tech.logEvents(time, user, trip, apiUrl, results, events, "eventful");
+ 
 
 
             }
@@ -456,7 +458,7 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
 
-                tech.logEvents(time, user, trip, apiUrl, results, events);
+                tech.logEvents(time, user, trip, apiUrl, results, events, "ticketmaster");
 
 
 
