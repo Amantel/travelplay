@@ -58,14 +58,15 @@ MongoClient.connect(mongo_url, (err, database) => {
 
         console.log('listening on 8001');
      
-         startServer(false);
+         //startServer(false);
     })
 })
  
 
 
 
-
+//apis.findEventfulEvents(settings.eventfulURL, {city:"new york",start:"2017-02-01",end:"2017-02-28"}, [], {},"x");
+//apis.findTicketMasterEvents(settings.TicketMasterUrl, {city:"new york",start:"2017-02-01",end:"2017-02-28"}, [], {},"x");
 
  
 
@@ -668,12 +669,13 @@ function findEvents(user, time) {
         if (tech.isUS(trip.country)) {
             //Eventful + Tickemaster
             //GetfakeCall(apiUrl,trip,artistList,user,time);
- 
-            apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
-            apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
-            
+        if(trip.city=="new york")
+            // apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
+             apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
+            //console.log("US:"+trip.city);
         } else {
             //SongKick
+            //console.log("NonUS:"+trip.city);
             apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
         }
 

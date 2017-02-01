@@ -53,19 +53,18 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
                         callback(null, json.resultsPage.results.location[0].metroArea.id);
                     } else {
                         //console.log(cityName + "  " + "city not found")
-                        callback("city not found", 0);
+                        callback("city not found - "+cityName, 0);
                     }
                 } else {
-                    tech.logError(err);
-                    tech.logError(response);
-                    callback("city finding error", 0);
+                    //tech.logError(err);
+                    //tech.logError(response);
+                    callback("city finding error - "+cityName, 0);
 
                 }
             });
         },
 
         function (cityID, callback) {
-            //console.log("*****>");
             var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", 1);
             //console.log(url);
             request(url, function (error, response, body) {
@@ -81,9 +80,9 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
                         callback(null, totalEntries, cityID);
                     }
                 } else {
-                    tech.logError(err);
-                    tech.logError(response);
-                    callback("city finding error in Songkick primary search", 0);
+                    //tech.logError(err);
+                    //tech.logError(response);
+                    callback("finding error Songkick primary search", 0);
 
                 }
             });
@@ -92,20 +91,15 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
 
     ], function (err, totalEntries, cityID) {
         if (err) {
-            console.log("*********************FINISHED WITH ERROR**************************");
-            console.log("findSongKickEventsStart error");
             console.log(err);
+             
         }
         else {
-
-            //console.log("totalEntries " + totalEntries);
-            //console.log("cityID " + cityID);
-
             var N = Math.ceil(totalEntries / 50);
             var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
             findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time);
         }
-
+ 
 
     });
 }
@@ -134,8 +128,8 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         callback(null, foundEvents);
                     }
                 } else {
-                    tech.logError(err);
-                    tech.logError(response);
+                    //tech.logError(err);
+                    //tech.logError(response);
                     callback("find Songkick events error", 0);
 
                 }
@@ -145,9 +139,8 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
         })
         , function (err, results) {
             if (err) {
-                console.log("*********************FINISHED WITH ERROR**************************");
-                console.log("findSongKickEventsFinal error");
-                console.log(err);
+                console.log(trip.city+" findSongKickEventsFinal error");
+                
             } else {
                 var flattened = [];
                 var events = [];
@@ -186,9 +179,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     */
 
                 }
-                console.log("Results: " + flattened.length);
-                console.log("Events: " + events.length);
-                console.log("*********************FINISHED WITH SUCCESS*********************");
+                console.log(trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
 
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
@@ -211,15 +202,16 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 
 function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
+
+     artistList.push("gabrielle marlena");
      var cityName = encodeURI(trip.city);
      var start=trip.start.replace("-","").replace("-","")+"00";
      var end=trip.end.replace("-","").replace("-","")+"00";
-     apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", trip.start).replace("DATE_END", trip.end);
-
-     async.waterfall([
+     apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", start).replace("DATE_END", end);
+      async.waterfall([
         function (callback) {
             var url = apiUrl;
-
+console.log(url);
             request(url, function (err, response, body) {
                 if (!err && response.statusCode == 200) {
                     var json = JSON.parse(body);
@@ -229,25 +221,24 @@ function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
                         callback("error in eventful primary search in json", 0);
                     }
                     else {
-                        callback(null, json.page_count,json.events);
+                        callback(null, json.page_count);
                     }
                 } else {
-                    tech.logError(err);
-                    tech.logError(response);
+                    //tech.logError(err);
+                    //tech.logError(response);
                     callback("error in eventful primary search", 0);
 
                 }
             });
         }
 
-    ], function (err, pages, events) {
+    ], function (err, pages) {
         if (err) {
-            console.log("*********************FINISHED WITH ERROR**************************");
             console.log("findEventfulEventsStart error");
-            console.log(err);
+            
         }
         else {
-            findEventfulFinish(pages,events, apiUrl, trip, artistList, user, time);
+            findEventfulFinish(pages, apiUrl, trip, artistList, user, time);
         }
 
 
@@ -259,25 +250,24 @@ function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
 
 
 
-function findEventfulFinish(pages, events, apiUrl, trip, artistList, user, time) {
+function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
  
         if (!pages)
             pages=0;
             
         var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
-
-        async.map(pagesArray, 
+         async.map(pagesArray, 
         
          (function (pageNumber, callback) {
             var url = apiUrl + "&page_number=" + pageNumber;
-
-            request(url, function (error, response, body) {
+             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var foundEvents = [];
                     var json = JSON.parse(body);
-                    if (!json || !json.events ||json.events.event) {
+                    if (!json || !json.events || !json.events.event) {
                         callback("find Eventful events error inner", 0);
                     } else {
+
                         foundEvents = json.events.event.map(function (elem) {
                             return { "event_title": elem.title, "event": elem };
                         });
@@ -285,8 +275,8 @@ function findEventfulFinish(pages, events, apiUrl, trip, artistList, user, time)
                         callback(null, foundEvents);
                     }
                 } else {
-                    tech.logError(err);
-                    tech.logError(response);
+                    //tech.logError(err);
+                    //tech.logError(response);
                     callback("find Eventful events error", 0);
 
                 }
@@ -297,9 +287,10 @@ function findEventfulFinish(pages, events, apiUrl, trip, artistList, user, time)
         
         , function (err, results) {
             if (err) {
-                console.log("*********************FINISHED WITH ERROR**************************");
                 console.log(err);
-            } else {
+                console.log(trip.city+" eventful finished with error");
+                
+            } else { 
                 var flattened = [];
                 var events = [];
                 if(results.length>0)
@@ -317,15 +308,13 @@ function findEventfulFinish(pages, events, apiUrl, trip, artistList, user, time)
                         return false;
                     });
                 }
-                console.log("Results: " + flattened.length);
-                console.log("Events: " + events.length);
-                console.log("*********************FINISHED WITH SUCCESS*********************");
-
+                console.log(trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
+ /*
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
 
                 tech.logEvents(time, user, trip, apiUrl, results, events);
-
+*/
 
 
             }
@@ -345,10 +334,11 @@ function findEventfulFinish(pages, events, apiUrl, trip, artistList, user, time)
  
 
 function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
+    
      var cityName = encodeURI(trip.city);
      var start=trip.start+"T00:00:00Z";
      var end=trip.end+"T00:00:00Z";
-     apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", trip.start).replace("DATE_END", trip.end);
+     apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", start).replace("DATE_END", end);
 
      async.waterfall([
         function (callback) {
@@ -363,25 +353,24 @@ function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
                         callback("error in ticketmaster primary search in json", 0);
                     }
                     else {
-                        callback(null, json.page.totalPages,json._embedded.events);
+                        callback(null, json.page.totalPages);
                     }
                 } else {
-                    tech.logError(err);
-                    tech.logError(response);
+                    //tech.logError(err);
+                    //tech.logError(response);
                     callback("error in ticketmaster primary search", 0);
 
                 }
             });
         }
 
-    ], function (err, pages, events) {
+    ], function (err, pages) {
         if (err) {
-            console.log("*********************FINISHED WITH ERROR**************************");
-            console.log("findEventfulEventsStart error");
-            console.log(err);
+            console.log("findTicketMasterEventsStart error");
+            
         }
         else {
-            findTicketMasterFinish(pages,events, apiUrl, trip, artistList, user, time);
+            findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time);
         }
 
 
@@ -393,15 +382,14 @@ function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
 
 
 
-function findTicketMasterFinish(pages, events, apiUrl, trip, artistList, user, time) {
- 
+function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
+
         if (!pages)
             pages=0;
             
         var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
-
         async.map(pagesArray, 
- 
+
          (function (pageNumber, callback) {
             var url = apiUrl + "&page=" + pageNumber;
 
@@ -409,8 +397,14 @@ function findTicketMasterFinish(pages, events, apiUrl, trip, artistList, user, t
                 if (!error && response.statusCode == 200) {
                     var foundEvents = [];
                     var json = JSON.parse(body);
-                    if (!json || !json._embedded || json._embedded.events) {
-                        callback("find Ticketmaster events error inner", 0);
+                    if (!json || !json._embedded || !json._embedded.events) {
+                        if(!json) {
+                            callback("find Ticketmaster events error inner", 0);
+                        }
+                        else {                    
+                            callback(null, []);                           
+                        }
+                        
                     } else {
   
 
@@ -421,8 +415,8 @@ function findTicketMasterFinish(pages, events, apiUrl, trip, artistList, user, t
                         callback(null, foundEvents);
                     }
                 } else {
-                    tech.logError(err);
-                    tech.logError(response);
+                    //tech.logError(err);
+                    //tech.logError(response);
                     callback("find Ticketmaster events error", 0);
 
                 }
@@ -433,8 +427,9 @@ function findTicketMasterFinish(pages, events, apiUrl, trip, artistList, user, t
         
         , function (err, results) {
             if (err) {
-                console.log("*********************FINISHED WITH ERROR**************************");
                 console.log(err);
+                console.log("ticketmaster finished with error")
+                
             } else {
                 var flattened = [];
                 var events = [];
@@ -457,7 +452,6 @@ function findTicketMasterFinish(pages, events, apiUrl, trip, artistList, user, t
                 }
                 console.log("Results: " + flattened.length);
                 console.log("Events: " + events.length);
-                console.log("*********************FINISHED WITH SUCCESS*********************");
 
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
