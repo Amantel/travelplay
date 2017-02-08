@@ -372,7 +372,7 @@ app.get('/index', (req, res) => {
 app.get('/', (req, res) => {
     sess = req.session;
 
-//        var html = '<html><body>Visit <a href="'+server_settings.appUrl+'" target="_blank"> here </a></body></html>';
+ //       var html = '<html><body>Visit <a href="'+server_settings.appUrl+'" target="_blank"> here </a></body></html>';
 //        tech.sendMail(settings.adminMail, "New registration on "+server_settings.appName+" ", html);
 
 

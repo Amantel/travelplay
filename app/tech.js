@@ -154,7 +154,6 @@ function randomString(length, chars) {
 
 
 function sendMail(email, subject, html) {
-
  
     var transporter = nodemailer.createTransport(server_settings.smtpConfig);
     var mailData = {
@@ -165,12 +164,19 @@ function sendMail(email, subject, html) {
         html: html
     };
 
-    transporter.sendMail(mailData);
+ console.log(mailData);
 
-    // console.log('mail sent');
+	transporter.sendMail(mailData, (error, info) => {
+		if (error) {
+			return console.log(error);
+		}
+		console.log('Message %s sent: %s', info.messageId, info.response);
+	});	
+		 
     return true;
 
 };
+
 
 
 function logError(err, result) {
