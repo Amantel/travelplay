@@ -18,6 +18,7 @@ const ObjectID = mongodb.ObjectID;
 /*Inner modules*/
 const server = require("./index");
 const settings = require("./settings");
+const server_settings = require("./server_setting");
 
 
 
@@ -154,19 +155,10 @@ function randomString(length, chars) {
 
 function sendMail(email, subject, html) {
 
-    var smtpConfig = {
-        host: 'smtp.yandex.ru',
-        port: 465,
-        secure: true, // use SSL
-        auth: {
-            user: 'tp@muchstudio.ru',
-            pass: 'ojR5zSY3D0'
-
-        }
-    };
-    var transporter = nodemailer.createTransport(smtpConfig);
+ 
+    var transporter = nodemailer.createTransport(server_settings.smtpConfig);
     var mailData = {
-        from: 'tp@muchstudio.ru',
+        from: server_settings.mailFrom,
         to: email,
         subject: subject,
         text: 'Only HTML here, sorry',

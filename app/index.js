@@ -21,6 +21,7 @@ const apis = require("./apis");
 const tech = require("./tech");
 const settings = require("./settings");
 const fakes = require("./fakes");
+const server_settings = require("./server_setting");
 
 
 var SpotifyWebApi = require('spotify-web-api-node');
@@ -46,21 +47,20 @@ const MongoClient = mongodb.MongoClient
 const ObjectID = mongodb.ObjectID;
 
 
-var mongo_url = "mongodb://root:1234@ds111589.mlab.com:11589/travel_play";
 
 var db;
 
 
-MongoClient.connect(mongo_url, (err, database) => {
+MongoClient.connect(server_settings.mongoUrl, (err, database) => {
     if (err) return console.log(err)
     db = database;
 
 
-    app.listen(8001, () => {
+    app.listen(server_settings.port, () => {
         module.exports.app = app;
         module.exports.db = db;
 
-        console.log('listening on 8001');
+        console.log('listening on '+server_settings.port);
      
          //startServer(false);
     })
@@ -261,9 +261,12 @@ app.all('/login', (req, res) => {
 
                         console.log('saved to database');
 
-                        var html = '<html><body>Visit <a href="http://localhost:8001/users" target="_blank"> here </a></body></html>';
 
-                        tech.sendMail(settings.adminMail, "New registration on TravelPlay", html);
+
+
+                        var html = '<html><body>Visit <a href="'+server_settings.appUrl+'" target="_blank"> here </a></body></html>';
+
+                        tech.sendMail(settings.adminMail, "New registration on "+server_settings.appName+" ", html);
 
 
                         res.render('login.ejs', { authError: "", authSuccess: "SUCCESS" });
@@ -309,9 +312,10 @@ app.post("/approve_user", (req, res) => {
 
                 if ((req.body.email || null) && approved) {
                     var password = (req.body.password || null)
-                    var html = '<html><body>You can now access TravelPlay with your email and password: ' + password + ' </body></html>';
 
-                    tech.sendMail(req.body.email, "Approved on TravelPlay", html);
+                     var html = '<html><body>You can now access <a href="'+server_settings.appUrl+'" target="_blank">'+server_settings.appName+'</a> with your email and password: ' + password + ' </body></html>';
+
+                    tech.sendMail(req.body.email, "Approved on "+server_settings.appName+"", html);
                 }
 
 
@@ -367,6 +371,13 @@ app.get('/index', (req, res) => {
 
 app.get('/', (req, res) => {
     sess = req.session;
+
+//        var html = '<html><body>Visit <a href="'+server_settings.appUrl+'" target="_blank"> here </a></body></html>';
+//        tech.sendMail(settings.adminMail, "New registration on "+server_settings.appName+" ", html);
+
+
+
+
     res.render('index.ejs', { session: sess, 
         auth_url: settings.spotifyApiUrl, 
         spotifyResult:sess.spotifyResult,
@@ -388,7 +399,7 @@ app.get('/tripitrequesttoken', (req, res) => {
         if(typeof(sess.requestTokenSecrets)=="undefined")    
             sess.requestTokenSecrets={};
         sess.requestTokenSecrets[token] = secret;
-        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" +settings.appUrl+ "tripitcallback";
+        var requestUrl = "https://www.tripit.com/oauth/authorize?oauth_token=" + token + "&oauth_callback=" +server_settings.appUrl+ "tripitcallback";
         res.redirect(requestUrl);
     }, function (error) {
         res.send(error);

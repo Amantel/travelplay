@@ -13,6 +13,7 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const tech = require("./tech");
 const server = require("./index");
 const settings = require("./settings");
+const server_settings = require("./server_setting");
 
 
 
