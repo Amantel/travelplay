@@ -1,4 +1,5 @@
 
+//pm2 restart /srv/nodeapps/tp/index.js
 const express = require('express');
 const bodyParser = require('body-parser')
 
@@ -68,7 +69,7 @@ MongoClient.connect(mongo_url, (err, database) => {
 
 
 
-//apis.findEventfulEvents(settings.eventfulURL, {city:"new york",start:"2017-02-01",end:"2017-02-28"}, [], {},"x");
+//apis.findEventfulEvents(settings.eventfulURL, {city:"new york",start:"2017-02-01",end:"2017-02-28"}, [], {_id:"some_user_id"},"x");
 //apis.findTicketMasterEvents(settings.TicketMasterUrl, {city:"new york",start:"2017-02-01",end:"2017-02-28"}, [], {},"x");
 
  
@@ -126,8 +127,8 @@ app.post('/save_user', (req, res) => {
                 }
                 else {
                     console.log("New User. No email found");
-                    json.password = generatePass();
-                    json.code = randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                    json.password = tech.generatePass();
+                    json.code = tech.randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
                     db.collection('users').save(json, (err, result) => {
                         if (err) {
                             res.send({ error: err });
@@ -246,7 +247,7 @@ app.all('/login', (req, res) => {
                 }
                 else {
                     var new_user = {};
-                    new_user.password = generatePass();
+                    new_user.password = tech.generatePass();
                     new_user.active = 1;
                     new_user.approved = 0;
                     new_user.email = req.body.email;
@@ -262,7 +263,7 @@ app.all('/login', (req, res) => {
 
                         var html = '<html><body>Visit <a href="http://localhost:8001/users" target="_blank"> here </a></body></html>';
 
-                        sendMail(settings.adminMail, "New registration on TravelPlay", html);
+                        tech.sendMail(settings.adminMail, "New registration on TravelPlay", html);
 
 
                         res.render('login.ejs', { authError: "", authSuccess: "SUCCESS" });
@@ -310,7 +311,7 @@ app.post("/approve_user", (req, res) => {
                     var password = (req.body.password || null)
                     var html = '<html><body>You can now access TravelPlay with your email and password: ' + password + ' </body></html>';
 
-                    sendMail(req.body.email, "Approved on TravelPlay", html);
+                    tech.sendMail(req.body.email, "Approved on TravelPlay", html);
                 }
 
 
@@ -673,14 +674,13 @@ function findEvents(user, time) {
 
         if (tech.isUS(trip.country)) {
             //Eventful + Tickemaster
-            //GetfakeCall(apiUrl,trip,artistList,user,time);
-        if(trip.city=="new york")
-            // apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
+             apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
              apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
             //console.log("US:"+trip.city);
         } else {
             //SongKick
             //console.log("NonUS:"+trip.city);
+            apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);            
             apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
         }
 

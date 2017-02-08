@@ -43,9 +43,9 @@ function saveEvents(user, foundEvents, trip) {
     server.db.collection('users').update({ _id: id }, { $push: { matches: { $each: foundEvents } } }
         , (err, result) => {
             if (err) {
-                buff(err);
+                console.log(err);
             }
-            //buff('saved to database')
+            //console.log('saved to database')
             var html = '<html><body>'
                 + 'id = ' + id
                 + 'tripid = ' + tripid                
@@ -61,38 +61,46 @@ function saveEvents(user, foundEvents, trip) {
 
 
 function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents,apiName) {
-    //buff("logging");
-    var folder_name = time.toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "/" + apiName + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
+
+    var time_text="";
+    if(typeof(time.toISOString)=="function")
+        time_text=time.toISOString();
+    else 
+        time_text=time;
+
+    
+
+    var folder_name = time_text.toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "/" + apiName + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
     var dir = "./tech/" + folder_name + "/";
     fs.ensureDir(dir, function (err) {
         if (err) {
-            buff(err) // => null  
+            console.log(err) // => null  
             return false;
         } else {
             fs.writeFile(dir + "result.json", JSON.stringify(jsonResult), function (err) {
                 if (err) {
-                    buff(err);
+                    console.log(err);
                     return false;
                 }
 
-                //buff("The file was saved!");
+                //console.log("The file was saved!");
             });
             fs.writeFile(dir + "apiurl.json", apiUrl, function (err) {
                 if (err) {
-                    buff(err);
+                    console.log(err);
                     return false;
                 }
 
-                //buff("The file was saved!");
+                //console.log("The file was saved!");
             });
 
             fs.writeFile(dir + "found.json", JSON.stringify(foundEvents), function (err) {
                 if (err) {
-                    buff(err);
+                    console.log(err);
                     return false;
                 }
 
-                // buff("The file was saved!");
+                // console.log("The file was saved!");
             });
         }
 
@@ -136,7 +144,7 @@ function addIdsToTrips() {
 
 
 function randomString(length, chars) {
-//buff(randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'));     
+//console.log(randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'));     
     var result = '';
     for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
     return result;
@@ -167,7 +175,7 @@ function sendMail(email, subject, html) {
 
     transporter.sendMail(mailData);
 
-    // buff('mail sent');
+    // console.log('mail sent');
     return true;
 
 };
