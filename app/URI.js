@@ -288,4 +288,4 @@ var URIQuery;
 
 })();
 
-this.URI = URI
+this.URI = URI;

@@ -111,7 +111,7 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
 function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time) {
     async.map(pagesArray,
         (function (pageNumber, callback) {
-            var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber))
+            var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber));
 
             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
@@ -137,8 +137,8 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
             });
 
 
-        })
-        , function (err, results) {
+        }), 
+        function (err, results) {
             if (err) {
                 console.log(trip.city+" findSongKickEventsFinal error");
                 
@@ -146,8 +146,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 var flattened = [];
                 var events = [];
                 if (results.length > 0) {
-
-                    var flattened = results.reduce(function (a, b) {
+                        flattened = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
 
@@ -162,7 +161,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     });
                     //filter by bands
                     events = events.filter(function (elem, i, array) {
-                        if (elem.event_title != undefined) {
+                        if (elem.event_title !== undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
                         }
                         return false;
@@ -285,9 +284,8 @@ function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
             });
 
 
-        })       
-        
-        , function (err, results) {
+        }),
+        function (err, results) {
             if (err) {
                 console.log(err);
                 console.log(trip.city+" eventful finished with error");
@@ -298,14 +296,14 @@ function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
                 if(results.length>0)
                 {
 
-                    var flattened = results.reduce(function (a, b) {
+                        flattened = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
 
                     //filter by bands
-                    var events = flattened.filter(function (elem, i, array) {
+                        events = flattened.filter(function (elem, i, array) {
                         console.log(i+")"+elem.event_title.toLowerCase());
-                        if (elem.event_title != undefined) {
+                        if (elem.event_title !== undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
                         }
                         return false;
@@ -426,12 +424,11 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
             });
 
 
-        })       
-        
-        , function (err, results) {
+        }),
+        function (err, results) {
             if (err) {
                 console.log(err);
-                console.log("ticketmaster finished with error")
+                console.log("ticketmaster finished with error");
                 
             } else {
                 var flattened = [];
@@ -439,13 +436,13 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
                 if(results.length>0)
                 {
 
-                    var flattened = results.reduce(function (a, b) {
+                        flattened = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
 
                     //filter by bands
-                    var events = flattened.filter(function (elem, i, array) {
-                        if (elem.event_title != undefined) {
+                        events = flattened.filter(function (elem, i, array) {
+                        if (elem.event_title !== undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
                         }
                         return false;

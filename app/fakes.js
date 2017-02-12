@@ -17,7 +17,7 @@ const server = require("./index");
 
 
 function getfakeCall(apiUrl, trip, artistList, user, time) {
-    if (artistList.length == 0) {
+    if (artistList.length === 0) {
         for (i = 0; i < 21; i++) {
             artistList.push("band name X=" + i);
         }
@@ -82,7 +82,7 @@ function getTopAlbums(n) {
 
 
         }
-    })
+    });
 }
 
 //getTopAlbumsFromFile();
@@ -91,7 +91,7 @@ function getTopAlbumsFromFile() {
     var array = fs.readFileSync("bands.json").toString().split(',');
     array = array.map(function (el, i) {
 
-        return { "band": el.toLowerCase(), "additional_info": { "band_name_original": el } }
+        return { "band": el.toLowerCase(), "additional_info": { "band_name_original": el } };
 
 
     });
@@ -121,7 +121,7 @@ function getTravelsFromFile() {
     var trips = json.map(function (el, i) {
         el.start = el.date;
         delete el.date;
-        var date_start = new Date(el.start)
+        var date_start = new Date(el.start);
         var date_end = new Date(date_start.setDate(date_start.getDate() + Math.round(Math.random() * 37 + 2)));
         el.end = date_end.toISOString().substring(0, 10);
         return el;

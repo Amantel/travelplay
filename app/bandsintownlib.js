@@ -79,7 +79,7 @@ function findBrandsinTownEvent(data) { //sync function
     var foundEvents = [];
     var json = JSON.parse(data);
 
-    iteratorMarker++
+    iteratorMarker++;
 
     //buff("data");
     //buff(json.length);

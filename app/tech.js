@@ -41,18 +41,18 @@ function saveEvents(user, foundEvents, trip) {
 
 
 
-    server.db.collection('users').update({ _id: id }, { $push: { matches: { $each: foundEvents } } }
-        , (err, result) => {
+    server.db.collection('users').update({ _id: id }, { $push: { matches: { $each: foundEvents } } },
+     (err, result) => {
             if (err) {
                 console.log(err);
             }
             //console.log('saved to database')
-            var html = '<html><body>'
-                + 'id = ' + id
-                + 'tripid = ' + tripid                
-                + ' Visit <a href="http://localhost:8001/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'
-                + ' in ' + trip.city + ' city '
-                + '</body></html>';
+            var html = '<html><body>'+
+                'id = ' + id+
+                'tripid = ' + tripid  +              
+                ' Visit <a href="http://localhost:8001/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'+
+                ' in ' + trip.city + ' city '+
+                '</body></html>';
 
             sendMail(settings.adminMail, "New matches on TravelPlay", html);
         });
@@ -75,7 +75,7 @@ function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents,apiName) {
     var dir = "./tech/" + folder_name + "/";
     fs.ensureDir(dir, function (err) {
         if (err) {
-            console.log(err) // => null  
+            console.log(err); // => null  
             return false;
         } else {
             fs.writeFile(dir + "result.json", JSON.stringify(jsonResult), function (err) {
@@ -106,7 +106,7 @@ function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents,apiName) {
         }
 
 
-    })
+    });
 }
 
 
@@ -114,25 +114,29 @@ function addIdsToTrips() {
          server.db.collection('users').find().toArray(function (err, result) {
 
             if (!err) {
+                    var addTripIDtoTrips=function(trip) {
+                        if(!trip.id)
+                            trip.id=randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                        return trip;
+                    };
+                    var updateDBaction=function(err, result) {
+                        if (err) {
+                            console.log(err);
+                        }
+
+                        console.log('updated database');
+                    };
+                    
+
+
                     for(i=0;i<result.length;i++) {
                         id = new ObjectID(result[i]._id);
                         var trips=result[i].trips;
-                        trips=trips.map(function(el,i){
-                            trip=el;
-                            if(!el.id)
-                                trip.id=randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-                            return trip;
-                        });                        
+                        trips=trips.map(addTripIDtoTrips);                        
 
-                        server.db.collection('users').update({ _id: id }, { $set: { trips: trips } }
-                            , (err, result) => {
-                                if (err) {
-                                    console.log(err);
-                                }
-
-                                console.log('updated database')
-                                
-                            });
+                        server.db.collection('users').update(
+                            { _id: id },  { $set: { trips: trips } }, updateDBaction
+                        );
 
                     }
             }
@@ -174,7 +178,7 @@ function sendMail(email, subject, html) {
 		 
     return true;
 
-};
+}
 
 
 

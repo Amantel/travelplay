@@ -1,11 +1,11 @@
 
 //pm2 restart /srv/nodeapps/tp/index.js
 const express = require('express');
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
 
 const http = require('http');
 const https = require("https");
-const URIlib = require('./URI')
+const URIlib = require('./URI');
 const url = require('url');
 
 const later = require('later');
@@ -31,11 +31,11 @@ var tripItApiClient = require("tripit-node");
 
 const app = express();
 app.set('views', __dirname+"/../views");
-app.set('trust proxy', 'loopback')
-app.use(bodyParser.urlencoded({ extended: true }))
+app.set('trust proxy', 'loopback');
+app.use(bodyParser.urlencoded({ extended: true }));
 //app.use(express.static('public'));
 app.use(express.static(__dirname + '/../public'));
-app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 3000000 }, resave: true, saveUninitialized: true }))
+app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 3000000 }, resave: true, saveUninitialized: true }));
 var sess;
 
  
@@ -43,7 +43,7 @@ var sess;
 
 const mongodb = require('mongodb');
 
-const MongoClient = mongodb.MongoClient
+const MongoClient = mongodb.MongoClient;
 const ObjectID = mongodb.ObjectID;
 
 
@@ -52,7 +52,7 @@ var db;
 
 
 MongoClient.connect(server_settings.mongoUrl, (err, database) => {
-    if (err) return console.log(err)
+    if (err) return console.log(err);
     db = database;
 
 
@@ -63,8 +63,8 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         console.log('listening on '+server_settings.port);
      
          //startServer(false);
-    })
-})
+    });
+});
  
 
 
@@ -146,9 +146,9 @@ app.post('/register_user', (req, res) => {
                 return false;
             }
 
-    })
+    });
 
-})
+});
 
 app.post('/save_user', (req, res) => {
     var sess=req.session;
@@ -176,35 +176,24 @@ app.post('/save_user', (req, res) => {
             { '_id': new ObjectID(json.user_id) }, 
             [['_id','asc']],
             {$set: saveObj }, 
-            {new:true}
-             , 
+            {new:true}, 
             (err, result) => {
                 if (err) {
                     res.send({ error: err });
-                    console.log(err)
+                    console.log(err);
                     return false;
                 } 
-                console.log('saved to database')
+                console.log('saved to database');
                 sess.authed_user = result.value;
                 res.send("OK");
             }
         );
-    /*
-        db.collection('users').update({ _id: new ObjectID(json.user_id) }, { $set: saveObj }
-            , (err, result) => {
-                if (err) {
-                    res.send({ error: err });
-                } 
-                console.log('saved to database')
-                res.send(result);
-            });
-            */
-
+  
     } else {
          res.send("USER NOT FOUND OR NOTHING TO SAVE");
     }
 
-})
+});
 
 
  
@@ -232,14 +221,14 @@ app.post('/save_user_old', (req, res) => {
                 //console.log(result)
                 if (result.length > 0) {
                     console.log("We already have this email, so let us update first with it");
-                    json["_id"] = new ObjectID(result[0]._id);
-                    db.collection('users').update({ _id: json["_id"] }, { $set: { trips: json.trips, bands: json.bands } }
-                        , (err, result) => {
+                    json._id = new ObjectID(result[0]._id);
+                    db.collection('users').update({ _id: json._id }, { $set: { trips: json.trips, bands: json.bands } },
+                    (err, result) => {
                             if (err) {
                                 res.send({ error: err });
                             }
 
-                            console.log('saved to database')
+                            console.log('saved to database');
                             res.send("OK");
                         });
 
@@ -254,7 +243,7 @@ app.post('/save_user_old', (req, res) => {
                             res.send({ error: err });
                         }
 
-                        console.log('saved to database')
+                        console.log('saved to database');
                         res.send("OK");
                     });
                 }
@@ -267,19 +256,19 @@ app.post('/save_user_old', (req, res) => {
         });
     } else {
 
-        db.collection('users').update({ _id: new ObjectID(json.user_id) }, { $set: { trips: json.trips, bands: json.bands } }
-            , (err, result) => {
+        db.collection('users').update({ _id: new ObjectID(json.user_id) }, { $set: { trips: json.trips, bands: json.bands } }, 
+            (err, result) => {
                 if (err) {
                     res.send({ error: err });
                 }
                 console.log(result);
-                console.log('saved to database')
+                console.log('saved to database');
                 res.send("OK");
             });
 
     }
 
-})
+});
 
 
 
@@ -310,7 +299,7 @@ app.all('/admin_login', (req, res) => {
     else {
         res.render('admin_login.ejs', { authError: "" });
     }
-})
+});
 
 
 app.all('/login', (req, res) => {
@@ -336,7 +325,7 @@ app.all('/login', (req, res) => {
                         sess.auth = "0";
                         sess.authed_user = {};
                         console.log("Not approved");
-                        res.render('login.ejs', { authError: "User not approved", authSuccess: "" })
+                        res.render('login.ejs', { authError: "User not approved", authSuccess: "" });
 
                     }
                 }
@@ -362,7 +351,7 @@ app.all('/login', (req, res) => {
 
 
 
-})
+});
 
 
 
@@ -374,8 +363,8 @@ app.post("/approve_user", (req, res) => {
             approved = 1;
         var id = new ObjectID(req.body.id);
 
-        db.collection('users').update({ _id: id }, { $set: { approved: approved } }
-            , (err, result) => {
+        db.collection('users').update({ _id: id }, { $set: { approved: approved } }, 
+            (err, result) => {
                 if (err) {
                     res.send({ error: err });
                 }
@@ -383,7 +372,7 @@ app.post("/approve_user", (req, res) => {
                 console.log('saved to database');
 
                 if ((req.body.email || null) && approved) {
-                    var password = (req.body.password || null)
+                    var password = (req.body.password || null);
 
                      var html = '<html><body>You can now access <a href="'+server_settings.appUrl+'" target="_blank">'+server_settings.appName+'</a> with your email and password: ' + password + ' </body></html>';
 
@@ -430,7 +419,7 @@ app.get('/users', (req, res) => {
 
 
 
-})
+});
 
 
 
@@ -444,7 +433,7 @@ app.get('/my_trips', (req, res) => {
     if(sess.auth==1)
     {
         var tripItResult=sess.tripItResult;
-        delete sess['tripItResult'];
+        delete sess.tripItResult;
         res.render('profile_trips.ejs', { session: sess, tripItResult:tripItResult });
     }  else
     {
@@ -496,11 +485,11 @@ app.get('/', (req, res) => {
 
      var actions={};
 
-     actions.actionResult=sess['actionResult'];
-     actions.actionError=sess['actionError'];
+     actions.actionResult=sess.actionResult;
+     actions.actionError=sess.actionError;
      
-     delete sess['actionResult']; 
-     delete sess['actionError']; 
+     delete sess.actionResult; 
+     delete sess.actionError; 
 
     if(sess.auth!=1)
         res.render('first.ejs', { session: sess, actions:actions,
@@ -516,7 +505,7 @@ app.get('/', (req, res) => {
     {
         res.render('users.ejs', { session: sess });
     }  
-})
+});
 
 
  
@@ -593,7 +582,7 @@ app.get('/spotifycallback', (req, res) => {
     }
     else {
         settings.spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
-            sess.spotifyAccessToken=authInfo.body['access_token'];
+            sess.spotifyAccessToken=authInfo.body.access_token;
             sess.spotifyAuthed = true;
 
      var localSpotifyApi = new SpotifyWebApi({
@@ -629,7 +618,7 @@ app.get('/spotifycallback', (req, res) => {
                     if (a < b) return -1;
                     if (a > b) return 1;
                     return 0;
-                })
+                });
 
                 console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
 
@@ -637,10 +626,10 @@ app.get('/spotifycallback', (req, res) => {
                 sess.spotifyResult=all_artists.distinct_list.map(function(el,i){
                     return {band:el.toLowerCase(),  "additional_info": {
                         "band_name_original": el
-                    }}
+                    }};
                 }); 
                 
-                ;
+                
                 res.redirect('/');
             });
 
@@ -662,13 +651,13 @@ app.get('/deactivate', (req, res) => {
             var id = new ObjectID(sess.authed_user._id);
             console.log(id);
 
-            db.collection('users').update({ _id: id }, { $set: { active: 0 } }
-                , (err, result) => {
+            db.collection('users').update({ _id: id }, { $set: { active: 0 } },
+            (err, result) => {
                     if (err) {
                         res.send({ error: err });
                     }
 
-                    console.log('deactivated')
+                    console.log('deactivated');
                     res.send("OK");
                 });
         }
@@ -772,7 +761,7 @@ app.get('/save_user_special', (req, res) => {
                 callback(err, "NOT OK");
             }
 
-            console.log('saved to database')
+            console.log('saved to database');
             callback(null, "OK");
         });
 
@@ -781,7 +770,7 @@ app.get('/save_user_special', (req, res) => {
         res.send("OK");
     });
 
-})
+});
 
 
 
@@ -850,7 +839,7 @@ function ScheduledFind() {
             result.forEach(function (user) {
 
                 findEvents(user, time);
-            })
+            });
 
         }
         else {
