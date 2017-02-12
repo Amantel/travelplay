@@ -370,8 +370,8 @@ app.get('/my_artists', (req, res) => {
     sess = req.session;
     if (sess.auth == 1) {
         var spotifyResult = sess.spotifyResult;
-        delete sess.spotifyResult;
-        res.render('profile_artists.ejs', { session: sess, tripItResult: spotifyResult });
+        delete sess.spotifyResult;        
+        res.render('profile_artists.ejs', { session: sess, spotifyResult: spotifyResult,authUrl: settings.spotifyApiUrl });
     } else {
         res.redirect("/");
     }
@@ -420,7 +420,7 @@ app.get('/', (req, res) => {
     if (sess.auth != 1)
         res.render('first.ejs', {
             session: sess, actions: actions,
-            auth_url: settings.spotifyApiUrl,
+            authUrl: settings.spotifyApiUrl,
             spotifyResult: sess.spotifyResult,
             tripItResult: sess.tripItResult
         });
@@ -503,7 +503,7 @@ app.get('/spotifycallback', (req, res) => {
     sess = req.session;
 
     if (sess.spotifyAuthed) {
-        res.redirect('/');
+        res.redirect('/my_artists');
     }
     else {
         settings.spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
@@ -545,7 +545,7 @@ app.get('/spotifycallback', (req, res) => {
                         return 0;
                     });
 
-                    console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
+                    //console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
 
                     //res.send({result:all_artists.distinct_list, err:""});
                     sess.spotifyResult = all_artists.distinct_list.map(function (el, i) {
@@ -556,9 +556,9 @@ app.get('/spotifycallback', (req, res) => {
                         };
                     });
 
+                    res.redirect('/my_artists');
 
-                    res.redirect('/');
-                });
+                 });
 
             });
 
