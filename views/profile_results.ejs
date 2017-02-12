@@ -65,10 +65,10 @@
         <div>
 
             <%               
-        var trips=session.authed_user.trips;
+        var trips=session.authed_user.trips || [];
         for(i=0;i<trips.length; i++) {  
             var trip=trips[i];
-            var matches=session.authed_user.matches;
+            var matches=session.authed_user.matches || [];
             var trip_matches=matches.filter(x=>x.trip_id==trip.id);   
         %>
                 <div class="panel panel-default">
