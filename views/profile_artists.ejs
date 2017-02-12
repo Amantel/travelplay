@@ -61,15 +61,15 @@
             <hr>
                 <input type="hidden" data-user_id value="<%=session.authed_user._id%>">
                 <div class="trips_block">
-                    <h3>Trips</h3>
+                    <h3>Artists</h3>
 
                     <% 
-                var trips=[]; 
-                if(session.authed_user.trips && session.authed_user.trips.length>0)
-                trips=trips.concat(session.authed_user.trips);
+                var bands=[]; 
+                if(session.authed_user.bands && session.authed_user.bands.length>0)
+                bands=bands.concat(session.authed_user.bands);
 
-                if( typeof tripItResult !== 'undefined' && tripItResult) 
-                    trips=trips.concat(tripItResult);
+                if( typeof spotifyResult !== 'undefined' && spotifyResult) 
+                    bands=bands.concat(spotifyResult);
 
             %>
 
@@ -78,52 +78,37 @@
                             <thead>
                                 <tr>
                                     <th>
-                                        City
+                                        Active
                                     </th>
-                                    <th>
-                                        Start
-                                    </th>
-                                    <th>
-                                        Finish
-                                    </th>
-                                    <th>
-                                        Country
-                                    </th>
-                                    <th>
-                                        Results
+                                    <th class="text-right">
+                                        Action
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody data-trips>
+                            <tbody data-bands>
                                 <%
                 
-                for(i=0;i<trips.length; i++) {  
-                    var trip=trips[i];
+                                for(i=0;i<bands.length; i++) {  
+                                    var band=bands[i];
+                                    var bandName="";
+                                    if(typeof(band.additional_info)!=='undefined')
+                                        bandName=band.additional_info.band_name_original;
+                                    else 
+                                        bandName=band.band;    
 
 
-                %>
-                                    <tr class="trip" data-trip>
+
+                                %>
+                                    <tr class="band" data-band>
                                         <td>
-                                            <input type="hidden" data-trip_city value="<%= trip.city%>">
-                                            <input type="hidden" data-trip_country value="<%= trip.country  %>">
-                                            <input type="hidden" data-trip_start value="<%= trip.start%>">
-                                            <input type="hidden" data-trip_end value="<%= trip.end%>">
-                                            <% if(trip.id) {%> <input type="hidden" data-trip_id value="<%= trip.id%>">
-                                                <% } %>
-                                                    <span class="trip_city_text"><%=trip.city%></span>
+                                            <input type="hidden"
+                                             data-band_name_original 
+                                             value="<%=bandName%>">
+                                            <span class="band_name"><%=bandName%></span>
                                         </td>
-                                        <td>
-                                            <span class="trip_start_text"><%=trip.start%></span>
-                                        </td>
-                                        <td>
-                                            <span class="trip_start_text"><%=trip.end%></span>
-                                        </td>
-                                        <td>
-                                            <span class="trip_country_text"><%=trip.country%></span>
-                                        </td>
-                                        <td>
-                                            <a href="/my_results#<%=trip.id%>">view results</a>
-                                        </td>
+                                        <td class="text-right">
+                                            <a href="#" class="btn btn-warning" data-remove_row>Remove</a>
+                                        </td>                                        
                                     </tr>
                                     <%  }  %>
                             </tbody>
@@ -133,36 +118,26 @@
 
                 <%                 if( typeof tripItResult !== 'undefined' && tripItResult)       {      %>
                     <div class="alert alert-success alert-dismissible" role="alert">
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>                        Trips loaded from TripIt. Do not forget to save.
+                        <button type="button" class="close" data-dismiss="alert" 
+                        aria-label="Close"><span aria-hidden="true">&times;</span></button>                       
+                        Trips loaded from TripIt. Do not forget to save.
                     </div>
                     <%                }             %>
                         <div id="save_call" class="alert alert-success  hidden" role="alert">
                             Do not forget to save.
                         </div>
 
-                        <h4>Add new trip</h4>
-                        <form class="form-inline" data-add_trip_form>
+                        <h4>Add Artist</h4>
+                        <form class="form-inline" data-add_artist_form>
                             <div class="form-group">
-                                <label class="sr-only" for="data-new_city">City</label>
-                                <input type="text" value="London" class="form-control" id="data-new_city" data-new_city placeholder="City">
+                                <label class="sr-only" for="data-new_band">Artist</label>
+                                <input type="text" value="Metallica" class="form-control" id="data-new_band" data-new_band placeholder="Artist">
                             </div>
-                            <div class="form-group">
-                                <label class="sr-only" for="data-new_country">Country</label>
-                                <input type="text" value="United Kingdom" class="form-control" id="data-new_country" data-new_country placeholder="Country">
-                            </div>
-                            <div class="form-group">
-                                <label class="sr-only" for="data-new_start">Start </label>
-                                <input type="text" value="2017-06-26" class="form-control" id="data-new_start" data-date_mask data-new_start placeholder="Start date YYYY-MM-DD">
-                            </div>
-                            <div class="form-group">
-                                <label class="sr-only" for="data-new_end">End date</label>
-                                <input type="text" value="2017-07-31" class="form-control" id="data-new_end" data-date_mask data-new_end placeholder="End date YYYY-MM-DD">
-                            </div>
-                            <a href="#" id="more_trips" class="btn btn-default pull-right">Add this trip</a>
+                            <a href="#" id="more_bands" class="btn btn-default pull-right">Add this band</a>
                         </form>
-                        <h4>Or use your TripIt account</h4>
+                        <h4>Or use your Spotify account</h4>
                         <div>
-                            <a href="/tripitrequesttoken" id="Tripit" class="btn  btn-primary">TripIt</a>
+                            <a href="/tripitrequesttoken" id="Spotify" class="btn  btn-primary">Spotify</a>
                         </div>
 
                         <div class="clearfix" style="margin: 50px 0"></div>
@@ -384,6 +359,7 @@
                 return result;
             }
         </script>
+
 
 
 </body>
