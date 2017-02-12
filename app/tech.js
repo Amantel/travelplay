@@ -164,8 +164,7 @@ function sendMail(email, subject, html) {
         html: html
     };
 
- console.log(mailData);
-
+ 
 	transporter.sendMail(mailData, (error, info) => {
 		if (error) {
 			return console.log(error);

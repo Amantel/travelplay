@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        Wanderlust
+    </title>
+
+    <link href="./css/bootstrap.min.css" rel="stylesheet" type="text/css">
+
+
+    <style>
+        html {
+            position: relative;
+            min-height: 100%;
+        }
+        
+        body {
+            /* Margin bottom by footer height */
+            margin-bottom: 60px;
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            /* Set the fixed height of the footer here */
+            background-color: #f5f5f5;
+        }
+        
+        .container .text-muted {
+            margin: 20px 0;
+        }
+        
+        .form-signin {
+            max-width: 330px;
+            padding: 15px;
+            margin: 0 auto;
+        }
+    </style>
+
+</head>
+
+
+
+<body>
+    <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a>
+    <a class="btn btn-info pull-right"
+        style="margin: 20px 5px" href="/">Home</a>
+        <div class="clearfix"><br></div>
+        <div class="container" style="max-width: 500px">
+
+
+                <div class="text-center">
+                    <h1>Wanderlust</h1>
+                </div>
+                <p class="lead text-center">Some punchline text</p>
+                <hr>
+
+                <div>
+
+                    <%               
+        var trips=session.authed_user.trips;
+        for(i=0;i<trips.length; i++) {  
+            var trip=trips[i];
+            var matches=session.authed_user.matches;
+           var trip_matches=matches.filter(x=>x.trip_id==trip.id);   
+        %>
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+
+                                <h4 id="<%=trip.id%>">
+                                    <span class="trip_city_text"><%=trip.city%></span>
+
+                                    <span class="trip_start_text"><%=trip.start%></span>
+
+                                    <span class="trip_start_text"><%=trip.end%></span>
+                                </h4>
+                                <% if(trip_matches.length>0) { %>
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Event</th>
+                                                <th>Date</th>
+                                                <th class="hidden">Link</th>
+                                            </tr> 
+                                        </thead>
+                                        <tbody>
+                                            <%     
+                 for(j=0;j<trip_matches.length; j++) {  
+                    var event_row=matches[j];
+                    if(event_row && event_row.event) {
+                %>
+                                                <tr>
+                                                    <td>
+                                                        <%=event_row.event.text%>
+                                                    </td>
+                                                    <td>
+                                                        <%=event_row.event.date%>
+                                                    </td>
+                                                    <td data-toggle="tooltip" data-placement="top" title="not it beta" class="text-center hidden">-</td>
+                                                </tr>
+                                                <%                 
+             }
+                }
+                %>
+                                        </tbody>
+                                    </table>
+                                    <% } %>
+                            </div>
+                        </div>
+                        <%  } %>
+
+
+
+
+
+
+
+
+                </div>
+
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <p class="text-muted text-center">
+                    For questions and suggestions please contact us at <a href="mailto:info@wanderlust.cloud">info@wanderlust.cloud</a>
+                </p>
+            </div>
+        </footer>
+
+
+
+
+        <script type='text/javascript' src="./js/jquery-latest.js"></script>
+        <script type='text/javascript' src="./js/bootstrap.min.js"></script>
+        <script type="text/javascript">
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+
+            });
+        </script>
+
+
+
+</body>
+
+</html>

@@ -35,7 +35,7 @@ app.set('trust proxy', 'loopback')
 app.use(bodyParser.urlencoded({ extended: true }))
 //app.use(express.static('public'));
 app.use(express.static(__dirname + '/../public'));
-app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }, resave: true, saveUninitialized: true }))
+app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 3000000 }, resave: true, saveUninitialized: true }))
 var sess;
 
  
@@ -87,8 +87,128 @@ function startServer(doSchedule) {
 }
 
 
+app.post('/register_user', (req, res) => {
+    sess = req.session;
+     
+
+    var json = req.body;
+    json.email = json.email.trim();
+
+    db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
+
+            if (!err) {
+                if (result.length > 0) {
+                        sess.actionResult="User registred";                        
+                        console.log("user updated");
+                        res.redirect("/");
+                        return true;
+                }
+                else {                    
+                    json.password = tech.generatePass();
+                    json.code = 
+
+
+                    new_user.password = tech.generatePass();
+                    json.code = tech.randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                    new_user.active = 1;
+                    new_user.approved = 0;
+                    new_user.email = req.body.email;
+                    new_user.trips = [];
+                    new_user.bands = [];
+                    new_user.matches = [];
+                    new_user.update = new Date();
+
+                    db.collection('users').save(json, (err, result) => {
+                        if (err) {
+                            sess.actionError="Error with database in: save user";
+                            console.log(err);
+                            res.redirect("/");
+                            return false;
+                        }
+                        
+                        sess.actionResult="User registred";
+                        
+                        var html = '<html><body>Visit <a href="'+server_settings.appUrl+'users" target="_blank"> here </a></body></html>';
+                        tech.sendMail(settings.adminMail, "New registration on "+server_settings.appName+" ", html);                   
+
+                        console.log(sess.actionResult);
+                        res.redirect("/");
+                        return true;
+
+                    });
+                }
+
+            }
+            else {
+                sess.actionError="Error with database in: find user";
+                console.log(err);
+                res.redirect("/");
+                return false;
+            }
+
+    })
+
+})
 
 app.post('/save_user', (req, res) => {
+    var sess=req.session;
+
+
+    var json = req.body;
+   
+ 
+    var saveObj={};
+    var doSave=false;
+    if(json.trips && json.trips.length>0) {
+        doSave=true;
+        saveObj.trips=json.trips;
+    }
+    if(json.bands && json.bands.length>0) {
+        doSave=true;
+        saveObj.bands=json.bands;
+    }
+     if(json.user_id && doSave) 
+    { 
+
+ 
+        db.collection('users').findAndModify(
+            
+            { '_id': new ObjectID(json.user_id) }, 
+            [['_id','asc']],
+            {$set: saveObj }, 
+            {new:true}
+             , 
+            (err, result) => {
+                if (err) {
+                    res.send({ error: err });
+                    console.log(err)
+                    return false;
+                } 
+                console.log('saved to database')
+                sess.authed_user = result.value;
+                res.send("OK");
+            }
+        );
+    /*
+        db.collection('users').update({ _id: new ObjectID(json.user_id) }, { $set: saveObj }
+            , (err, result) => {
+                if (err) {
+                    res.send({ error: err });
+                } 
+                console.log('saved to database')
+                res.send(result);
+            });
+            */
+
+    } else {
+         res.send("USER NOT FOUND OR NOTHING TO SAVE");
+    }
+
+})
+
+
+ 
+app.post('/save_user_old', (req, res) => {
     //check if old email
 
 
@@ -235,54 +355,6 @@ app.all('/login', (req, res) => {
         });
 
     }
-    else if ((req.body.registration || null) && (req.body.email || null)) {
-        db.collection('users').find({
-            email: { $eq: req.body.email }
-        }).toArray(function (err, result) {
-
-            if (!err) {
-                if (result.length > 0) {
-                    console.log("USER FOUND");
-                    res.render('login.ejs', { authError: "EMAIL IN USE", authSuccess: "" });
-                }
-                else {
-                    var new_user = {};
-                    new_user.password = tech.generatePass();
-                    new_user.active = 1;
-                    new_user.approved = 0;
-                    new_user.email = req.body.email;
-                    new_user.trips = [];
-                    new_user.bands = [];
-                    new_user.update = new Date();
-                    db.collection('users').save(new_user, (err, result) => {
-                        if (err) {
-                            res.render('login.ejs', { authError: err, authSuccess: "" });
-                        }
-
-                        console.log('saved to database');
-
-
-
-
-                        var html = '<html><body>Visit <a href="'+server_settings.appUrl+'" target="_blank"> here </a></body></html>';
-
-                        tech.sendMail(settings.adminMail, "New registration on "+server_settings.appName+" ", html);
-
-
-                        res.render('login.ejs', { authError: "", authSuccess: "SUCCESS" });
-                    });
-
-
-                    //                            
-                }
-
-            }
-            else {
-                res.send({ error: err });
-            }
-        });
-
-    }
     else {
         res.render('login.ejs', { authError: "", authSuccess: "" });
     }
@@ -328,6 +400,11 @@ app.post("/approve_user", (req, res) => {
 app.get('/users', (req, res) => {
 
     sess = req.session;
+    if(sess.auth!=2) {
+        res.redirect('/');
+        return false;
+    }
+
     db.collection('users').find().toArray(function (err, result) {
 
         if (!err) {
@@ -360,15 +437,55 @@ app.get('/users', (req, res) => {
 
  
 
+ 
+app.get('/my_trips', (req, res) => {
+    sess=req.session;
 
-app.get('/index', (req, res) => {
-    sess = req.session;
-    res.render('index.ejs', { session: sess, 
-        auth_url: settings.spotifyApiUrl, 
-        spotifyResult:sess.spotifyResult,
-        tripItResult:sess.tripItResult
-     });})
+    if(sess.auth==1)
+    {
+        var tripItResult=sess.tripItResult;
+        delete sess['tripItResult'];
+        res.render('profile_trips.ejs', { session: sess, tripItResult:tripItResult });
+    }  else
+    {
+        res.redirect("/");
+    }  
+    
 
+}); 
+ 
+app.get('/my_artists', (req, res) => {
+    sess=req.session;
+    
+    res.render('profile_artists.ejs', { session: sess });
+
+}); 
+
+
+app.get('/my_results', (req, res) => {
+    sess=req.session;
+    
+
+
+    if(sess.auth==1)
+    {
+         res.render('profile_results.ejs', { session: sess });
+    
+    }  else
+    {
+        res.redirect("/"); 
+    }  
+}); 
+
+
+
+
+
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect("/");
+});
+ 
 app.get('/', (req, res) => {
     sess = req.session;
 
@@ -377,12 +494,28 @@ app.get('/', (req, res) => {
 
 
 
+     var actions={};
 
-    res.render('index.ejs', { session: sess, 
-        auth_url: settings.spotifyApiUrl, 
-        spotifyResult:sess.spotifyResult,
-        tripItResult:sess.tripItResult
-     });
+     actions.actionResult=sess['actionResult'];
+     actions.actionError=sess['actionError'];
+     
+     delete sess['actionResult']; 
+     delete sess['actionError']; 
+
+    if(sess.auth!=1)
+        res.render('first.ejs', { session: sess, actions:actions,
+            auth_url: settings.spotifyApiUrl, 
+            spotifyResult:sess.spotifyResult,
+            tripItResult:sess.tripItResult
+        });
+    if(sess.auth==1)
+    {
+        res.render('profile.ejs', { session: sess });
+    }
+    if(sess.auth==2)
+    {
+        res.render('users.ejs', { session: sess });
+    }  
 })
 
 
@@ -434,10 +567,10 @@ app.get('/tripitcallback', (req, res) => {
             });
 
             sess.tripItResult=trips;
-            res.redirect("/");
-        }).catch(function (reason) {
+            res.redirect("/my_trips");
+        }).catch(function (reason) { 
             console.log(reason);
-             res.redirect("/");
+             res.redirect("/my_trips");
         });
 
 

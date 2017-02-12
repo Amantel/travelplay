@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
 
@@ -45,8 +44,8 @@ body {
 
 
 <body>
-    <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a> <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a> 
 
+<a class="btn btn-info pull-right" style="margin: 20px 5px" href="./login">Enter</a> 
 <div class="clearfix"><br></div>
     <div class="container" style="max-width: 500px">
       
@@ -58,38 +57,38 @@ body {
       <p class="lead text-center">Some punchline text</p>
       <hr>
       <div class="text-center">
-                <% 
-                if(result) {
-                    var checked="";
-                    for(i=0; i<result.length; i++) {
-                        checked="";
-                        if(result[i].approved==1)
-                            checked="checked";
-                            
-                    
-                %>     
-                    <form method="POST" class="form-inline text-left" style="margin:10px;"  action="/approve_user">
-
-                    <input type="hidden" name="id" value="<%=result[i]._id%>">
-                    <input type="hidden" name="email" value="<%=result[i].email%>">
-                    <input type="hidden" name="password" value="<%=result[i].password%>">
-                    <label data-toggle="tooltip" data-placement="top" title="<%=result[i]._id%>" >
-                        <input class="checkbox" type="checkbox" <%=checked%> name="approved" value="1"  > 
-                        <%=result[i].email%> 
-                   
-                    </label>
-
-                    <input type="submit" class="btn btn-primary btn-sm pull-right" name="save" value="save">
-
-                    </form>
-                <% 
-                    }
-                }
-                %>
-
- 
+        <p>Some info about the product</p>
+        <p>Some info about the product</p>
       </div>
-       
+      <div class="text-left" id="register_form">
+        <form class="form-signin" method="POST" action="./register_user">
+          <label for="inputEmail" class="sr-only">Email address</label>
+          <input type="email" id="inputEmail" name="email" class="form-control" placeholder="Email address" required autofocus>
+          <br>
+          <button class="btn  btn-primary btn-block" type="submit">Join beta</button>
+          <small>* We will be in touch soon</small>
+
+<%if(actions && actions.actionResult) { %>  
+<div class="alert alert-success alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  <strong>Success</strong> <%=session.actionResult%>
+</div>
+<%}%>
+<%if(actions && actions.actionError) { %>  
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  <strong>Success</strong> <%=session.actionError%>
+</div>
+<%}%>
+  
+
+
+        </form>
+      <div class="text-center" style="margin-top: 100px;">
+        <p>Other information</p>        
+      </div>        
+        
+      </div>      
     </div>
 
     <footer class="footer">
