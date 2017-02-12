@@ -94,6 +94,9 @@
                                     <th>
                                         Results
                                     </th>
+                                     <th>
+                                        Actions
+                                    </th>                                   
                                 </tr>
                             </thead>
                             <tbody data-trips>
@@ -126,10 +129,13 @@
                                         <td>
                                             <a href="/my_results#<%=trip.id%>">view results</a>
                                         </td>
+                                        <td>
+                                            <a href="#" class="btn btn-warning" data-remove_row >Remove</a>
+                                        </td>                                         
                                     </tr>
                                     <%  }  %>
                             </tbody>
-                        </table>
+                        </table> 
 
                 </div>
 
@@ -198,6 +204,14 @@
         <script type="text/javascript">
             $(function () {
 
+                $( "table" ).on( "click","[data-remove_row]", function(e) {
+                    e.preventDefault();                    
+                    $(this).parents("tr").remove();
+                    if($("#save_call").hasClass("hidden")) {
+                        $("#save_call").removeClass("hidden");
+                        setTimeout(() => { $("#save_call").addClass("hidden") }, 2000);                    
+                    }
+                });
 
                 $('[data-toggle="tooltip"]').tooltip()
                 $('[data-date_mask]').inputmask("9999-99-99");
@@ -318,7 +332,7 @@
                             '<span class="band_name">'+ band +'</span>'+
                         '</td>'+
                         '<td class="text-right">'+
-                            '<a href="#" class="btn btn-warning" data-remove_row>Remove</a>'+
+                            '<a href="#" class="btn btn-warning" data-remove_row >Remove</a>'+
                         '</td>'+
                     '</tr>'+
                     ''; 
@@ -346,6 +360,9 @@
                     + '</td>'
                     + '<td>'
                     + '---'
+                    + '</td>'
+                    + '<td>'
+                    +' <a href="#" class="btn btn-warning" data-remove_row >Remove</a>'
                     + '</td>'
                     + '</tr>'
                     + '';
