@@ -104,12 +104,8 @@ app.post('/register_user', (req, res) => {
                 return true;
             }
             else {
-                json.password = tech.generatePass();
-                json.code =
-
-
-                    new_user.password = tech.generatePass();
-                json.code = tech.randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                var new_user={}
+                new_user.password = tech.generatePass();
                 new_user.active = 1;
                 new_user.approved = 0;
                 new_user.email = req.body.email;
