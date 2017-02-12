@@ -280,11 +280,15 @@ app.all('/login', (req, res) => {
 app.post("/approve_user", (req, res) => {
     if ((req.body.save || null) && (req.body.id || null)) {
         var approved = 0;
-        if (req.body.approved)
+        var password=null;
+        if (req.body.approved) {
             approved = 1;
+            password = tech.generatePass();
+        }
+            
         var id = new ObjectID(req.body.id);
-
-        db.collection('users').update({ _id: id }, { $set: { approved: approved } },
+        
+        db.collection('users').update({ _id: id }, { $set: { approved: approved, password:password } },
             (err, result) => {
                 if (err) {
                     res.send({ error: err });
@@ -293,7 +297,6 @@ app.post("/approve_user", (req, res) => {
                 console.log('saved to database');
 
                 if ((req.body.email || null) && approved) {
-                    var password = (req.body.password || null);
 
                     var html = '<html><body>You can now access <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> with your email and password: ' + password + ' </body></html>';
 
