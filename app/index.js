@@ -104,8 +104,10 @@ app.post('/register_user', (req, res) => {
                 return true;
             }
             else {
-                var new_user={}
+
+                var new_user = {}
                 new_user.password = tech.generatePass();
+                new_user.code = tech.randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
                 new_user.active = 1;
                 new_user.approved = 0;
                 new_user.email = req.body.email;
@@ -161,10 +163,10 @@ app.post('/save_user', (req, res) => {
     }
     if (json.bands && json.bands.length > 0) {
         doSave = true;
-        saveObj.bands = json.bands.map(band=>
+        saveObj.bands = json.bands.map(band =>
             ({
-                band:band.band.toLowerCase(),
-                additional_info:{band_name_original:band.band}
+                band: band.band.toLowerCase(),
+                additional_info: { band_name_original: band.band }
             })
         );
     }
@@ -280,15 +282,15 @@ app.all('/login', (req, res) => {
 app.post("/approve_user", (req, res) => {
     if ((req.body.save || null) && (req.body.id || null)) {
         var approved = 0;
-        var password=null;
+        var password = null;
         if (req.body.approved) {
             approved = 1;
             password = tech.generatePass();
         }
-            
+
         var id = new ObjectID(req.body.id);
-        
-        db.collection('users').update({ _id: id }, { $set: { approved: approved, password:password } },
+
+        db.collection('users').update({ _id: id }, { $set: { approved: approved, password: password } },
             (err, result) => {
                 if (err) {
                     res.send({ error: err });
@@ -355,9 +357,17 @@ app.get('/my_trips', (req, res) => {
     sess = req.session;
 
     if (sess.auth == 1) {
+        var actions = {};
+
+        actions.actionResult = sess.actionResult;
+        actions.actionError = sess.actionError;
+
+        delete sess.actionResult;
+        delete sess.actionError;
+
         var tripItResult = sess.tripItResult;
         delete sess.tripItResult;
-        res.render('profile_trips.ejs', { session: sess, tripItResult: tripItResult });
+        res.render('profile_trips.ejs', { session: sess, actions: actions, tripItResult: tripItResult });
     } else {
         res.redirect("/");
     }
@@ -368,9 +378,17 @@ app.get('/my_trips', (req, res) => {
 app.get('/my_artists', (req, res) => {
     sess = req.session;
     if (sess.auth == 1) {
+        var actions = {};
+
+        actions.actionResult = sess.actionResult;
+        actions.actionError = sess.actionError;
+
+        delete sess.actionResult;
+        delete sess.actionError;
+
         var spotifyResult = sess.spotifyResult;
-        delete sess.spotifyResult;        
-        res.render('profile_artists.ejs', { session: sess, spotifyResult: spotifyResult,authUrl: settings.spotifyApiUrl });
+        delete sess.spotifyResult;
+        res.render('profile_artists.ejs', { session: sess, actions: actions, spotifyResult: spotifyResult, authUrl: settings.spotifyApiUrl });
     } else {
         res.redirect("/");
     }
@@ -384,7 +402,14 @@ app.get('/my_results', (req, res) => {
 
 
     if (sess.auth == 1) {
-        res.render('profile_results.ejs', { session: sess });
+        var actions = {};
+
+        actions.actionResult = sess.actionResult;
+        actions.actionError = sess.actionError;
+
+        delete sess.actionResult;
+        delete sess.actionError;
+        res.render('profile_results.ejs', { session: sess, actions: actions });
 
     } else {
         res.redirect("/");
@@ -406,8 +431,6 @@ app.get('/', (req, res) => {
     //       var html = '<html><body>Visit <a href="'+server_settings.appUrl+'" target="_blank"> here </a></body></html>';
     //        tech.sendMail(settings.adminMail, "New registration on "+server_settings.appName+" ", html);
 
-
-
     var actions = {};
 
     actions.actionResult = sess.actionResult;
@@ -418,16 +441,18 @@ app.get('/', (req, res) => {
 
     if (sess.auth != 1)
         res.render('first.ejs', {
-            session: sess, actions: actions,
+            session: sess,
+            actions: actions,
             authUrl: settings.spotifyApiUrl,
             spotifyResult: sess.spotifyResult,
             tripItResult: sess.tripItResult
         });
     if (sess.auth == 1) {
-        res.render('profile.ejs', { session: sess });
+        console.log(actions);
+        res.render('profile.ejs', { session: sess, actions: actions });
     }
     if (sess.auth == 2) {
-        res.render('users.ejs', { session: sess });
+        res.render('users.ejs', { session: sess, actions: actions });
     }
 });
 
@@ -557,7 +582,7 @@ app.get('/spotifycallback', (req, res) => {
 
                     res.redirect('/my_artists');
 
-                 });
+                });
 
             });
 
@@ -599,12 +624,16 @@ app.get('/protected', (req, res) => {
     var r = req.query.r || null;
 
 
-    if (sess.auth > 0)
-        if (r)
+    if (sess.auth > 0) {
+         sess.actionResult = "Already authorized";
+         console.log(sess.actionResult);
+        if (r) {
             res.redirect("/" + r);
-        else {
-            res.send("authed");
         }
+        else {
+            res.redirect("/");
+        }
+    }
     else {
         //here we try auth
         if ((req.query.code || null)) {
@@ -622,52 +651,65 @@ app.get('/protected', (req, res) => {
                             sess.auth = "1"; //AUTH COMPLETED
                             sess.authed_user = result[0];
                             sess.authed_user.current_auth = sess.auth;
+
+                            sess.actionResult = "Auto autorization completed";
+                            console.log(sess.actionResult);
+
                             if (r)
                                 res.redirect("/" + r);
-                            else
-                                //res.send(sess.authed_user);   
-                                res.send(sess.authed_user.matches);
-                            console.log(sess.authed_user.matches.length);
+                            else {
+                                res.redirect("/");
+                            
+                            }
+
 
                         } else {
                             sess.auth = "0";
                             sess.authed_user = {};
-                            console.log("Not approved");
+
+                            sess.actionError = "Auto autorization failed - User not approved";
+                            console.log(sess.actionError);
+
                             if (r)
                                 res.redirect("/" + r);
-                            else
-                                res.send("Found but not approved");
+                            else {
+                                res.redirect("/");
+                                
+                            }
                         }
                     }
                     else {
                         sess.auth = "0";
                         sess.authed_user = {};
-                        console.log("Wrong credentials");
+
+                        sess.actionError = "Auto autorization failed - Wrong credentials";
+                        console.log(sess.actionError);
+
                         if (r)
                             res.redirect("/" + r);
-                        else
-                            res.send("Not Found");
-
+                        else {
+                            res.redirect("/");
+                        }
                     }
 
                 }
                 else {
-                    res.send({ error: err });
+                    sess.actionError = "Auto autorization failed - DB error: " + err.toString();
+                    console.log(sess.actionError);
+
+                    res.redirect("/");
 
                 }
             });
         }
         else {
-            res.send("error - no auth");
+            sess.actionError = "Auto autorization failed - No private code";
+            console.log(sess.actionError);
         }
 
 
     }
-
-
-    //unlogin        
-    sess.auth = 0;
-    sess.authed_user = {};
+ 
 
 
 });

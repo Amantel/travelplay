@@ -50,7 +50,7 @@ function saveEvents(user, foundEvents, trip) {
             var html = '<html><body>'+
                 'id = ' + id+
                 'tripid = ' + tripid  +              
-                ' Visit <a href="http://localhost:8001/protected?code=' + code + '" target="_blank"> TravelPlay </a> for new matches'+
+                ' Visit <a href="http://localhost:8001/protected?code=' + code + '&r=my_results" target="_blank"> TravelPlay </a> for new matches'+
                 ' in ' + trip.city + ' city '+
                 '</body></html>';
 

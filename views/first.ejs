@@ -48,7 +48,18 @@ body {
 <a class="btn btn-info pull-right" style="margin: 20px 5px" href="./login">Enter</a> 
 <div class="clearfix"><br></div>
     <div class="container" style="max-width: 500px">
-      
+      <%if(actions && actions.actionResult) { %>  
+        <div class="alert alert-success alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <%=actions.actionResult%>
+        </div>
+        <%}%>
+        <%if(actions && actions.actionError) { %>  
+        <div class="alert alert-warning alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <%=actions.actionError%>
+        </div>
+      <%}%>      
         
 
       <div class="text-center">
@@ -68,18 +79,7 @@ body {
           <button class="btn  btn-primary btn-block" type="submit">Join beta</button>
           <small>* We will be in touch soon</small>
 
-<%if(actions && actions.actionResult) { %>  
-<div class="alert alert-success alert-dismissible" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-  <strong>Success</strong> <%=session.actionResult%>
-</div>
-<%}%>
-<%if(actions && actions.actionError) { %>  
-<div class="alert alert-warning alert-dismissible" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-  <strong>Success</strong> <%=session.actionError%>
-</div>
-<%}%>
+      
   
 
 

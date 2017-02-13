@@ -53,7 +53,20 @@
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a>
     <div class="clearfix"><br></div>
     <div class="container" >
-
+        
+      <%if(actions && actions.actionResult) { %>  
+        <div class="alert alert-success alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <%=actions.actionResult%>
+        </div>
+        <%}%>
+        <%if(actions && actions.actionError) { %>  
+        <div class="alert alert-warning alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <%=actions.actionError%>
+        </div>
+      <%}%>      
+    
 
 
         <div class="text-center">
