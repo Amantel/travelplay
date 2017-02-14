@@ -104,7 +104,9 @@ $(function () {
     });
  
 
-
+    $("[data-select_all]").click(function(){
+        $('[data-mass_select]:not(:checked)').click();
+    });
 
     $("table").on("click", "[data-remove_selected]", function (e) {
         e.preventDefault();
@@ -203,10 +205,13 @@ $(function () {
             trips.push(trip);
         });
 
-        if ($("[data-trips]").length > 0)
 
-            rbody.trips = trips;
-
+        if ($("[data-trips]").length > 0) {
+            if(trips.length>0)
+                rbody.trips = trips;
+            else
+                rbody.trips = "EMPTY";    
+        }
 
         var bandForms = $("[data-band]");
 
@@ -217,13 +222,18 @@ $(function () {
             bands.push(band);
         });
 
-        if ($("[data-bands]").length > 0)
-            rbody.bands = bands;
+        if ($("[data-bands]").length > 0) {
+            if(bands.length>0)
+                rbody.bands = bands;
+            else
+                rbody.bands = "EMPTY";    
+        }
+
 
         rbody.user_id = false;
         if ($("[data-user_id]").length > 0 && $("[data-user_id]").val() !== "")
             rbody.user_id = $("[data-user_id]").val();
-
+        
         console.log(rbody);
 
         if(bands.length>100) {
