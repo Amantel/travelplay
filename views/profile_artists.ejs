@@ -61,10 +61,12 @@
 
             %>
 
-
+                             
                         <table class="table" >
                             <thead>
-                                <tr>
+                                <tr>    
+                                    <th>
+                                    </th>
                                     <th>
                                         Active
                                     </th>
@@ -88,6 +90,7 @@
 
                                 %>
                                     <tr class="band" data-band>
+                                        <td><input type="checkbox" data-mass_select></td>    
                                         <td>
                                             <input type="hidden"
                                              data-band_name_original 
@@ -96,6 +99,7 @@
                                         </td>
                                         <td class="text-right">
                                             <span class="btn btn-warning" data-remove_row>Remove</span>
+                                            <span class="btn btn-danger hidden" data-remove_selected>Remove selected</span>
                                         </td>                                        
                                     </tr>
                                     <%  }  %>

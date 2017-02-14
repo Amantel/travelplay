@@ -1,5 +1,6 @@
 function createBand(band, i) {
     return '<tr class="band" data-band>' +
+        '<td><input type="checkbox" data-mass_select></td>'+    
         '<td>' +
         '<input type="hidden" ' +
         ' data-band_name_original' +
@@ -7,7 +8,8 @@ function createBand(band, i) {
         '<span class="band_name">' + band + '</span>' +
         '</td>' +
         '<td class="text-right">' +
-        '<a href="#" class="btn btn-warning" data-remove_row >Remove</a>' +
+        '<span class="btn btn-warning" data-remove_row>Remove</span>'+
+        '<span class="btn btn-danger hidden" data-remove_selected>Remove selected</span>'+
         '</td>' +
         '</tr>' +
         '';
@@ -16,6 +18,7 @@ function createBand(band, i) {
 function createTrip(city, start, end, country, i, id) {
 
     return '<tr class="trip" data-trip>' +
+        '<td><input type="checkbox" data-mass_select></td>'+
         '<td class="">' +
         '<input type="hidden" data-trip_city value="' + city + '">' +
         '<input type="hidden" data-trip_country value="' + country + '">' +
@@ -37,7 +40,8 @@ function createTrip(city, start, end, country, i, id) {
         '---' +
         '</td>' +
         '<td>' +
-        ' <a href="#" class="btn btn-warning" data-remove_row >Remove</a>' +
+        '<span class="btn btn-warning" data-remove_row>Remove</span>'+
+        '<span class="btn btn-danger hidden" data-remove_selected>Remove selected</span>'+
         '</td>' +
         '</tr>' +
         '';
@@ -84,6 +88,24 @@ $(function () {
     $("table").on("click", "[data-remove_row]", function (e) {
         e.preventDefault();
         $(this).parents("tr").remove();
+        $(".loading").removeClass("hidden");            
+        $("#brb").click();
+ 
+    });
+
+    $("table").on("click", "[data-mass_select]", function (e) {
+        if($('[data-mass_select]:checked').length>0) {
+            $('[data-remove_row]').addClass("hidden");
+            $('[data-remove_selected]').removeClass("hidden");
+        } else {
+            $('[data-remove_selected]').addClass("hidden");
+            $('[data-remove_row]').removeClass("hidden");
+        }
+    });
+
+    $("table").on("click", "[data-remove_selected]", function (e) {
+        e.preventDefault();
+        $('[data-mass_select]:checked').parents("tr").remove();
         $(".loading").removeClass("hidden");            
         $("#brb").click();
  
@@ -180,7 +202,7 @@ $(function () {
 
         if(trips.length>100) {
             alert("We can save only first 100 trips");
-            trips=trips.splice(100,trips.length)
+            trips=trips.splice(100,trips.length);
         }
 
         var bandForms = $("[data-band]");
@@ -203,7 +225,7 @@ $(function () {
 
         if(bands.length>100) {
             alert("We can save only first 100 artists");
-            bands=bands.splice(100,bands.length)
+            bands=bands.splice(100,bands.length);
         }
 
         $.ajax({
