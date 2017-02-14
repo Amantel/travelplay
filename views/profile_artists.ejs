@@ -56,8 +56,18 @@
                 if(session.authed_user.bands && session.authed_user.bands.length>0)
                 bands=bands.concat(session.authed_user.bands);
 
-                if( typeof spotifyResult !== 'undefined' && spotifyResult) 
-                    bands=bands.concat(spotifyResult);
+                if( typeof spotifyResult !== 'undefined' && spotifyResult)  {
+                    var clearBands=bands.map(bandObj=>bandObj.band);
+                    var clearSpotifyResult=spotifyResult.filter(
+                        (bandName) => {
+                            return !clearBands.includes(bandName.band)
+                        }
+                    )
+
+                    bands=bands.concat(clearSpotifyResult);
+           
+                    
+                }
 
             %>
 
