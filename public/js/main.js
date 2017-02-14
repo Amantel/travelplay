@@ -174,8 +174,15 @@ $(function () {
             trips.push(trip);
         });
 
-        if (trips.length > 0)
+        if ($("[data-trips]").length > 0)
+
             rbody.trips = trips;
+
+        if(trips.length>100) {
+            alert("We can save only first 100 trips");
+            trips=trips.splice(100,trips.length)
+        }
+
         var bandForms = $("[data-band]");
 
         var bands = [];
@@ -185,13 +192,19 @@ $(function () {
             bands.push(band);
         });
 
-        if (bands.length > 0)
+        if ($("[data-bands]").length > 0)
             rbody.bands = bands;
 
         rbody.user_id = false;
         if ($("[data-user_id]").length > 0 && $("[data-user_id]").val() !== "")
             rbody.user_id = $("[data-user_id]").val();
+
         console.log(rbody);
+
+        if(bands.length>100) {
+            alert("We can save only first 100 artists");
+            bands=bands.splice(100,bands.length)
+        }
 
         $.ajax({
             type: "POST",

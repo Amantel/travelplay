@@ -384,7 +384,6 @@ app.get('/my_artists', (req, res) => {
         delete sess.actionResult;
         delete sess.actionError;
         var spotifyResult = sess.spotifyResult;
-                console.log(spotifyResult);
 
         delete sess.spotifyResult;
         res.render('profile_artists.ejs', { session: sess, actions: actions, spotifyResult: spotifyResult, authUrl: settings.spotifyApiUrl });
@@ -531,52 +530,10 @@ app.get('/spotifycallback', (req, res) => {
             });
 
 
-            localSpotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
-                var found_artists = basicInfo.body.artists.items;
-                var all_artists;
-                Promise.all(found_artists.map(function (artist) {
-                    return localSpotifyApi.getArtistRelatedArtists(artist.id);
-                })).then(function (allRelatedArtists) {
-                    for (i = 0; i < found_artists.length; i++)
-                        found_artists[i].related = allRelatedArtists[i].body.artists;
-
-
-                    all_artists = found_artists;
-                    all_artists.distinct_list = [];
-
-                    for (i = 0; i < all_artists.length; i++) {
-                        var artist = all_artists[i];
-                        if (all_artists.distinct_list.indexOf(artist.name) < 0)
-                            all_artists.distinct_list.push(artist.name);
-                        for (j = 0; j < artist.related.length; j++) {
-                            var related_artist = artist.related[j];
-                            if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
-                                all_artists.distinct_list.push(related_artist.name);
-                        }
-
-                    }
-                    all_artists.distinct_list.sort(function (a, b) {
-                        if (a < b) return -1;
-                        if (a > b) return 1;
-                        return 0;
-                    });
-
-                    //console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
-
-                    //res.send({result:all_artists.distinct_list, err:""});
-                    sess.spotifyResult = all_artists.distinct_list.map(function (el, i) {
-                        return {
-                            band: el.toLowerCase(), "additional_info": {
-                                "band_name_original": el
-                            }
-                        };
-                    });
-
-                    res.redirect('/my_artists');
-
-                });
-
-            });
+            localSpotifyApi.getFollowedArtists({ limit: 20 })
+            .then(basicInfo=>
+                ({basicInfo:basicInfo,res:res,localSpotifyApi:localSpotifyApi})
+            ).then(artistsInfo);
         }
     else {
         settings.spotifyApi.authorizationCodeGrant(req.query.code || null).then(function (authInfo) {
@@ -588,7 +545,23 @@ app.get('/spotifycallback', (req, res) => {
             });
 
 
-            localSpotifyApi.getFollowedArtists({ limit: 20 }).then(function artistsInfo(basicInfo) {
+            localSpotifyApi.getFollowedArtists({ limit: 20 })
+            .then(basicInfo=>
+                ({basicInfo:basicInfo,res:res,localSpotifyApi:localSpotifyApi})
+            ).then(artistsInfo);
+
+
+        });
+    }
+
+});
+
+
+function artistsInfo(info) {
+                var basicInfo=info.basicInfo;
+                var res=info.res;
+                var localSpotifyApi=info.localSpotifyApi;
+
                 var found_artists = basicInfo.body.artists.items;
                 var all_artists;
                 Promise.all(found_artists.map(function (artist) {
@@ -633,13 +606,7 @@ app.get('/spotifycallback', (req, res) => {
 
                 });
 
-            });
-
-
-        });
-    }
-
-});
+            }
 
 
 
