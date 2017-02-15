@@ -71,7 +71,6 @@
                                 <thead>
                                     <tr>
                                         <th>Event</th>
-                                        <th>Date</th>
                                         <th class="hidden">Link</th>
                                     </tr>
                                 </thead>
@@ -83,11 +82,9 @@
                 %>
                                         <tr>
                                             <td>
-                                                <%=event_row.event.text%>
+                                                <%=event_row.event.event_title%>
                                             </td>
-                                            <td>
-                                                <%=event_row.event.date%>
-                                            </td>
+                  
                                             <td data-toggle="tooltip" data-placement="top" title="not it beta" class="text-center hidden">-</td>
                                         </tr>
                                         <%                 
@@ -125,6 +122,8 @@
 
     <script type='text/javascript' src="./js/jquery-latest.js"></script>
     <script type='text/javascript' src="./js/bootstrap.min.js"></script>
+    <script src="./js/jquery.inputmask.bundle.min.js"></script>
+    
     <script src="./js/main.js"></script>
 
 
