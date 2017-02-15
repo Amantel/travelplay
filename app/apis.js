@@ -184,7 +184,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
 
-                tech.logEvents(time, user, trip, apiUrl, results, events,"songkick");
+                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), results, events,"songkick");
 
 
 
