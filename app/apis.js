@@ -179,7 +179,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     */
 
                 }
-                console.log(trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
+                console.log("Songkick "+trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
 
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
@@ -302,14 +302,14 @@ function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
 
                     //filter by bands
                         events = flattened.filter(function (elem, i, array) {
-                        console.log(i+")"+elem.event_title.toLowerCase());
+                        //console.log(i+")"+elem.event_title.toLowerCase());
                         if (elem.event_title !== undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
                         }
                         return false;
                     });
                 }
-                //console.log(trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
+                console.log("Eventful "+trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
  
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
@@ -450,8 +450,8 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
                     });
 
                 }
-                console.log("Results: " + flattened.length);
-                console.log("Events: " + events.length);
+                console.log("Ticketmaster "+trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
+                
 
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
