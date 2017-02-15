@@ -622,7 +622,7 @@ function artistsInfo(info) {
 
 
 
-
+/*
 app.get('/deactivate', (req, res) => {
     sess = req.session;
     if (sess.auth == 1) {
@@ -646,7 +646,7 @@ app.get('/deactivate', (req, res) => {
     }
 
 });
-
+*/
 app.get('/protected', (req, res) => {
     sess = req.session;
     var r = req.query.r || null;
@@ -793,7 +793,7 @@ function findEvents(user, time) {
         return el.band;
     });
 
-    if (artistList.length < 20) {
+    if (artistList.length < 1) {
         console.log("bands to few for test");
         return false;
     }

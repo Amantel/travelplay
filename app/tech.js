@@ -71,7 +71,7 @@ function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents,apiName) {
 
     
 
-    var folder_name = time_text.toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "/" + apiName + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
+    var folder_name = time_text.slice(0, 19).replace(/:/g, '_').replace(/-/g, '_') + "/" + user._id + "/" + "/" + apiName + "/" + "_" + foundEvents.length + "_" + trip.city + new Date().toISOString().slice(0, 19).replace(/:/g, '_').replace(/-/g, '_');
     var dir = "./tech/" + folder_name + "/";
     fs.ensureDir(dir, function (err) {
         if (err) {
