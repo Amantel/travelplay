@@ -51,7 +51,12 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
                         totalEntries = 0;
                     if (totalEntries > 0) {
                         // console.log(cityName + "  " + json.resultsPage.results.location[0].metroArea.id)
-                        callback(null, json.resultsPage.results.location[0].metroArea.id);
+
+                        var cityID= json.resultsPage.results.location[0].metroArea.id;
+                        if(json.resultsPage.results.location.length>1 && 
+                            tech.isUS(json.resultsPage.results.location[0].metroArea.country.displayName))
+                            cityID=json.resultsPage.results.location[1].metroArea.id;
+                        callback(null,cityID);
                     } else {
                         //console.log(cityName + "  " + "city not found")
                         callback("city not found - "+cityName, 0);
@@ -66,7 +71,18 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
         },
 
         function (cityID, callback) {
-            var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", 1);
+
+            var start=trip.start;
+            var end=trip.end;
+
+
+            var url = apiUrl.
+                replace("CITY_ID", cityID).
+                replace("PAGE_NUMBER", 1).
+                replace("DATE_START", start).
+                replace("DATE_END", end);
+
+
             //console.log(url);
             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
@@ -111,7 +127,16 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
 function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time) {
     async.map(pagesArray,
         (function (pageNumber, callback) {
-            var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber));
+            //var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber));
+            var start=trip.start;
+            var end=trip.end;
+
+
+            var url = apiUrl.
+                replace("CITY_ID", cityID).
+                replace("PAGE_NUMBER", encodeURI(pageNumber)).
+                replace("DATE_START", start).
+                replace("DATE_END", end);
 
             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
@@ -150,7 +175,8 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         return a.concat(b);
                     });
 
-                    
+                    /*
+                    //already filtered
                     //filter by dates
                     events = flattened.filter(function (elem, i, array) {
                         if (elem.event !== undefined && elem.event.start !== undefined) {
@@ -159,6 +185,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         return false;
     
                     });
+                    */
                     //filter by bands
                     events = events.filter(function (elem, i, array) {
                         if (elem.event_title !== undefined) {
@@ -169,15 +196,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     });
                  
 
-                    /*
-                    TESTS
-                    var N = Math.floor(Math.random() * Math.min(10, flattened.length)) + 0;
-                    for (i = 0; i < N; i++) {
-                        var X = Math.floor(Math.random() * flattened.length) + 1;
-                        events.push(flattened[X]);
-                    } 
-                    */
-
+    
                 }
                 console.log("Songkick "+trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
 

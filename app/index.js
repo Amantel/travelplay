@@ -62,7 +62,7 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
         console.log('listening on ' + server_settings.port);
 
-        //startServer(false);
+        startServer(false);
     });
 });
 
