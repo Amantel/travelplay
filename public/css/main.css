@@ -122,3 +122,16 @@ table tr td{
     -webkit-transform: scaleY(1.0);
   }
 }        
+
+
+tr.band.relation_1 {
+    font-weight: bold;
+}
+tr.band.relation_2 {
+    color: #555;
+    background-color: #fffff5;
+}
+
+tr.band.source_spotify .band_name {
+    border-bottom: 1px dashed #2ebd59;
+}

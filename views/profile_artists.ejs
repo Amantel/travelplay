@@ -63,6 +63,10 @@
                             return !clearBands.includes(bandName.band)
                         }
                     )
+                    clearSpotifyResult.map((obj)=>{
+                        obj.source="spotify";
+                        return obj;
+                    });
 
                     bands=bands.concat(clearSpotifyResult);
            
@@ -95,17 +99,33 @@
                                     if(typeof(band.additional_info)!=='undefined')
                                         bandName=band.additional_info.band_name_original;
                                     else 
-                                        bandName=band.band;    
+                                        bandName=band.band;  
 
+                                    var bandRelation=1;    
+                                    if(typeof(band.relation)!=='undefined')
+                                        bandRelation=band.relation;
 
+                                    var bandSource="default"; 
+                                     if(typeof(band.source)!=='undefined')
+                                        bandSource=band.source;
+                                   
 
                                 %>
-                                    <tr class="band" data-band>
+                                    <tr class="band relation_<%=bandRelation%> source_<%=bandSource%>" data-band>
                                         <td><input type="checkbox" data-mass_select></td>    
                                         <td>
                                             <input type="hidden"
                                              data-band_name_original 
                                              value="<%=bandName%>">
+
+                                            <input type="hidden"
+                                             data-band_source 
+                                             value="<%=bandSource%>">    
+
+                                            <input type="hidden"
+                                             data-band_relation 
+                                             value="<%=bandRelation%>">    
+
                                             <span class="band_name"><%=bandName%></span>
                                         </td>
                                         <td class="text-right">
@@ -120,7 +140,7 @@
                 </div>
 
                 <%                 if( typeof spotifyResult !== 'undefined' && spotifyResult)       {      %>
-                                            <span data-hidden_reload_marker></span>
+                           <!-- <span data-hidden_reload_marker></span> -->
 
                     <%                }             %>
 

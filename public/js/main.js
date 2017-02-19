@@ -84,7 +84,7 @@ function randomString(length, chars) {
 } 
 
 $(function () {
-
+    console.log($("tr").length);
     $("table").on("click", "[data-remove_row]", function (e) {
         e.preventDefault();
         $(this).parents("tr").remove();
@@ -218,7 +218,12 @@ $(function () {
         var bands = [];
         $.each(bandForms, function (i, el) {
             el = $(el);
-            var band = { "band": el.find("[data-band_name_original]").val().trim() };
+            var band = { 
+                "band": el.find("[data-band_name_original]").val().trim().toLowerCase(), 
+                "additional_info": { "band_name_original": el.find("[data-band_name_original]").val().trim() },
+                "source": el.find("[data-band_source]").val().trim(),
+                "relation": el.find("[data-band_relation]").val().trim()
+            };
             bands.push(band);
         });
 
@@ -236,14 +241,14 @@ $(function () {
         
         console.log(rbody);
 
+/*
         if(bands.length>100) {
             alert("We can save only first 100 artists. Please choose.");
             bands=bands.splice(100,bands.length);
             $(".loading").addClass("hidden");                
             return false;
         }
-
-
+*/
         if(trips.length>100) {
             alert("We can save only first 100 trips. Please choose.");
             trips=trips.splice(100,trips.length);

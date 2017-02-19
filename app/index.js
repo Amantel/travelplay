@@ -62,7 +62,7 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
         console.log('listening on ' + server_settings.port);
 
-        startServer(false);
+        //startServer(false);
     });
 });
 
@@ -164,19 +164,22 @@ app.post('/save_user', (req, res) => {
         }
         else {
             saveObj.trips = [];
-
+ 
         }
-
+ 
     }
     if (json.bands !== undefined) {
         doSave = true;
         if (json.bands !== "EMPTY") {
+            saveObj.bands=json.bands;
+            /*
             saveObj.bands = json.bands.map(band =>
                 ({
                     band: band.band.toLowerCase(),
                     additional_info: { band_name_original: band.band }
                 })
             );
+            */
         }
         else {
             saveObj.bands = [];
@@ -584,35 +587,64 @@ function artistsInfo(info) {
 
 
         all_artists = found_artists;
-        all_artists.distinct_list = [];
+       // console.log("all_artists "+all_artists.length);
+       // console.log(all_artists);
 
-        for (i = 0; i < all_artists.length; i++) {
+        var distinct=[];
+
+
+        
+        artistsDistinct = [];
+
+        for (var i = 0; i < all_artists.length; i++) {
             var artist = all_artists[i];
-            if (all_artists.distinct_list.indexOf(artist.name) < 0)
-                all_artists.distinct_list.push(artist.name);
-            for (j = 0; j < artist.related.length; j++) {
-                var related_artist = artist.related[j];
-                if (all_artists.distinct_list.indexOf(related_artist.name) < 0)
-                    all_artists.distinct_list.push(related_artist.name);
+            var relatedBands=artist.related;
+            delete artist.related;
+
+            if (distinct.indexOf(artist.name) < 0) {
+                artist.relation=1;
+                artistsDistinct.push(artist);
+                distinct.push(artist.name);
+            }
+            for (var j = 0; j < relatedBands.length; j++) {
+                var related_artist = relatedBands[j];
+                if (distinct.indexOf(related_artist.name) < 0) {
+                    related_artist.relation=2;
+                    artistsDistinct.push(related_artist);
+                    distinct.push(related_artist.name);
+                }
             }
 
         }
-        all_artists.distinct_list.sort(function (a, b) {
+        /*
+        artistsDistinct.sort(function (a, b) {
             if (a < b) return -1;
             if (a > b) return 1;
             return 0;
         });
+        */
+       artistsDistinct.sort(function (a, b) {
+            if (a.relation < b.relation) return -1;
+            if (a.relation > b.relation) return 1;
+            return 0;
+        });
 
-        //console.log("Followed and Related (c) Spotify: " + all_artists.distinct_list.length);
 
-        //res.send({result:all_artists.distinct_list, err:""});
-        sess.spotifyResult = all_artists.distinct_list.map(function (el, i) {
+         
+        console.log("Followed and Related (c) Spotify: " + artistsDistinct.length);
+
+        //res.send({result:artistsDistinct, err:""});
+        sess.spotifyResult = artistsDistinct.map(function (el, i) {
             return {
-                band: el.toLowerCase(), "additional_info": {
-                    "band_name_original": el
+                band: el.name.toLowerCase(),
+                relation: el.relation,
+                "additional_info": {
+                    "band_name_original": el.name,
+                    "total_info":el
                 }
             };
         });
+       
 
         res.redirect('/my_artists');
 
