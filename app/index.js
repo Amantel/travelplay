@@ -184,12 +184,35 @@ app.post('/save_user', (req, res) => {
         else {
             saveObj.bands = [];
         }
+
+
+
+        if(saveObj.bands.length>0) {
+            console.log(saveObj.bands[0]);
+            saveObj.bands.forEach(bandObj=>{
+                db.collection('bands').update(
+                    {"bandName":{$eq:bandObj.band}}, //
+                    //{'$set': {"lastFound":new Date().toISOString()} }, // 
+                    { $set: bandObj },
+                    { upsert: true },
+                    (err, result) => { 
+                        if (err) {
+                            //res.send({ error: err });
+                            console.log(err);
+                            return false;
+                        }                        
+                        //console.log(result);
+                    }   
+                );
+            });
+        }
+
+
     }
     if (json.user_id && doSave) {
 
 
         db.collection('users').findAndModify(
-
             { '_id': new ObjectID(json.user_id) },
             [['_id', 'asc']],
             { $set: saveObj },
@@ -201,6 +224,8 @@ app.post('/save_user', (req, res) => {
                     return false;
                 }
                 sess.authed_user = result.value;
+
+
                 res.send("OK");
             }
         );
