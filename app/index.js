@@ -33,10 +33,18 @@ var tripItApiClient = require("tripit-node");
 const app = express();
 app.set('views', __dirname + "/../views");
 app.set('trust proxy', 'loopback');
-app.use(bodyParser.urlencoded({ extended: true }));
+
+
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true, parameterLimit:50000}));
+
+
 //app.use(express.static('public'));
 app.use(express.static(__dirname + '/../public'));
 app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 3000000 }, resave: true, saveUninitialized: true }));
+
+
+
 var sess;
 
 

@@ -222,7 +222,8 @@ $(function () {
                 "band": el.find("[data-band_name_original]").val().trim().toLowerCase(), 
                 "additional_info": { "band_name_original": el.find("[data-band_name_original]").val().trim() },
                 "source": el.find("[data-band_source]").val().trim(),
-                "relation": el.find("[data-band_relation]").val().trim()
+                "relation": el.find("[data-band_relation]").val().trim(),
+                "genres":el.find("[data-band_genre_string]").val().trim().split("|")
             };
             bands.push(band);
         });

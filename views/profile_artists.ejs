@@ -57,6 +57,10 @@
                 bands=bands.concat(session.authed_user.bands);
 
                 if( typeof spotifyResult !== 'undefined' && spotifyResult)  {
+
+                    //console.log(spotifyResult[0].additional_info.total_info.genres.join('|'));
+
+
                     var clearBands=bands.map(bandObj=>bandObj.band);
                     var clearSpotifyResult=spotifyResult.filter(
                         (bandName) => {
@@ -65,6 +69,7 @@
                     )
                     clearSpotifyResult.map((obj)=>{
                         obj.source="spotify";
+                        obj.genresString=obj.additional_info.total_info.genres.join('|');
                         return obj;
                     });
 
@@ -72,6 +77,7 @@
            
                     
                 }
+
 
             %>
 
@@ -94,12 +100,23 @@
                                 <%
                 
                                 for(i=0;i<bands.length; i++) {  
+                                    
                                     var band=bands[i];
                                     var bandName="";
                                     if(typeof(band.additional_info)!=='undefined')
                                         bandName=band.additional_info.band_name_original;
                                     else 
                                         bandName=band.band;  
+
+                                    if(typeof(band.genres)!=='undefined')
+                                        genresString=band.genres.join('|');
+                                    else 
+                                        {
+                                            if(band.genresString!=='undefined')
+                                                genresString=band.genresString;
+                                            else
+                                                genresString="";
+                                        }                                       
 
                                     var bandRelation=1;    
                                     if(typeof(band.relation)!=='undefined')
@@ -126,7 +143,11 @@
                                              data-band_relation 
                                              value="<%=bandRelation%>">    
 
-                                            <span class="band_name"><%=bandName%></span>
+                                            <input type="hidden"
+                                             data-band_genre_string 
+                                             value="<%=genresString%>">   
+
+                                            <span class="band_name" data-toggle="tooltip" data-placement="top" title="<%=genresString%>"><%=bandName%></span>
                                         </td>
                                         <td class="text-right">
                                             <span class="btn btn-warning" data-remove_row>Remove</span>
