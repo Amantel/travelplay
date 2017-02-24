@@ -71,8 +71,8 @@ function makeBandRequestTimeOut(artistName, callback) {
         //buff("Searching for "+artistName);    
         makeRequest(settings.BandsInTownUrl.replace("ARTIST_NAME", encodeURI(artistName)), { callback: callback }, findBrandsinTownEvent, callbackErrorGeneral);
     }, Math.random() * settings.BandsInTownTimeOutTime);
-}
-
+} 
+ 
 
 function findBrandsinTownEvent(data) { //sync function
 
@@ -81,7 +81,7 @@ function findBrandsinTownEvent(data) { //sync function
 
     iteratorMarker++;
 
-    //buff("data");
+    //buff("data"); 
     //buff(json.length);
 
     if (json && json.length > 0 && (typeof (json.errors) == "undefined")) {

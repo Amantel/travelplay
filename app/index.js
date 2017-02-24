@@ -22,6 +22,7 @@ const tech = require("./tech");
 const settings = require("./settings");
 const fakes = require("./fakes");
 const server_settings = require("./server_setting");
+const fs = require('fs-extra');
 
 
 var SpotifyWebApi = require('spotify-web-api-node');
@@ -61,7 +62,6 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on ' + server_settings.port);
-
         //startServer(false);
     });
 });
@@ -452,7 +452,7 @@ app.get('/', (req, res) => {
     delete sess.actionResult;
     delete sess.actionError;
 
-    if (sess.auth != 1)
+    if (sess.auth != 1 && sess.auth != 2)
         res.render('first.ejs', {
             session: sess,
             actions: actions,
@@ -460,12 +460,21 @@ app.get('/', (req, res) => {
             spotifyResult: sess.spotifyResult,
             tripItResult: sess.tripItResult
         });
+
     if (sess.auth == 1) {
         console.log(actions);
         res.render('profile.ejs', { session: sess, actions: actions });
     }
     if (sess.auth == 2) {
-        res.render('users.ejs', { session: sess, actions: actions });
+     //   res.render('users.ejs', { session: sess, actions: actions });
+        res.render('first.ejs', {
+            session: sess,
+            actions: actions,
+            authUrl: settings.spotifyApiUrl,
+            spotifyResult: sess.spotifyResult,
+            tripItResult: sess.tripItResult
+        });
+     
     }
 });
 
@@ -579,6 +588,13 @@ function artistsInfo(info) {
 
     var found_artists = basicInfo.body.artists.items;
     var all_artists;
+/*
+    spotTest(info);
+
+    res.redirect('/my_artists');
+
+    return false;
+*/
     Promise.all(found_artists.map(function (artist) {
         return localSpotifyApi.getArtistRelatedArtists(artist.id);
     })).then(function (allRelatedArtists) {
@@ -632,7 +648,6 @@ function artistsInfo(info) {
 
          
         console.log("Followed and Related (c) Spotify: " + artistsDistinct.length);
-
         //res.send({result:artistsDistinct, err:""});
         sess.spotifyResult = artistsDistinct.map(function (el, i) {
             return {
@@ -836,7 +851,7 @@ function findEvents(user, time) {
             //Eventful + Tickemaster
             apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
             apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
-            //console.log("US:"+trip.city);
+            //console.log("US:"+trip.city); 
         } else {
             //SongKick
             //console.log("NonUS:"+trip.city);
@@ -875,4 +890,129 @@ function ScheduledFind() {
     });
 
 
+}
+
+/*
+function spotTest1() {
+        id = new ObjectID("588738df79ec3c0b3409d8ee");
+
+        db.collection('users').find({
+            _id: { $eq: id }
+        }).toArray(function (err, result) {
+
+            if (!err) {
+                if (result.length > 0) {
+                    console.log("USER FOUND");
+                    var user=result[0];
+                    console.log("bands length "+user.bands.length)
+                    fs.writeFile("bands.json", JSON.stringify(user.bands), function (err) {
+                        if (err) {
+                            console.log(err);
+                            return false;
+                        }
+                    });                    
+                }
+            }
+            else {
+                console.log({ error: err });
+
+            }
+        });
+
+
+ 
+} 
+*/
+
+function spotTest(info) {
+    console.log("*********SPOT TEST START**********");
+    console.log(new Date());
+    var basicInfo = info.basicInfo;
+    var res = info.res;
+    var localSpotifyApi = info.localSpotifyApi;
+    var found_artists=basicInfo.body.artists.items.map(x=>x.id);
+    console.log(found_artists.length);
+    found_artists=found_artists.slice(0,10);
+    console.log(found_artists.length);
+    var mashArtists=[];
+    for(var i=0; i<10; i++) {
+        mashArtists=mashArtists.concat(found_artists);
+    }
+    console.log(mashArtists.length);
+
+    var promises=mashArtists.map(function (artist) {
+            var artistT=localSpotifyApi.getArtist(artist); //returning promise
+            return artistT;         //returning promise
+    });
+ 
+   
+    Promise.all(promises).then(function (foundInfo) {
+        console.log(foundInfo.length);
+        foundInfo = foundInfo.map(
+            x=>
+            x.body.name
+            );
+        console.log(foundInfo[foundInfo.length-1]);
+        console.log("************");
+        
+    },function(err){
+        console.log(err);
+    });
+   
+
+ 
+} 
+//testSpot();
+
+function testSpot() {
+    var artistID="0YWKRTzA4kBceGwjywtMkh";
+    console.log("************START");
+    console.log(new Date());
+    
+    ids=[
+        '0YWKRTzA4kBceGwjywtMkh','0YWKRTzA4kBceGwjywtMkh','0YWKRTzA4kBceGwjywtMkh',
+        '0YWKRTzA4kBceGwjywtMkh','0YWKRTzA4kBceGwjywtMkh','0YWKRTzA4kBceGwjywtMkh',
+        '0YWKRTzA4kBceGwjywtMkh','0YWKRTzA4kBceGwjywtMkh','0YWKRTzA4kBceGwjywtMkh',
+        '0YWKRTzA4kBceGwjywtMkh'
+    ];
+
+    var mashArtists=[];
+    for(var i=0; i<100; i++) {
+        mashArtists=mashArtists.concat(ids);
+    }
+    
+
+    async.mapSeries(mashArtists,loadArtist, function(err, result) {
+        if(err) {
+            console.log("err");
+    console.log(new Date());
+            
+            console.log(err);
+        } else {
+        console.log("result");
+    console.log(new Date());
+
+           console.log(result[result.length-1]);
+           console.log(result.length);
+           console.log("************END");
+
+
+        }
+    });
+} 
+
+function loadArtist(artistID,callback) {
+    var url="https://api.spotify.com/v1/artists/"+artistID;
+    request(url, function (err, response, body) {
+        if (!err && response.statusCode == 200) {
+            var json = JSON.parse(body);
+            //console.log(json);
+            callback(null,json);
+        } else {
+           //console.log("request error");
+            //console.log(err);
+            callback(err, 0);
+
+        }
+    });    
 }
