@@ -145,12 +145,11 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     if (!json) {
                         callback("find Songkick events error inner", 0);
                     } else {
-                        foundEvents = json.resultsPage.results.event.filter(function (elem, i, array) {
-                            return elem.performance.length > 0;
-                        }).map(function (elem) {
-                            return { "event_title": elem.performance[0].displayName, "event": elem };
-                        });
 
+                        foundEvents=json.resultsPage.results.event.filter(function (elem, i, array) {
+                        return elem.performance.length > 0;
+                    });
+                
                         callback(null, foundEvents);
                     }
                 } else {
@@ -168,24 +167,33 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 console.log(trip.city+" findSongKickEventsFinal error");
                 
             } else {
+
+
+  
+                /*
+                .map(function (elem) {
+                    return { "event_title": elem.performance[0].displayName, "event": elem };
+                });
+*/
+
+
+
                 var flattened = [];
                 var events = [];
                 if (results.length > 0) {
-                        flattened = results.reduce(function (a, b) {
+
+                    flattened = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
-
-                    /*
-                    //already filtered
-                    //filter by dates
-                    events = flattened.filter(function (elem, i, array) {
-                        if (elem.event !== undefined && elem.event.start !== undefined) {
-                            return new Date(elem.event.start.date) >= new Date(settings.SongKickStartDate) && new Date(elem.event.start.date) <= new Date(settings.SongKickEndtDate);
-                        }
-                        return false;
-    
+                    performanceses=flattened.map(function(event) {
+                        return event.performance.map(function(performance){
+                            return { "event_title": performance.displayName, "event": event };
+                        });
+                    }).reduce(function (a, b) {
+                        return a.concat(b);
                     });
-                    */
+                    
+
                     //filter by bands
                     events = events.filter(function (elem, i, array) {
                         if (elem.event_title !== undefined) {
@@ -194,6 +202,9 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         return false;
     
                     });
+
+                    //get genres
+                    
                  
 
     
@@ -203,7 +214,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 if (events.length > 0)
                     tech.saveEvents(user, events, trip); 
 
-                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), results, events,"songkick");
+                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, events,"songkick");
 
 
 

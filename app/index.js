@@ -71,6 +71,10 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
         console.log('listening on ' + server_settings.port);
         //startServer(false);
+
+        apis.findSongKickEvents(settings.SongKickUrl,  {city:"vienna",start:"2017-03-15",end:"2017-03-19"}, [], {_id:"some_user_id"}, "xxx", settings.SongKickLocationUrl);
+
+
     });
 });
 
