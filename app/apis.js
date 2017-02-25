@@ -6,6 +6,7 @@ module.exports.findTicketMasterEvents = findEventsTicketMasterStart;
 
 const request = require('request');
 const async = require('async');
+const fs = require('fs-extra');
 
 const SpotifyWebApi = require('spotify-web-api-node');
 
@@ -184,8 +185,29 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 
                     //here we have all event titles
+                    //if there are no genres to users filter only by bands 
+                    if(user.genres.length===0)
+                    {
+                        //filter by bands
+                        performances = performances.filter(function (elem, i, array) {
+                            if (elem.event_title !== undefined) {
+                                return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                            }
+                            return false;
 
-                    findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl, trip, user, time);
+                        });
+
+                        console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
+
+                        if (performances.length > 0)
+                            tech.saveEvents(user, performances, trip);
+
+                        tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
+
+
+                    } else {
+                        findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl, trip, user, time);
+                    }
 
                     //let's collect genres
 
@@ -261,11 +283,17 @@ function findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl,
 
 
 
-                    //let's collect genres
+                    //toLowerCase genres
+                    performances=performances.map(function (performance) {
+                        performance.genres=performance.genres.
+                        filter(g=>typeof(g)==="string").
+                        map(g=>g.toLowerCase());
+                        return performance;
+                    });                    
 
 
                     //filter by bands
-                    performances = performances.filter(function (elem, i, array) {
+                    performances12 = performances.filter(function (elem, i, array) {
                         if (elem.event_title !== undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
                         }
@@ -273,18 +301,35 @@ function findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl,
 
                     });
 
-                    //get genres
+                    performances3 = performances.filter(function (performance, i, array) {
 
+                        final=user.genres.filter(function(el){
+                            return performance.genres.indexOf(el)!==-1;
+                        });
 
+                        return final.length;
+ 
+                    });
 
+/*
+                    console.log("***********performances12***********");
+                    console.log(performances12);
+                    console.log(performances12.length);
+                    console.log("***********performances3***********");
+                    tech.logToFile("events.json", performances.map(p=>p.genres));
+                    tech.logToFile("usergenres.json", user.genres);
+                    tech.logToFile("performances3.json", performances3);
+                    console.log(performances3);
+                    console.log(performances3.length);
+*/
 
                 }
-                console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + events.length);
+                console.log("Songkick " + trip.city + " Results: " + performances.length + " " + "Events: " + performances3.length);
 
-                if (events.length > 0)
-                    tech.saveEvents(user, events, trip);
+                if (performances3.length > 0)
+                    tech.saveEvents(user, performances3, trip);
 
-                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, events, "songkick");
+                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), performances3, performances, "songkick");
 
 
 

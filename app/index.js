@@ -917,8 +917,8 @@ function ScheduledFind() {
 
             result.forEach(function (user) {
                 user.genres=tech.getUserGenres(user.bands);
-                console.log(user.genres);
-                //findEvents(user, time);
+                //console.log(user.genres);
+                findEvents(user, time);
             });
 
         }

@@ -10,6 +10,7 @@ module.exports.isUS = isUS;
 module.exports.addIdsToTrips = addIdsToTrips;
 module.exports.checkGenres = checkGenres;
 module.exports.getUserGenres = getUserGenres;
+module.exports.logToFile = logToFile;
 
 
 const nodemailer = require('nodemailer');
@@ -64,6 +65,20 @@ function saveEvents(user, foundEvents, trip) {
 
 
 }
+
+function logToFile(file_name, jsonResult) {
+
+ fs.writeFile(file_name, JSON.stringify(jsonResult), function (err) {
+                if (err) {
+                    console.log(err);
+                    return false;
+                } else {
+                    console.log(file_name+" written");
+                }
+        });
+}
+
+
 
 
 function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents, apiName) {
