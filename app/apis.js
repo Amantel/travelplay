@@ -33,7 +33,7 @@ const server_settings = require("./server_setting");
 
 
 
-function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocationUrl) {
+function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocationUrl) {
 
     var cityName = encodeURI(trip.city);
 
@@ -52,19 +52,19 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
                     if (totalEntries > 0) {
                         // console.log(cityName + "  " + json.resultsPage.results.location[0].metroArea.id)
 
-                        var cityID= json.resultsPage.results.location[0].metroArea.id;
-                        if(json.resultsPage.results.location.length>1 && 
+                        var cityID = json.resultsPage.results.location[0].metroArea.id;
+                        if (json.resultsPage.results.location.length > 1 &&
                             tech.isUS(json.resultsPage.results.location[0].metroArea.country.displayName))
-                            cityID=json.resultsPage.results.location[1].metroArea.id;
-                        callback(null,cityID);
+                            cityID = json.resultsPage.results.location[1].metroArea.id;
+                        callback(null, cityID);
                     } else {
                         //console.log(cityName + "  " + "city not found")
-                        callback("city not found - "+cityName, 0);
+                        callback("city not found - " + cityName, 0);
                     }
                 } else {
                     //tech.logError(err);
                     //tech.logError(response);
-                    callback("city finding error - "+cityName, 0);
+                    callback("city finding error - " + cityName, 0);
 
                 }
             });
@@ -72,8 +72,8 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
 
         function (cityID, callback) {
 
-            var start=trip.start;
-            var end=trip.end;
+            var start = trip.start;
+            var end = trip.end;
 
 
             var url = apiUrl.
@@ -109,14 +109,14 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time,apiLocatio
     ], function (err, totalEntries, cityID) {
         if (err) {
             console.log(err);
-             
+
         }
         else {
             var N = Math.ceil(totalEntries / 50);
             var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
             findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time);
         }
- 
+
 
     });
 }
@@ -128,8 +128,8 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
     async.map(pagesArray,
         (function (pageNumber, callback) {
             //var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber));
-            var start=trip.start;
-            var end=trip.end;
+            var start = trip.start;
+            var end = trip.end;
 
 
             var url = apiUrl.
@@ -146,10 +146,10 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         callback("find Songkick events error inner", 0);
                     } else {
 
-                        foundEvents=json.resultsPage.results.event.filter(function (elem, i, array) {
-                        return elem.performance.length > 0;
-                    });
-                
+                        foundEvents = json.resultsPage.results.event.filter(function (elem, i, array) {
+                            return elem.performance.length > 0;
+                        });
+
                         callback(null, foundEvents);
                     }
                 } else {
@@ -161,60 +161,47 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
             });
 
 
-        }), 
+        }),
         function (err, results) {
             if (err) {
-                console.log(trip.city+" findSongKickEventsFinal error");
-                
+                console.log(trip.city + " findSongKickEventsFinal error");
             } else {
-
-
-  
-                /*
-                .map(function (elem) {
-                    return { "event_title": elem.performance[0].displayName, "event": elem };
-                });
-*/
-
-
-
                 var flattened = [];
-                var events = [];
+                var performances = [];
+                var foundEvents = [];
                 if (results.length > 0) {
 
                     flattened = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
-                    performanceses=flattened.map(function(event) {
-                        return event.performance.map(function(performance){
+                    performances = flattened.map(function (event) {
+                        return event.performance.map(function (performance) {
                             return { "event_title": performance.displayName, "event": event };
                         });
                     }).reduce(function (a, b) {
                         return a.concat(b);
                     });
-                    
 
-                    //filter by bands
-                    events = events.filter(function (elem, i, array) {
-                        if (elem.event_title !== undefined) {
-                            return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                        }
-                        return false;
-    
-                    });
 
-                    //get genres
-                    
-                 
+                    //here we have all event titles
 
-    
+                    findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl, trip, user, time);
+
+                    //let's collect genres
+
+
+
+
+
+
+                } else {
+                    console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
+
+                    if (performances.length > 0)
+                        tech.saveEvents(user, performances, trip);
+
+                    tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
                 }
-                console.log("Songkick "+trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
-
-                if (events.length > 0)
-                    tech.saveEvents(user, events, trip); 
-
-                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, events,"songkick");
 
 
 
@@ -226,6 +213,85 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 
 
+function findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl, trip, user, time) {
+
+    async.mapLimit(performances, 10,
+        (function (performance, callback) {
+            var url = settings.discogsApiUrl.replace("ARTIST_NAME", encodeURI(performance.event_title));
+
+            request({
+                url: url,
+                headers: {
+                    'User-Agent': 'TravelPlay Robot 1/X'
+                }
+            }, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var json = JSON.parse(body);
+                    if (!json) {
+                        callback("find Discogs genres error inner", 0);
+                    }
+                    var genres = json.results.map(function (result) {
+                        var curGenres = [];
+                        curGenres = curGenres.concat(result.style);
+                        curGenres = curGenres.concat(result.genre);
+                        return curGenres;
+                    });
+
+                    if (genres.length > 1)
+                        genres = genres.reduce(function (a, b) {
+                            return a.concat(b);
+                        });
+                    genreInfoUniq = [...new Set(genres)];
+                    performance.genres = genreInfoUniq;
+                    callback(null, performance);
+                } else {
+                    callback("find Discogs genres error", 0);
+
+                }
+            });
+
+
+        }),
+        function (err, results) {
+            if (err) {
+                console.log("Discogs Genre error");
+            } else {
+
+                if (results.length > 0) {
+
+
+
+                    //let's collect genres
+
+
+                    //filter by bands
+                    performances = performances.filter(function (elem, i, array) {
+                        if (elem.event_title !== undefined) {
+                            return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                        }
+                        return false;
+
+                    });
+
+                    //get genres
+
+
+
+
+                }
+                console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + events.length);
+
+                if (events.length > 0)
+                    tech.saveEvents(user, events, trip);
+
+                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, events, "songkick");
+
+
+
+            }
+        });
+
+}
 
 
 
@@ -233,21 +299,21 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
 
-     //artistList.push("gabrielle marlena");
-     var cityName = encodeURI(trip.city);
-     var start=trip.start.replace("-","").replace("-","")+"00";
-     var end=trip.end.replace("-","").replace("-","")+"00";
-     apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", start).replace("DATE_END", end);
-      async.waterfall([
+    //artistList.push("gabrielle marlena");
+    var cityName = encodeURI(trip.city);
+    var start = trip.start.replace("-", "").replace("-", "") + "00";
+    var end = trip.end.replace("-", "").replace("-", "") + "00";
+    apiUrl = apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", start).replace("DATE_END", end);
+    async.waterfall([
         function (callback) {
             var url = apiUrl;
- 
+
             request(url, function (err, response, body) {
                 if (!err && response.statusCode == 200) {
                     var json = JSON.parse(body);
 
-                    if(!json.page_count) {
-                        tech.logError(json);                    
+                    if (!json.page_count) {
+                        tech.logError(json);
                         callback("error in eventful primary search in json", 0);
                     }
                     else {
@@ -265,7 +331,7 @@ function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
     ], function (err, pages) {
         if (err) {
             console.log("findEventfulEventsStart error");
-            
+
         }
         else {
             findEventfulFinish(pages, apiUrl, trip, artistList, user, time);
@@ -276,22 +342,22 @@ function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
 }
 
 
- 
+
 
 
 
 function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
     //artistList.push("Shake and Sing with Suzi Shelton".toLowerCase());
     //artistList.push("Baelfire".toLowerCase());
-        if (!pages)
-            pages=0;
-            
-        var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
-         async.map(pagesArray, 
-        
-         (function (pageNumber, callback) {
+    if (!pages)
+        pages = 0;
+
+    var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
+    async.map(pagesArray,
+
+        (function (pageNumber, callback) {
             var url = apiUrl + "&page_number=" + pageNumber;
-             request(url, function (error, response, body) {
+            request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var foundEvents = [];
                     var json = JSON.parse(body);
@@ -318,20 +384,19 @@ function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
         function (err, results) {
             if (err) {
                 console.log(err);
-                console.log(trip.city+" eventful finished with error");
-                
-            } else { 
+                console.log(trip.city + " eventful finished with error");
+
+            } else {
                 var flattened = [];
                 var events = [];
-                if(results.length>0)
-                {
+                if (results.length > 0) {
 
-                        flattened = results.reduce(function (a, b) {
+                    flattened = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
 
                     //filter by bands
-                        events = flattened.filter(function (elem, i, array) {
+                    events = flattened.filter(function (elem, i, array) {
                         //console.log(i+")"+elem.event_title.toLowerCase());
                         if (elem.event_title !== undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
@@ -339,48 +404,48 @@ function findEventfulFinish(pages, apiUrl, trip, artistList, user, time) {
                         return false;
                     });
                 }
-                console.log("Eventful "+trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
- 
+                console.log("Eventful " + trip.city + " Results: " + flattened.length + " " + "Events: " + events.length);
+
                 if (events.length > 0)
-                    tech.saveEvents(user, events, trip); 
+                    tech.saveEvents(user, events, trip);
 
                 tech.logEvents(time, user, trip, apiUrl, results, events, "eventful");
- 
+
 
 
             }
         });
 
-    
+
 
 
 
 
 }
- 
 
 
 
 
- 
+
+
 
 function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
-    
-     var cityName = encodeURI(trip.city);
-     var start=trip.start+"T00:00:00Z";
-     var end=trip.end+"T00:00:00Z";
-     apiUrl=apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", start).replace("DATE_END", end);
 
-     async.waterfall([
+    var cityName = encodeURI(trip.city);
+    var start = trip.start + "T00:00:00Z";
+    var end = trip.end + "T00:00:00Z";
+    apiUrl = apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", start).replace("DATE_END", end);
+
+    async.waterfall([
         function (callback) {
             var url = apiUrl;
 
             request(url, function (err, response, body) {
                 if (!err && response.statusCode == 200) {
                     var json = JSON.parse(body);
- 
-                    if(!json.page) {
-                        tech.logError(json);                    
+
+                    if (!json.page) {
+                        tech.logError(json);
                         callback("error in ticketmaster primary search in json", 0);
                     }
                     else {
@@ -398,7 +463,7 @@ function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
     ], function (err, pages) {
         if (err) {
             console.log("findTicketMasterEventsStart error");
-            
+
         }
         else {
             findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time);
@@ -409,19 +474,19 @@ function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
 }
 
 
- 
+
 
 
 
 function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
 
-        if (!pages)
-            pages=0;
-            
-        var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
-        async.map(pagesArray, 
+    if (!pages)
+        pages = 0;
 
-         (function (pageNumber, callback) {
+    var pagesArray = Array(pages * 1).fill(0).map((e, i) => i + 1);
+    async.map(pagesArray,
+
+        (function (pageNumber, callback) {
             var url = apiUrl + "&page=" + pageNumber;
 
             request(url, function (error, response, body) {
@@ -429,19 +494,19 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
                     var foundEvents = [];
                     var json = JSON.parse(body);
                     if (!json || !json._embedded || !json._embedded.events) {
-                        if(!json) {
+                        if (!json) {
                             callback("find Ticketmaster events error inner", 0);
                         }
-                        else {                    
-                            callback(null, []);                           
+                        else {
+                            callback(null, []);
                         }
-                        
+
                     } else {
-  
+
 
                         foundEvents = json._embedded.events.map(function (elem) {
                             return { "event_title": elem.name, "event": elem };
-                        });                        
+                        });
 
                         callback(null, foundEvents);
                     }
@@ -459,19 +524,18 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
             if (err) {
                 console.log(err);
                 console.log("ticketmaster finished with error");
-                
+
             } else {
                 var flattened = [];
                 var events = [];
-                if(results.length>0)
-                {
+                if (results.length > 0) {
 
-                        flattened = results.reduce(function (a, b) {
+                    flattened = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
 
                     //filter by bands
-                        events = flattened.filter(function (elem, i, array) {
+                    events = flattened.filter(function (elem, i, array) {
                         if (elem.event_title !== undefined) {
                             return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
                         }
@@ -480,11 +544,11 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
                     });
 
                 }
-                console.log("Ticketmaster "+trip.city+" Results: " + flattened.length+" "+"Events: " + events.length);
-                
+                console.log("Ticketmaster " + trip.city + " Results: " + flattened.length + " " + "Events: " + events.length);
+
 
                 if (events.length > 0)
-                    tech.saveEvents(user, events, trip); 
+                    tech.saveEvents(user, events, trip);
 
                 tech.logEvents(time, user, trip, apiUrl, results, events, "ticketmaster");
 
@@ -493,12 +557,11 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
             }
         });
 
-    
+
 
 
 
 
 }
- 
 
- 
+

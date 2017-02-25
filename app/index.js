@@ -70,14 +70,14 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on ' + server_settings.port);
-        //startServer(false);
+        startServer(false);
 
-        apis.findSongKickEvents(settings.SongKickUrl,  {city:"vienna",start:"2017-03-15",end:"2017-03-19"}, [], {_id:"some_user_id"}, "xxx", settings.SongKickLocationUrl);
+        
 
 
     });
 });
-
+//apis.findSongKickEvents(settings.SongKickUrl,  {city:"vienna",start:"2017-03-15",end:"2017-03-19"}, [], {_id:"some_user_id"}, "xxx", settings.SongKickLocationUrl);
 
 
 
@@ -916,8 +916,9 @@ function ScheduledFind() {
         if (!err && (result.length > 0)) {
 
             result.forEach(function (user) {
-
-                findEvents(user, time);
+                user.genres=tech.getUserGenres(user.bands);
+                console.log(user.genres);
+                //findEvents(user, time);
             });
 
         }
@@ -1053,3 +1054,4 @@ function loadArtist(artistID,callback) {
         }
     });    
 }
+//tech.checkGenres(settings.discogsApiUrl.replace("ARTIST_NAME",encodeURI("Trash Talk")));
