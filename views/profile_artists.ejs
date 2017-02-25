@@ -69,7 +69,8 @@
                     )
                     clearSpotifyResult.map((obj)=>{
                         obj.source="spotify";
-                        obj.genresString=obj.additional_info.total_info.genres.join('|');
+                        //obj.genresString=obj.additional_info.total_info.genres.join('|');
+                        obj.genres=obj.additional_info.total_info.genres;
                         return obj;
                     });
 
@@ -77,8 +78,38 @@
            
                     
                 }
+                //getGenres(bands);
+                getGenres(bands.filter(band=>band.relation==1)); //first related
 
+                function getGenres(bands) {
+                console.log("***************************");
+                genreInfo=bands.map(band=>band.genres).
+                reduce(function(totalArray, genreArray) {
+                    return totalArray.concat(genreArray);
+                }).filter(genre=>genre!="");
+ 
+                var countedGenres = {};
+                genreInfo.forEach(function(i) { countedGenres[i] = (countedGenres[i]||0)+1;  });
 
+                //console.log(countedGenres);
+
+                var sortable = [];
+                for (var genre in countedGenres)
+                    sortable.push([genre, countedGenres[genre]])
+
+                sortable.sort(function(a, b) {
+                    return b[1] - a[1]
+                });
+                console.log(sortable);
+                console.log(sortable.length);
+ 
+
+/*
+                genreInfoUniq=new Set(genreInfo);
+
+                console.log(Array.from(genreInfoUniq.length); 
+*/
+                }
             %>
 
                              
@@ -111,12 +142,7 @@
                                     if(typeof(band.genres)!=='undefined')
                                         genresString=band.genres.join('|');
                                     else 
-                                        {
-                                            if(band.genresString!=='undefined')
-                                                genresString=band.genresString;
-                                            else
-                                                genresString="";
-                                        }                                       
+                                        genresString="";
 
                                     var bandRelation=1;    
                                     if(typeof(band.relation)!=='undefined')

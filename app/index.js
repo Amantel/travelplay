@@ -196,7 +196,7 @@ app.post('/save_user', (req, res) => {
 
 
         if(saveObj.bands.length>0) {
-            console.log(saveObj.bands[0]);
+            //console.log(saveObj.bands[0]);
             saveObj.bands.forEach(bandObj=>{
                 db.collection('bands').update(
                     {"bandName":{$eq:bandObj.band}}, //
