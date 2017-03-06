@@ -70,7 +70,7 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on ' + server_settings.port);
-        startServer(false);
+        //startServer(server_settings.doShedule);
 
         
 
@@ -591,7 +591,7 @@ app.get('/spotifycallback', (req, res) => {
         });
 
 
-        localSpotifyApi.getFollowedArtists({ limit: 20 })
+        localSpotifyApi.getFollowedArtists({ limit: 100 })
             .then(basicInfo =>
                 ({ basicInfo: basicInfo, res: res, localSpotifyApi: localSpotifyApi })
             ).then(artistsInfo);
