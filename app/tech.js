@@ -193,6 +193,9 @@ function checkGenres(url) {
 }
 
 function getUserGenres(bands) {
+    if(bands.length<1)
+        return [];
+
     genreInfo = bands.map(band => band.genres).
         reduce(function (totalArray, genreArray) {
             return (totalArray || []).concat(genreArray);
