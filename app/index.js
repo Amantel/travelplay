@@ -100,6 +100,57 @@ function startServer(doSchedule) {
 }
 
 
+app.post('/change_user', (req, res) => {
+    if ((req.body.save || null) && (req.body.id || null)) {
+        var active=0;
+        if(req.body.active)
+            active=req.body.active;
+
+        var id = new ObjectID(req.body.id);
+
+        db.collection('users').update({ _id: id }, { $set: { active: active } },
+            (err, result) => {
+                if (err) {
+                    res.send({ error: err });
+                }
+                else {
+                    res.redirect("/uchange");
+                }
+            });
+    }
+
+});
+
+
+
+app.get('/uchange', (req, res) => {
+
+    sess = req.session;
+    /*
+    if (sess.auth != 2) {
+        res.redirect('/');
+        return false;
+    }
+*/
+    db.collection('users').find().toArray(function (err, result) {
+
+        if (!err) {
+
+
+
+            res.render('uchange.ejs', { result: result });
+
+
+        }
+        else {
+            res.send({ error: err });
+        }
+    });
+
+
+
+});
+
 app.post('/register_user', (req, res) => {
     sess = req.session;
 

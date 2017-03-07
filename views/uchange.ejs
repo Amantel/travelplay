@@ -1,0 +1,118 @@
+
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        Wanderlust
+    </title>
+
+    <link href="./css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    
+
+    <style>
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  background-color: #f5f5f5;
+}
+.container .text-muted {
+  margin: 20px 0;
+}
+
+.form-signin {
+      max-width: 330px;
+    padding: 15px;
+    margin: 0 auto;
+}
+
+    </style>
+
+</head>
+
+
+
+<body>
+    <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a> <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a> 
+
+<div class="clearfix"><br></div>
+    <div class="container" style="max-width: 500px">
+      
+        
+
+      <div class="text-center">
+        <h1>Wanderlust</h1>
+      </div>
+      <p class="lead text-center">Some punchline text</p>
+      <hr>
+      <div class="text-center">
+                <% 
+                if(locals.result) {
+                    var checked="";
+                    for(i=0; i<result.length; i++) {
+                        checked="";
+                        if(result[i].active==1)
+                            checked="checked";
+                            
+                    
+                %>     
+                    <form method="POST" class="form-inline text-left" style="margin:10px;"  action="/change_user">
+
+                    <input type="hidden" name="id" value="<%=result[i]._id%>">
+                    <input type="hidden" name="email" value="<%=result[i].email%>">
+                    <input type="hidden" name="password" value="<%=result[i].password%>">
+                    <label data-toggle="tooltip" data-placement="top" title="<%=result[i]._id%>" >
+                        <input class="checkbox" type="checkbox" <%=checked%> name="active" value="1"  > 
+                        <%=result[i].email%> 
+                    </label>
+
+                    <input type="submit" class="btn btn-primary btn-sm pull-right" name="save" value="save">
+
+                    </form>
+                <% 
+                    }
+                }
+                %>
+
+ 
+      </div>
+       
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted text-center">
+            For questions and suggestions please contact us at <a href="mailto:info@wanderlust.cloud">info@wanderlust.cloud</a>
+        </p>
+      </div>
+    </footer>
+
+
+
+
+    <script type='text/javascript' src="./js/jquery-latest.js"></script>
+    <script type='text/javascript' src="./js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+    $(function () {
+          $('[data-toggle="tooltip"]').tooltip()
+
+    });
+    </script>
+
+
+
+</body>
+
+</html>
