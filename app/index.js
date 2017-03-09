@@ -72,42 +72,18 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         console.log('listening on ' + server_settings.port);
 
 
-        //tech.sendMail("amantels@gmail.com","TP TEST", "html");
 
+
+ 
+
+
+ 
         if(server_settings.startFinder)           startServer(server_settings.doShedule);
-
-     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
-
-        if (!err && (result.length > 0)) {
-
-            result.forEach(function (user) {
-                user.genres=tech.getUserGenres(user.bands);
-                console.log(user.genres);
-                tech.logToFile("franchesco_genres.json", user.genres);
-            });
-
-        }
-        else {
-            return console.log(err);
-        }
-    });       
-
+                   
 
     });
 });
-//apis.findSongKickEvents(settings.SongKickUrl,  {city:"vienna",start:"2017-03-15",end:"2017-03-19"}, [], {_id:"some_user_id"}, "xxx", settings.SongKickLocationUrl);
-
-
-
-//apis.findEventfulEvents(settings.eventfulURL, {city:"new york",start:"2017-02-01",end:"2017-02-28"}, [], {_id:"some_user_id"},"x");
-//apis.findTicketMasterEvents(settings.TicketMasterUrl, {city:"new york",start:"2017-02-01",end:"2017-02-28"}, [], {},"x");
-
-
-
-
-
-
-
+ 
 function startServer(doSchedule) {
     if (!doSchedule) {
         ScheduledFind();
@@ -928,11 +904,42 @@ app.get('/save_user_special', (req, res) => {
 
 /**************/
 
+function findEvents(user, time) {
+    var trips = user.trips || null;
+    var bands = user.bands || null;
+
+    if (!trips || !bands) {
+        console.log("nothing to search for");
+        return false;
+    }
+
+
+    artistList = bands.map(function (el, i) {
+        return el.band;
+    });
+
+     trips.forEach(function (trip) {
+
+            if(new Date(trip.end)>new Date()) {        
+                var apiUrl = "";
+                if (tech.isUS(trip.country)) {                   
+                    console.log("US:"+trip.city+" later"); 
+                } else {
+                    //SongKick
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
+                }
+        }
+
+
+    });
+ 
+}
+
 
 
 
 //SongKick for non US, Eventful & TicketMaster for US.
-function findEvents(user, time) {
+function findEventsOld(user, time) {
     var trips = user.trips || null;
     var bands = user.bands || null;
 

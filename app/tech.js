@@ -1,5 +1,6 @@
 
 module.exports.saveEvents = saveEvents;
+module.exports.savePerformancesToTrip = savePerformancesToTrip;
 module.exports.logEvents = logEvents;
 module.exports.randomString = randomString;
 module.exports.sendMail = sendMail;
@@ -31,6 +32,86 @@ const server_settings = require("./server_setting");
 
 
 /*DB WORKS*/
+
+function savePerformancesToTrip(user, performances, trip) {
+    var id=trip.id; 
+    
+/*
+EXAMPLE:
+    performances=[
+        { 
+            "artist_name": "artist_name_1",  
+            "venue_name": "venue_name_1", 
+            "uri": "someuri", 
+            "start_date": "20.11.2017", 
+            "source": "songkick"                                           
+        } ,   
+    ];
+*/
+
+
+    //1. Find trip in matches collection
+    server.db.collection('matches').find({id:{$eq:id}}).toArray(function (err, result) {
+
+        if (!err) {
+            if(result.length>0) {
+                //2.1 compare
+                newPerformances=[];
+                var oldPerformances=result[0].performances;
+
+                newPerformances=performances.filter(function(newPerformance){
+                    var diffArr=oldPerformances.filter(function(oldPerformance){
+                        if(
+                            oldPerformance.artist_name.toLowerCase()==newPerformance.artist_name.toLowerCase() &&
+                            oldPerformance.venue_name.toLowerCase()==newPerformance.venue_name.toLowerCase() &&
+                            oldPerformance.start_date.toLowerCase()==newPerformance.start_date.toLowerCase() &&                       
+                            oldPerformance.source.toLowerCase()==newPerformance.source.toLowerCase() 
+                        )   return true;
+
+                        return false;
+
+                    });
+
+
+                    if(diffArr.length>0)
+                        return false;
+                    else
+                        return true;    
+                });
+
+                if(newPerformances.length>0) 
+                    server.db.collection('matches').update({ _id: result[0]._id }, { $push: { performances: { $each: newPerformances } } },
+                    (err, result) => {
+                        if (err) {
+                            console.log(err);
+                        }
+                        console.log('saved newPerformances to database: '+newPerformances.length);
+                    });
+
+
+                
+            } else {
+                //2.2 save
+                server.db.collection('matches').save({id:id, performances:performances},
+                (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    } 
+                    console.log('saved performances to database: '+performances.length);
+                });                        
+            } 
+
+           
+        }
+        else {
+            //error here - do nothing
+        }
+    });    
+
+}
+
+ 
+
 
 function saveEvents(user, foundEvents, trip) {
     var id = new ObjectID(user._id);

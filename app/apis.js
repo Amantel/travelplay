@@ -1,6 +1,6 @@
 module.exports.findSongKickEvents = findSongKickEventsStart;
-module.exports.findEventfulEvents = findEventfulEventsStart;
-module.exports.findTicketMasterEvents = findEventsTicketMasterStart;
+//module.exports.findEventfulEvents = findEventfulEventsStart;
+//module.exports.findTicketMasterEvents = findEventsTicketMasterStart;
 
 
 
@@ -15,21 +15,6 @@ const tech = require("./tech");
 const server = require("./index");
 const settings = require("./settings");
 const server_settings = require("./server_setting");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -138,7 +123,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 replace("PAGE_NUMBER", encodeURI(pageNumber)).
                 replace("DATE_START", start).
                 replace("DATE_END", end);
-
+             console.log(url);
             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var foundEvents = [];
@@ -177,50 +162,29 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     });
                     performances = flattened.map(function (event) {
                         return event.performance.map(function (performance) {
-                            return { "event_title": performance.displayName, "event": event };
+                            return { 
+                                "artist_name": performance.displayName, 
+                                "venue_name": event.venue.displayName, 
+                                "uri": event.uri, 
+                                "start_date": event.start.date,
+                                "source":"songkick"
+                            };
                         });
                     }).reduce(function (a, b) {
                         return a.concat(b);
                     });
 
+ 
+                    console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
+ 
+                    if (performances.length > 0)
+                        tech.savePerformancesToTrip(user, performances, trip);
 
-                    //here we have all event titles
-                    //if there are no genres to users filter only by bands 
-                    if(user.genres.length===0)
-                    {
-                        //filter by bands
-                        performances = performances.filter(function (elem, i, array) {
-                            if (elem.event_title !== undefined) {
-                                return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                            }
-                            return false;
-
-                        });
-
-                        console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
-
-                        if (performances.length > 0)
-                            tech.saveEvents(user, performances, trip);
-
-                        tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
-
-
-                    } else {
-                        findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl, trip, user, time);
-                    }
-
-                    //let's collect genres
-
-
-
-
-
+                    tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
+ 
 
                 } else {
                     console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
-
-                    if (performances.length > 0)
-                        tech.saveEvents(user, performances, trip);
 
                     tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
                 }
@@ -348,7 +312,7 @@ function findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl,
 
 
 
-
+/*
 
 function findEventfulEventsStart(apiUrl, trip, artistList, user, time) {
 
@@ -618,3 +582,4 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
 }
 
 
+*/
