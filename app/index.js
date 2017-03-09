@@ -78,20 +78,37 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
 
  
-        if(server_settings.startFinder)           startServer(server_settings.doShedule);
-                   
+        if(server_settings.startFinder) queryEvents(server_settings.doSchedule);
+        if(server_settings.startMatching) queryMatches(server_settings.doSchedule);           
+        if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);           
+        
 
     });
 });
  
-function startServer(doSchedule) {
+function queryEvents(doSchedule) {
     if (!doSchedule) {
         ScheduledFind();
     } else {
-        later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
+        later.setInterval(ScheduledFind, later.parse.text('every 8 h'));
     }
 }
 
+function queryMatches(doSchedule) {
+    if (!doSchedule) { 
+        ScheduledMatch();
+    } else {
+      //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
+    }
+}
+
+function queryGenres(doSchedule) {
+    if (!doSchedule) { 
+        ScheduledGenres();
+    } else {
+      //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
+    }
+}
 
 app.post('/change_user', (req, res) => {
     if ((req.body.save || null) && (req.body.id || null)) {
@@ -935,7 +952,101 @@ function findEvents(user, time) {
  
 }
 
+function findMatches(user, time) {
+    var trips = user.trips || null;
+    var bands = user.bands || null;
 
+    if (!trips || !bands) {
+        console.log("nothing to search for");
+        return false;
+    }
+
+
+
+
+     trips.forEach(function (trip) {
+
+            if(new Date(trip.end)>new Date()) {        
+                var apiUrl = "";
+                if (tech.isUS(trip.country)) {                   
+                    console.log("US:"+trip.city+" later"); 
+                } else {
+
+
+                    db.collection('matches').find({id:{$eq:trip.id}}).toArray(function (err, result) {
+                            if (!err) {
+                                if(result.length>0) {
+
+                                    var tripMatches=result[0];
+
+                                    //1. First tier
+                                    var firstTier = tripMatches.performances.filter(function (match, i, array) {
+                                        if (match.artist_name !== undefined) {
+                                            //check if match.artist_name in bands and band.relation==1
+                                            var findings=bands.filter(function(band){
+                                                if(
+                                                    band.band===match.artist_name.toLowerCase() &&
+                                                    band.relation==1
+                                                    ) return true;
+                                                return false;
+
+                                            });
+                                            return findings.length>0;
+                                             
+                                        }
+                                        return false;
+                                    });    
+                                    //console.log("First Tier for "+trip.city);
+                                    //console.log(firstTier);
+
+                                    //2. second tier
+                                    var secondTier = tripMatches.performances.filter(function (match, i, array) {
+                                        if (match.artist_name !== undefined) {
+                                            //check if match.artist_name in bands and band.relation==1
+                                            var findings=bands.filter(function(band){
+                                                if(
+                                                    band.band===match.artist_name.toLowerCase() &&
+                                                    band.relation==2
+                                                    ) return true;
+                                                return false;
+
+                                            });
+                                            return findings.length>0;
+                                             
+                                        }
+                                        return false;
+                                    });    
+                                   
+                                    //console.log("Second Tier for "+trip.city);
+                                    //console.log(secondTier);
+
+ 
+                                    console.log("Finished matching for "+trip.city);
+                                    
+                                } else {
+                                    console.log("Nothing found in DB in Matching");                      
+                                } 
+
+                            
+                            }
+                            else {
+                                //error here - do nothing
+                                console.log("Error in DB in Matching");
+                            }
+                        });    
+ 
+
+
+
+
+                   
+                }
+        }
+
+
+    });
+ 
+}
 
 
 //SongKick for non US, Eventful & TicketMaster for US.
@@ -1030,6 +1141,108 @@ LONDON TEST
 
 
 
+
+
+function queryDiscogs(artistName,callback) {
+    var url = settings.discogsApiUrl.replace("ARTIST_NAME", encodeURI(artistName));
+    
+    request({
+        url: url,
+        headers: {
+            'User-Agent': 'TravelPlay Robot 1/X'
+        }
+    }, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var json = JSON.parse(body);
+            if (!json) {
+                callback("find Discogs genres error inner", 0);
+            }
+                var genres = json.results.map(function (result) {
+                    var curGenres = [];
+                    curGenres = curGenres.concat(result.style);
+                    curGenres = curGenres.concat(result.genre);
+                    return curGenres;
+                });
+
+                if (genres.length > 1)
+                    genres = genres.reduce(function (a, b) {
+                        return a.concat(b);
+                    });
+                genreInfoUniq = [...new Set(genres)];
+            callback(null, genreInfoUniq);
+        } else {
+            callback("find Discogs genres error", 0);
+        }
+    });
+}
+
+function queryDiscogsBatch(artistNames) {
+    var pause=60000; //1m
+    async.map(artistNames, queryDiscogs, function(err, results) {
+        setTimeout(
+            function() { 
+                console.log("1");
+                //console.log(results);
+                console.log(err);
+                if(!err)
+                    return results; 
+            },
+         1000, err);
+    });
+    
+}
+
+
+function ScheduledGenres() {
+    db.collection('matches').find().toArray(function (err, tripMatches) {
+            if (!err) {
+                newArtists=tripMatches.reduce(function(a,tripMatch){
+                    var nonDB=tripMatch.performances.filter((x)=>!x.inDB);
+                    return a.concat(nonDB);
+                },[]);
+               //here we can cut newArtists to 240 batches and pause after limit
+
+
+
+               new240=newArtists.slice(0,240);
+               
+                async.mapSeries([new240], queryDiscogsBatch,function(e,result){
+                    console.log("2");
+                    console.log(err);
+                    //console.log(result);
+
+                });
+
+
+            } else {
+                console.log("ScheduledGenres DB error");
+            }
+    }); 
+}
+
+
+function ScheduledMatch() {
+
+    var time = new Date();
+
+    db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
+
+        if (!err && (result.length > 0)) {
+
+            result.forEach(function (user) {
+                user.genres=tech.getUserGenres(user.bands);
+                //console.log(user.genres);
+                findMatches(user, time);
+            });
+
+        }
+        else {
+            return console.log(err);
+        }
+    });
+
+
+}
 
 function ScheduledFind() {
 

@@ -44,7 +44,9 @@ EXAMPLE:
             "venue_name": "venue_name_1", 
             "uri": "someuri", 
             "start_date": "20.11.2017", 
-            "source": "songkick"                                           
+            "source": "songkick".                                           
+            "genres": [].
+            "inDB": 0.
         } ,   
     ];
 */
