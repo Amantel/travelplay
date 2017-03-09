@@ -245,7 +245,8 @@ function randomString(length, chars) {
 
 
 function sendMail(email, subject, html) {
-
+     //console.log('Message %s sent: %s');
+    
     var transporter = nodemailer.createTransport(server_settings.smtpConfig);
     var mailData = {
         from: server_settings.mailFrom,
@@ -262,7 +263,7 @@ function sendMail(email, subject, html) {
         }
         console.log('Message %s sent: %s', info.messageId, info.response);
     });
-
+ 
     return true;
 
 }

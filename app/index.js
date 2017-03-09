@@ -70,10 +70,27 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on ' + server_settings.port);
-        if(server_settings.startFinder)
-            startServer(server_settings.doShedule);
 
-        
+
+        //tech.sendMail("amantels@gmail.com","TP TEST", "html");
+
+        if(server_settings.startFinder)           startServer(server_settings.doShedule);
+
+     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
+
+        if (!err && (result.length > 0)) {
+
+            result.forEach(function (user) {
+                user.genres=tech.getUserGenres(user.bands);
+                console.log(user.genres);
+                tech.logToFile("franchesco_genres.json", user.genres);
+            });
+
+        }
+        else {
+            return console.log(err);
+        }
+    });       
 
 
     });
@@ -933,26 +950,74 @@ function findEvents(user, time) {
         console.log("bands to few for test");
         return false;
     }
-    trips.forEach(function (trip) {
-        var apiUrl = "";
 
-        if (tech.isUS(trip.country)) {
-            //Eventful + Tickemaster
-            apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
-            apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
-            //console.log("US:"+trip.city); 
-        } else {
-            //SongKick
-            //console.log("NonUS:"+trip.city);
-            apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
-            apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
+
+/*
+LONDON TEST
+        var trip=trips[0];
+            if(new Date(trip.end)>new Date()) {        
+                var apiUrl = "";
+                if (tech.isUS(trip.country)) {
+                    //Tickemaster
+                    apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
+                } else {
+                    //SongKick
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
+                }
+            }
+*/
+
+
+
+
+
+
+
+
+ 
+    (function myLoop (i) {
+        var trip=trips[i];
+        setTimeout(function () {   
+
+            if(new Date(trip.end)>new Date()) {        
+                var apiUrl = "";
+                if (tech.isUS(trip.country)) {
+                    //Tickemaster
+                    apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
+                } else {
+                    //SongKick
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
+                }
+            }
+
+            i--;         
+            if (i!=-1) myLoop(i);      
+        }, 60000); //launch every minute
+        
+    })(trips.length-1);     
+ 
+
+    /*
+    trips.forEach(function (trip) {
+
+            if(new Date(trip.end)>new Date()) {        
+                var apiUrl = "";
+                if (tech.isUS(trip.country)) {
+                    //Eventful + Tickemaster
+                    //apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
+                    apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
+                    //console.log("US:"+trip.city); 
+                } else {
+                    //SongKick
+                    //console.log("NonUS:"+trip.city);
+                    //apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
+                }
         }
 
 
-
-
-
     });
+    */
 
 }
 

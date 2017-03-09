@@ -55,6 +55,10 @@
             var trip=trips[i];
             var matches=session.authed_user.matches || [];
             var trip_matches=matches.filter(x=>x.trip_id==trip.id);   
+            trip_matches = trip_matches.filter(function(elem, index, self) {
+                return index == self.indexOf(elem);
+            })
+            
         %>
                 <div class="panel panel-default">
                     <div class="panel-body">

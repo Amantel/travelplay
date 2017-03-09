@@ -275,66 +275,74 @@ function findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl,
 
         }),
         function (err, results) {
-            if (err) {
-                console.log("Discogs Genre error");
-            } else {
+            if (err && !results) {
+                console.log("Discogs Genre error ZERO");
+            } 
 
-                if (results.length > 0) {
+            if (results && results.length > 0) {
+                if (err) {
+                    console.log("Discogs Genre error after "+results.length);
+                } 
 
 
-
-                    //toLowerCase genres
-                    performances=performances.map(function (performance) {
-                        performance.genres=performance.genres.
+                //toLowerCase genres
+                performances=performances.map(function (performance) {
+                    var genres="";
+                    if(performance.genres && performance.genres.length>0) {
+                        genres=performance.genres.
                         filter(g=>typeof(g)==="string").
                         map(g=>g.toLowerCase());
-                        return performance;
-                    });                    
+                    }
+
+                    performance.genres=genres;
+                    return performance;
+
+                });                    
 
 
-                    //filter by bands
-                    performances12 = performances.filter(function (elem, i, array) {
-                        if (elem.event_title !== undefined) {
-                            return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                        }
-                        return false;
+                //filter by bands
+                performances12 = performances.filter(function (elem, i, array) {
+                    if (elem.event_title !== undefined) {
+                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
+                    }
+                    return false;
 
+                });
+
+                performances3 = performances.filter(function (performance, i, array) {
+
+                    final=user.genres.filter(function(el){
+                        return performance.genres.indexOf(el)!==-1;
                     });
 
-                    performances3 = performances.filter(function (performance, i, array) {
+                    return final.length;
 
-                        final=user.genres.filter(function(el){
-                            return performance.genres.indexOf(el)!==-1;
-                        });
-
-                        return final.length;
- 
-                    });
+                });
 
 /*
-                    console.log("***********performances12***********");
-                    console.log(performances12);
-                    console.log(performances12.length);
-                    console.log("***********performances3***********");
-                    tech.logToFile("events.json", performances.map(p=>p.genres));
-                    tech.logToFile("usergenres.json", user.genres);
-                    tech.logToFile("performances3.json", performances3);
-                    console.log(performances3);
-                    console.log(performances3.length);
+                console.log("***********performances12***********");
+                console.log(performances12);
+                console.log(performances12.length);
+                console.log("***********performances3***********");
+                tech.logToFile("events.json", performances.map(p=>p.genres));
+                tech.logToFile("usergenres.json", user.genres);
+                tech.logToFile("performances3.json", performances3);
+                console.log(performances3);
+                console.log(performances3.length);
 */
 
-                }
-                console.log("Songkick " + trip.city + " Results: " + performances.length + " " + "Events: " + performances3.length);
-
-                if (performances3.length > 0)
-                    tech.saveEvents(user, performances3, trip);
-
-                tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), performances3, performances, "songkick");
-
-
-
             }
-        });
+            console.log("Songkick " + trip.city + " Results: " + performances.length + " " + "Events: " + performances3.length);
+
+            if (performances3.length > 0)
+                tech.saveEvents(user, performances3, trip);
+
+            tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), performances3, performances, "songkick");
+
+
+
+        
+    });
 
 }
 
