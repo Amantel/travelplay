@@ -33,25 +33,91 @@ const server_settings = require("./server_setting");
 
 /*DB WORKS*/
 
+
+
+
+
+
+
+function savePerformancesToTrip(user, performances, trip) {
+    var tripid=trip.id; 
+    performances=performances.map(p=>{
+        p.tripid=tripid; 
+        return p;  
+    });
+        
+    server.db.collection('matchesn').find({tripid:{$eq:tripid}}).toArray(function (err, result) {
+        
+        newPerformances=performances.filter(function(newPerformance){
+
+            var diffArr=result.filter(function(oldPerformance){
+                if(
+                    oldPerformance.artist_name.toLowerCase()==newPerformance.artist_name.toLowerCase() &&
+                    oldPerformance.venue_name.toLowerCase()==newPerformance.venue_name.toLowerCase() &&
+                    oldPerformance.start_date.toLowerCase()==newPerformance.start_date.toLowerCase() &&                       
+                    oldPerformance.source.toLowerCase()==newPerformance.source.toLowerCase() 
+                )   
+                return true;
+
+                return false;
+
+            });       
+
+            if(diffArr.length>0)
+                return false; //if there is no performance in DB
+            else
+                return true;  //if there is one or more performances in DB               
+        }); 
+        
+        if(newPerformances.length>0)
+            server.db.collection("matchesn").insert(
+            performances,
+            function(err,result) {
+            });        
+    });
+}
+
+
+
+ /*
 function savePerformancesToTrip(user, performances, trip) {
     var id=trip.id; 
     
-/*
-EXAMPLE:
-    performances=[
+
+//EXAMPLE:
+   var performances=[
         { 
             "artist_name": "artist_name_1",  
             "venue_name": "venue_name_1", 
             "uri": "someuri", 
             "start_date": "20.11.2017", 
-            "source": "songkick".                                           
-            "genres": [].
-            "inDB": 0.
+            "source": "songkick",                                         
+            "genres": [],
+            "inDB": 0
         } ,   
+        { 
+            "artist_name": "artist_name_2",  
+            "venue_name": "venue_name_2", 
+            "uri": "someuri", 
+            "start_date": "20.11.2017", 
+            "source": "songkick",                                         
+            "genres": [],
+            "inDB": 0
+        } ,           
     ];
-*/
-
-
+ 
+db.matchesn.update(
+   { artist_name: {$in : ["artist_name_1","artist_name_2"]} },
+   { upsert: true,
+    multi:true 
+    },
+   { $push: { $each: performances  } },
+   function(err,result) {
+    console.log(err);
+    console.log(result.result);
+   }
+);
+ 
     //1. Find trip in matches collection
     server.db.collection('matches').find({id:{$eq:id}}).toArray(function (err, result) {
 
@@ -109,10 +175,11 @@ EXAMPLE:
             //error here - do nothing
         }
     });    
+   
 
 }
 
- 
+  */
 
 
 function saveEvents(user, foundEvents, trip) {

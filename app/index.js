@@ -72,10 +72,46 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         console.log('listening on ' + server_settings.port);
 
 
+/*
+
+    var tripId="TRIPID";
+
+    var performances=[
+        { 
+            "artist_name": "artist_name_1",  
+            "venue_name": "venue_name_1", 
+            "uri": "someuri", 
+            "start_date": "20.11.2017", 
+            "source": "songkick",                                         
+            "genres": [],
+            "inDB": 0
+        } ,   
+        { 
+            "artist_name": "artist_name_2",  
+            "venue_name": "venue_name_2", 
+            "uri": "someuri", 
+            "start_date": "20.11.2017", 
+            "source": "songkick",                                         
+            "genres": [],
+            "inDB": 0
+        } ,           
+    ];
+performances=performances.map(p=>{
+    p.tripid=tripId; 
+    return p;
+});
 
 
- 
 
+
+db.collection("matchesn").insert(
+   performances,
+   function(err,result) {
+    console.log(err);
+    console.log(result.result);
+   }
+);
+*/
 
  
         if(server_settings.startFinder) queryEvents(server_settings.doSchedule);
@@ -1194,23 +1230,137 @@ function queryDiscogsBatch(artistNames) {
 
 
 function ScheduledGenres() {
+    var genreLag=0; //mlsc
     db.collection('matches').find().toArray(function (err, tripMatches) {
             if (!err) {
                 newArtists=tripMatches.reduce(function(a,tripMatch){
                     var nonDB=tripMatch.performances.filter((x)=>!x.inDB);
                     return a.concat(nonDB);
                 },[]);
-               //here we can cut newArtists to 240 batches and pause after limit
+            db.collection('matches').update(
+                {"performances.inDB":{$ne:1}},
+                { $set: { "performances.$.inDB" : 1 } },
+                                    { 
+                                        multi: true,
+                                        upsert: false
+                                    },
+                                    (err, result) => { 
+                                        if (err) {
+                                            console.log(err);
+                                            return false;
+                                        }  
+                                     console.log("result.result.ok "+result.result.ok);
+                                     console.log("result.result.nModified "+result.result.nModified);
+                                     console.log("Last FM match update finished");                         
+                                    }   
+            );
+
+            return false;
+
+            console.log(newArtists.length);
+            newArtists=newArtists.slice(0,2);
+            console.log(newArtists);
+           // return false;
+             
+              if(newArtists.length===0)
+                console.log("all in DB");
+
+              async.mapSeries(newArtists, 
+              function (artist, callback) {
 
 
+                    var url = "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=ARTIST_NAME&api_key=962b5d8275532aa2ba96bc85084964b5&format=json".
+                    replace("ARTIST_NAME", encodeURI(artist.artist_name));
 
-               new240=newArtists.slice(0,240);
+                    request({url: url}, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            var json = JSON.parse(body);
+                            if (!json) {
+                                setTimeout( callback, genreLag, "find LastFM genres inner error", 0);
+                            }
+
+                            var genres="";
+                            if(json.artist && json.artist.tags.tag.length>0)       
+                                genres = json.artist.tags.tag.map(function (tag) {
+                                    return tag.name;
+                                });
+                            json.genres=genres;    
+                            setTimeout( callback, genreLag, null, json);
+
+                        } else {
+                           setTimeout( callback, genreLag, "find LastFM genres error", 0);
+                        }
+                    });
                
-                async.mapSeries([new240], queryDiscogsBatch,function(e,result){
-                    console.log("2");
-                    console.log(err);
-                    //console.log(result);
+                },
+                function (err,result) {
+                    if(!err) {
+                            //0. filter artists or artist_names
 
+                            result=result.filter(artist=>{
+                                if(!artist.artist)
+                                    return false;
+                                if(!artist.artist.name)
+                                    return false;                                    
+                                return true;
+                            });
+
+                            
+                            result.forEach(artist=>{
+                                var artistIns=new RegExp("^" + artist.artist.name,"i");
+                                db.collection('bandsDB').update(
+                                    {"artist_name":{$regex:artistIns}}, //
+                                    { $set: artist },
+                                    { 
+                                        upsert: true,
+                                        multi: true 
+                                    },
+                                    (err, result) => { 
+                                        if (err) {
+                                            console.log(err);
+                                            return false;
+                                        }  
+                                     console.log("Last FM genre search finished");                         
+                                    }   
+                                );
+                            });
+                                //redundant
+                                /*
+                            result.forEach(artist=>{
+                                var artistIns=new RegExp("^" + artist.artist.name,"i");
+                                db.collection('matches').update(
+                                    {"performances.artist_name":{$regex:artistIns}}, //
+                                    { $set: { "performances.$.inDB" : 1 ,"performances.$.genres":artist.genres} },
+                                    { 
+                                        multi: true,
+                                        upsert: false
+                                    },
+                                    (err, result) => { 
+                                        if (err) {
+                                            console.log(err);
+                                            return false;
+                                        }  
+                                     console.log("result.result.ok "+result.result.ok);
+                                     console.log("result.result.nModified "+result.result.nModified);
+                                     console.log("Last FM match update finished");                         
+                                    }   
+                                );
+                            });
+                            */
+
+
+
+
+
+
+
+
+                    } else {
+                        console.log("LastFM genre error");
+                        console.log(err);
+                    }
+                    
+                    
                 });
 
 
