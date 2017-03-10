@@ -73,6 +73,49 @@ function savePerformancesToTrip(user, performances, trip) {
             server.db.collection("matchesn").insert(
             performances,
             function(err,result) {
+
+                async.map(performances, function (artist, callback){
+                    var artistIns=artist.artist_name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    artistIns=new RegExp("^" + artistIns,"i");                    
+                    db.collection('bandsDB').find( 
+                         { $or: [ { artist_name: {$regex:artistIns} }, { "artist.name": {$regex:artistIns} } ] }                         
+                         ).toArray(function (err, bandsInDB) {
+
+                        if (!err && (bandsInDB.length > 0)) {
+                             var bandInfo=bandsInDB[0];
+
+                                
+                            db.collection('matchesn').update(
+                                {"artist_name":{$eq:artist.artist_name}}, //
+                                { $set: { "inDB" : 1 ,"genres":bandInfo.genres} },
+                                { 
+                                    multi: true,
+                                    upsert: false
+                                },
+                                (err, result) => { 
+                                    if (err) {
+                                            return callback(err,0);
+                                    }  
+                                    return callback(null,result.result.nModified);                     
+                                }   
+                            );
+                            
+                        }
+                        else {
+                            return callback(err,0);
+                        }
+                    });
+
+                    
+                }, function(err, results) {
+                    console.log(err);
+                    console.log("Already in DB");
+                    console.log(results.length);
+                });
+                
+
+
+
             });        
     });
 }

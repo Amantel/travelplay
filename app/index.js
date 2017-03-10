@@ -1228,45 +1228,32 @@ function queryDiscogsBatch(artistNames) {
     
 }
 
+ 
 
 function ScheduledGenres() {
-    var genreLag=0; //mlsc
-    db.collection('matches').find().toArray(function (err, tripMatches) {
+    var genreLag=200; //mlsc
+    db.collection('matchesn').find({ $and: [ {"inDB":{$ne:1}}, {"lastFMfailed":{$ne:1}} ] }).toArray(
+        function (err, newArtists) {
             if (!err) {
-                newArtists=tripMatches.reduce(function(a,tripMatch){
-                    var nonDB=tripMatch.performances.filter((x)=>!x.inDB);
-                    return a.concat(nonDB);
-                },[]);
-            db.collection('matches').update(
-                {"performances.inDB":{$ne:1}},
-                { $set: { "performances.$.inDB" : 1 } },
-                                    { 
-                                        multi: true,
-                                        upsert: false
-                                    },
-                                    (err, result) => { 
-                                        if (err) {
-                                            console.log(err);
-                                            return false;
-                                        }  
-                                     console.log("result.result.ok "+result.result.ok);
-                                     console.log("result.result.nModified "+result.result.nModified);
-                                     console.log("Last FM match update finished");                         
-                                    }   
-            );
 
-            return false;
+                console.log(newArtists.length);
+                newArtists=newArtists.slice(0,20);
+                //console.log(newArtists);
+                // return false;
+                    
 
-            console.log(newArtists.length);
-            newArtists=newArtists.slice(0,2);
-            console.log(newArtists);
-           // return false;
-             
-              if(newArtists.length===0)
-                console.log("all in DB");
+                    
+                if(newArtists.length===0) {
+                    console.log("all in DB");
+                    return false;
+                }
+         
+ 
+                async.mapSeries(newArtists, 
+                function (artist, callback) {
 
-              async.mapSeries(newArtists, 
-              function (artist, callback) {
+                     
+
 
 
                     var url = "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=ARTIST_NAME&api_key=962b5d8275532aa2ba96bc85084964b5&format=json".
@@ -1307,7 +1294,8 @@ function ScheduledGenres() {
 
                             
                             result.forEach(artist=>{
-                                var artistIns=new RegExp("^" + artist.artist.name,"i");
+                            var artistIns=artist.artist.name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                            artistIns=new RegExp("^" + artistIns,"i");
                                 db.collection('bandsDB').update(
                                     {"artist_name":{$regex:artistIns}}, //
                                     { $set: artist },
@@ -1324,13 +1312,14 @@ function ScheduledGenres() {
                                     }   
                                 );
                             });
-                                //redundant
-                                /*
-                            result.forEach(artist=>{
-                                var artistIns=new RegExp("^" + artist.artist.name,"i");
-                                db.collection('matches').update(
-                                    {"performances.artist_name":{$regex:artistIns}}, //
-                                    { $set: { "performances.$.inDB" : 1 ,"performances.$.genres":artist.genres} },
+               
+
+                             result.forEach(artist=>{
+                            var artistIns=artist.artist.name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                            artistIns=new RegExp("^" + artistIns,"i");
+                                db.collection('matchesn').update(
+                                    {"artist_name":{$regex:artistIns}}, //
+                                    { $set: { "inDB" : 1 ,"genres":artist.genres} },
                                     { 
                                         multi: true,
                                         upsert: false
@@ -1346,8 +1335,7 @@ function ScheduledGenres() {
                                     }   
                                 );
                             });
-                            */
-
+                        
 
 
 
@@ -1357,11 +1345,34 @@ function ScheduledGenres() {
 
                     } else {
                         console.log("LastFM genre error");
-                        console.log(err);
+                        console.log(err.length);
+
+                        err.forEach(artist=>{
+                            var artistIns=artist.artist_name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                            artistIns=new RegExp("^" + artistIns,"i");
+                            db.collection('matchesn').update(
+                                {"artist_name":{$regex:artistIns}}, //
+                                { $set: {  "inDB" : 1 ,"lastFMfailed" : 1 } },
+                                { 
+                                    multi: true,
+                                    upsert: false
+                                },
+                                (err, result) => { 
+                                    if (err) {
+                                        console.log(err);
+                                        return false;
+                                    }  
+                                    console.log("result.result.ok "+result.result.ok);
+                                    console.log("result.result.nModified "+result.result.nModified);
+                                    console.log("Last FM failed match update finished");                         
+                                }   
+                            );
+                        });                        
+
                     }
                     
                     
-                });
+                }((newArtists)));
 
 
             } else {
