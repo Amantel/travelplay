@@ -1443,7 +1443,7 @@ function ScheduledGenres() {
             if (!err) {
 
                 console.log(newArtists.length);
-                //newArtists=newArtists.slice(100,101);
+                newArtists=newArtists.slice(100,101);
                 //console.log(newArtists);
                 // return false;
                     
@@ -1541,7 +1541,7 @@ function ScheduledGenres() {
                     } else {
                         console.log("LastFM genre error");
                         console.log(err.length);
-
+/*
                         err.forEach(artist=>{
                             var artistIns=artist.artist_name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                             artistIns=new RegExp("^" + artistIns,"i");
@@ -1563,12 +1563,12 @@ function ScheduledGenres() {
                                 }   
                             );
                         });        
-                                     
+                        */                
 
                     }
                     
                     
-                }((newArtists)));
+                });
 
 
             } else {
