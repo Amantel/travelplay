@@ -1434,16 +1434,16 @@ function queryDiscogsBatch(artistNames) {
     
 }
 
- 
 
 function ScheduledGenres() {
     var genreLag=200; //mlsc
-    db.collection('matchesn').find({ $and: [ {"inDB":{$ne:1}}, {"lastFMfailed":{$ne:1}} ] }).toArray(
+    //db.collection('matchesn').find({ $and: [ {"inDB":{$ne:1}}, {"lastFMfailed":{$ne:1}} ] }).toArray(
+        db.collection('matchesn').find().toArray(
         function (err, newArtists) {
             if (!err) {
 
                 console.log(newArtists.length);
-                newArtists=newArtists.slice(0,20);
+                //newArtists=newArtists.slice(100,101);
                 //console.log(newArtists);
                 // return false;
                     
@@ -1458,10 +1458,6 @@ function ScheduledGenres() {
                 async.mapSeries(newArtists, 
                 function (artist, callback) {
 
-                     
-
-
-
                     var url = "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=ARTIST_NAME&api_key=962b5d8275532aa2ba96bc85084964b5&format=json".
                     replace("ARTIST_NAME", encodeURI(artist.artist_name));
 
@@ -1469,7 +1465,7 @@ function ScheduledGenres() {
                         if (!error && response.statusCode == 200) {
                             var json = JSON.parse(body);
                             if (!json) {
-                                setTimeout( callback, genreLag, "find LastFM genres inner error", 0);
+                                setTimeout( callback.bind("find LastFM genres inner error - json not found in request",0), genreLag);
                             }
 
                             var genres="";
@@ -1478,10 +1474,10 @@ function ScheduledGenres() {
                                     return tag.name;
                                 });
                             json.genres=genres;    
-                            setTimeout( callback, genreLag, null, json);
+                            setTimeout( callback.bind(null,json), genreLag);
 
                         } else {
-                           setTimeout( callback, genreLag, "find LastFM genres error", 0);
+                           setTimeout( callback.bind("find LastFM genres error - bad status or error on request",0), genreLag);
                         }
                     });
                
@@ -1566,7 +1562,8 @@ function ScheduledGenres() {
                                     console.log("Last FM failed match update finished");                         
                                 }   
                             );
-                        });                        
+                        });        
+                                     
 
                     }
                     

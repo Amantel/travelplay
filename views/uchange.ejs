@@ -95,7 +95,7 @@ body {
                 if(locals.result) {
                     for(i=0; i<result.length; i++) {
        
-                    
+                    if(result[i].matches) {
                 %>     
                     <form method="POST" class="form-inline text-left" style="margin:10px;"  action="/change_user">
 
@@ -105,6 +105,7 @@ body {
                     <label data-toggle="tooltip" data-placement="top" title="<%=result[i]._id%>" >
                     
                         <%=result[i].email%> 
+                        
                         (<%=result[i].matches.length%>)
                     </label>
 
@@ -112,6 +113,7 @@ body {
 
                     </form>
                 <% 
+                        }
                     }
                 }
                 %>
