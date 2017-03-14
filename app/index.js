@@ -165,6 +165,22 @@ app.post('/change_user', (req, res) => {
             });
     }
 
+    if ((req.body.clear || null) && (req.body.id || null)) {
+
+
+        db.collection('users').update({ _id: new ObjectID(req.body.id) }, { $set: { matches: [] } },
+            (err, result) => {
+                if (err) {
+                    res.send({ error: err });
+                }
+                else {
+                    res.redirect("/uchange");
+                }
+            });
+    }
+
+
+
 });
 
 
@@ -558,7 +574,7 @@ app.get('/my_results', (req, res) => {
         delete sess.actionResult;
         delete sess.actionError;
  
-
+/*
         async.map(sess.authed_user.trips, function (trip, callback) {
 
                 db.collection('matchesn').find({tripid:{$eq:trip.id}}).toArray(function (err, result) {
@@ -573,13 +589,10 @@ app.get('/my_results', (req, res) => {
             matches.forEach(function(tripMatches){
                 matchesByTrips[tripMatches[0].tripid]=tripMatches;
             });
-            console.log(matchesByTrips.length);
-            
 
-            res.render('profile_results.ejs', { session: sess, actions: actions, matches:matchesByTrips });
         });
-
-
+*/  
+  res.render('profile_results.ejs', { session: sess, actions: actions, matches:matchesByTrips });
  
         
        
@@ -1103,6 +1116,8 @@ function findMatches(user, time) {
                                     tech.logToFile("2_tier_in_"+trip.city+".json", secondTier);
                                     tech.logToFile("3_tier_in_"+trip.city+".json", thirdTier);
                                     */
+
+                                    //PUT distinct bands to user.matches
                                     console.log("Finished matching for "+trip.city);
                                     
                                 } else {

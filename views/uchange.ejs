@@ -56,7 +56,8 @@ body {
         <h1>Wanderlust</h1>
       </div>
       <p class="lead text-center">Some punchline text</p>
-      <hr>
+             <h2>Deactivate Users</h2>
+
       <div class="text-center">
                 <% 
                 if(locals.result) {
@@ -88,7 +89,35 @@ body {
 
  
       </div>
+       <h2>Clear Matches</h2>
+      <div class="text-center">
+                <% 
+                if(locals.result) {
+                    for(i=0; i<result.length; i++) {
        
+                    
+                %>     
+                    <form method="POST" class="form-inline text-left" style="margin:10px;"  action="/change_user">
+
+                    <input type="hidden" name="id" value="<%=result[i]._id%>">
+                    <input type="hidden" name="email" value="<%=result[i].email%>">
+                    <input type="hidden" name="password" value="<%=result[i].password%>">
+                    <label data-toggle="tooltip" data-placement="top" title="<%=result[i]._id%>" >
+                    
+                        <%=result[i].email%> 
+                        (<%=result[i].matches.length%>)
+                    </label>
+
+                    <input type="submit" class="btn btn-danger btn-sm pull-right" name="clear" value="clear">
+
+                    </form>
+                <% 
+                    }
+                }
+                %>
+
+ 
+      </div>      
     </div>
 
     <footer class="footer">
