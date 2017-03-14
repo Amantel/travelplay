@@ -167,3 +167,8 @@ background: rgba(187, 161, 84, 0.14)
   font-weight: bold;
   padding-bottom: 4px;
 }
+
+.trip_finished {
+    background-color: #FCFCFC;
+    color: #CCC;
+}
