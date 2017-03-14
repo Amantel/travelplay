@@ -1465,7 +1465,7 @@ function ScheduledGenres() {
                         if (!error && response.statusCode == 200) {
                             var json = JSON.parse(body);
                             if (!json) {
-                                setTimeout( callback.bind("find LastFM genres inner error - json not found in request",0), genreLag);
+                                setTimeout( callback.bind(this,"find LastFM genres inner error - json not found in request",0), genreLag);
                             }
 
                             var genres="";
@@ -1474,10 +1474,11 @@ function ScheduledGenres() {
                                     return tag.name;
                                 });
                             json.genres=genres;    
-                            setTimeout( callback.bind(null,json), genreLag);
+                            setTimeout( callback.bind(this,null,json), genreLag);
+                            //callback(null,json);
 
                         } else {
-                           setTimeout( callback.bind("find LastFM genres error - bad status or error on request",0), genreLag);
+                           setTimeout( callback.bind(this,"find LastFM genres error - bad status or error on request",0), genreLag);
                         }
                     });
                
@@ -1485,7 +1486,7 @@ function ScheduledGenres() {
                 function (err,result) {
                     if(!err) {
                             //0. filter artists or artist_names
-
+                            return false;
                             result=result.filter(artist=>{
                                 if(!artist.artist)
                                     return false;
@@ -1539,9 +1540,9 @@ function ScheduledGenres() {
                             });
                         
                     } else {
-                        console.log("LastFM genre error");
+                        console.log("LastFM genre error");/*
                         console.log(err.length);
-/*
+
                         err.forEach(artist=>{
                             var artistIns=artist.artist_name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                             artistIns=new RegExp("^" + artistIns,"i");
