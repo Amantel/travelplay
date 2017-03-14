@@ -49,15 +49,29 @@
 
         <div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             <%               
         var trips=session.authed_user.trips || [];
         for(i=0;i<trips.length; i++) {  
             var trip=trips[i];
-            var matches=session.authed_user.matches || [];
-            var trip_matches=matches.filter(x=>x.trip_id==trip.id);   
-            trip_matches = trip_matches.filter(function(elem, index, self) {
-                return index == self.indexOf(elem);
-            })
+            var trip_matches=matches[trip.id] || [];
             
         %>
                 <div class="panel panel-default">
@@ -70,39 +84,23 @@
 
                             <span class="trip_start_text"><%=trip.end%></span>
                         </h4>
-                        <% if(trip_matches.length>0) { %>
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Event</th>
-                                        <th class="hidden">Link</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <%     
-                 for(j=0;j<trip_matches.length; j++) {  
-                    var event_row=matches[j];
-                    if(event_row && event_row.event) {
-                %>
-                                        <tr>
-                                            <td>
-                                                <%=event_row.event.event_title%>
-                                            </td>
-                  
-                                            <td data-toggle="tooltip" data-placement="top" title="not it beta" class="text-center hidden">-</td>
-                                        </tr>
-                                        <%                 
-             }
-                }
-                %>
-                                </tbody>
-                            </table>
-                            <% } %>
+                        <% if(trip_matches.forEach(function(match) { %>
+                            <div class="event_div tier_<%=match.tier%>">
+                                <h5>Tier <%=match.tier%></h5>
+                                <div class="event_text_block artist_name" 
+                                data-toggle="tooltip" data-placement="top" title="<%=match.genres.join();%>"
+                                ><%=match.artist_name%></div>
+                                <div class="event_text_block start_date"><span class="intro">Start:</span> <%=match.start_date%></div>
+                                
+                                <div class="event_text_block venue_name"><span class="intro">Venue:</span> <%=match.venue_name%></div>
+                                <div class="event_text_block source_name"><span class="intro">Source:</span> <%=match.source%></div>
+
+                                <div class="event_text_block uri_link"><a class="btn btn-xs btn-info" href="<%=match.uri%>">Link</a></div>
+                            </div>
+                         <%  } ))  %>
                     </div>
                 </div>
                 <%  } %>
-
-
 
 
 

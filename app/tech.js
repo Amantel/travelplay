@@ -121,7 +121,6 @@ function savePerformancesToTrip(user, performances, trip) {
 }
 
 
-
  /*
 function savePerformancesToTrip(user, performances, trip) {
     var id=trip.id; 
@@ -395,27 +394,27 @@ function getUserGenres(bands) {
         }).filter(genre => genre !== "");
 
 
-/*
+
     var countedGenres = {};
     genreInfo.forEach(function (i) { countedGenres[i] = (countedGenres[i] || 0) + 1; });
 
 
     var sortable = [];
     for (var genre in countedGenres)
-        sortable.push([genre, countedGenres[genre]])
+        sortable.push([genre, countedGenres[genre]]);
 
     sortable.sort(function (a, b) {
-        return b[1] - a[1]
+        return b[1] - a[1];
     });
-*/
 
-
-
+    genreInfoUniq=sortable.filter(x=>x[1]>Math.ceil(bands.length/100)).map(x=>x[0]);
+//logToFile("francesco_genres.json", genreInfoUniq);
+/*
      genreInfoUniq= [...new Set(genreInfo)];
 
     if(genreInfoUniq.length==1 && genreInfoUniq[0]===undefined)
         genreInfoUniq=[];
-
+*/
      return genreInfoUniq;
     
 

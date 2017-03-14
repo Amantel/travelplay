@@ -574,27 +574,36 @@ app.get('/my_results', (req, res) => {
         delete sess.actionResult;
         delete sess.actionError;
  
-/*
+
         async.map(sess.authed_user.trips, function (trip, callback) {
 
-                db.collection('matchesn').find({tripid:{$eq:trip.id}}).toArray(function (err, result) {
+                db.collection('matchesn').find({ $and: [ {"tripid":{$eq:trip.id}}, {"tier":{$gte:1}} ] }).toArray(function (err, result) {
                     if(err)
                         callback(err,[]);
+                    result.sort(function (a, b) {
+                            if (a.tier < b.tier) return -1;
+                            if (a.tier > b.tier) return 1;
+                            return 0;
+                        });
+
                      callback(null,result);
                 });
 
         }, function (err, results) {
             matches=results.filter(tripMatches=>tripMatches.length>0);
+
+            
             var matchesByTrips=[];
             matches.forEach(function(tripMatches){
                 matchesByTrips[tripMatches[0].tripid]=tripMatches;
             });
+            res.render('profile_results.ejs', { session: sess, actions: actions, matches:matchesByTrips });
 
         });
-*/  
-  res.render('profile_results.ejs', { session: sess, actions: actions, matches:matchesByTrips });
+
+  
  
-        
+         
        
 
     } else {
@@ -1055,7 +1064,7 @@ function findMatches(user, time) {
                                     var firstTier = [];
                                     var secondTier = [];
                                     var thirdTier = [];
-                                    
+                                    var failedGenres=[];    
                                     result.forEach(function(match){
                                     
                                       if (match.artist_name !== undefined) {
@@ -1084,25 +1093,35 @@ function findMatches(user, time) {
                                             if(findings.length>0)
                                                 secondTier.push(match);     
 
-
+                                            
                                             //3.Third Tier - Genres
-                                            findings=userGenres.filter(function(genre){
-                                                if(
-                                                    match.genres && 
-                                                    match.genres.indexOf(genre)                                                    
-                                                    ) return true;
-                                                return false;
+                                            if(match.genres && match.genres.length>0)
+                                            {
+                                                findings=match.genres.filter(function(genre){
+                                                    if(
+                                                        userGenres.indexOf(genre)>-1                                                    
+                                                        ) return true;
+                                                    return false;
 
-                                            });
-                                            if(findings.length>0)
-                                                thirdTier.push(match);                                                    
+                                                });
+                                                if(findings.length>0)
+                                                    thirdTier.push(match); 
+                                                else {
+                                                    //console.log(match.genres.join()+" no in user genres");
+                                                    failedGenres.push(match.genres);
+                                                }
+                                               
+                                                
+                                            }                                        
                                                 
                                         }                                    
-
+ 
 
                                     });
-
-           
+  /*
+                                    tech.logToFile(trip.city+"_failedGenres.json", failedGenres);
+                                    
+                                    
                                     console.log("First Tier for "+trip.city);
                                     console.log(firstTier);
  
@@ -1111,14 +1130,140 @@ function findMatches(user, time) {
 
                                     console.log("Third Tier for "+trip.city);
                                     console.log(thirdTier);
-                                    /*
-                                    tech.logToFile("1_tier_in_"+trip.city+".json", firstTier);
-                                    tech.logToFile("2_tier_in_"+trip.city+".json", secondTier);
-                                    tech.logToFile("3_tier_in_"+trip.city+".json", thirdTier);
-                                    */
+                                   
+                                    tech.logToFile(Math.random()+"1403_1_tier_in_"+trip.city+".json", firstTier);
+                                    tech.logToFile(Math.random()+"1403_2_tier_in_"+trip.city+".json", secondTier);
+                                    tech.logToFile(Math.random()+"1403_3_tier_in_"+trip.city+".json", thirdTier);
+                                     */
 
-                                    //PUT distinct bands to user.matches
-                                    console.log("Finished matching for "+trip.city);
+                                    //Update TIER to matches
+
+
+                                    async.waterfall([
+                                        function(callbackm) {
+                                            //zeroTier 
+                                            db.collection('matchesn').update(
+                                                {}, //
+                                                { $set: { "tier" : 0} },
+                                                { 
+                                                    upsert: false,
+                                                    multi:true
+                                                },
+                                                (err, result) => { 
+                                                        if (err) 
+                                                            callbackm(err);
+                                                        else    
+                                                            callbackm(null);                                                 
+                                                }   
+                                            );  
+                                            
+                                        },
+                                       
+                                        function(callbackm) {
+
+                                            async.map(thirdTier,
+                                            
+                                                function(performance,callback){
+
+                                                var id = new ObjectID(performance._id);
+
+                                                db.collection('matchesn').update(
+                                                    {"_id":{$eq:performance._id}}, //
+                                                    { $set: { "tier" : 3} },
+                                                    { 
+                                                        upsert: false
+                                                    },
+                                                    (err, result) => { 
+                                                        if (err) 
+                                                            callback(err);
+                                                        else    
+                                                            callback(null);                                                 
+                                                    }   
+                                                );
+
+                                            },
+                                            function(err, results) {
+                                                callbackm(null);   
+                                            });
+                                      
+                                            
+                                        },
+                                        function(callbackm) {
+
+                                            async.map(secondTier,
+                                            
+                                                function(performance,callback){
+
+                                                var id = new ObjectID(performance._id);
+
+                                                db.collection('matchesn').update(
+                                                    {"_id":{$eq:performance._id}}, //
+                                                    { $set: { "tier" : 2} },
+                                                    { 
+                                                        upsert: false
+                                                    },
+                                                    (err, result) => { 
+                                                        if (err) 
+                                                            callback(err);
+                                                        else    
+                                                            callback(null);                                                 
+                                                    }   
+                                                );
+
+                                            },
+                                            function(err, results) {
+                                                callbackm(null);   
+                                            });
+                                      
+                                            
+                                        },
+                                        function(callbackm) {
+
+                                            async.map(firstTier,
+                                            
+                                                function(performance,callback){
+
+                                                var id = new ObjectID(performance._id);
+
+                                                db.collection('matchesn').update(
+                                                    {"_id":{$eq:performance._id}}, //
+                                                    { $set: { "tier" : 1} },
+                                                    { 
+                                                        upsert: false
+                                                    },
+                                                    (err, result) => { 
+                                                        if (err) 
+                                                            callback(err);
+                                                        else    
+                                                            callback(null);                                                 
+                                                    }   
+                                                );
+
+                                            },
+                                            function(err, results) {
+                                                callbackm(null);   
+                                            });
+                                      
+                                            
+                                        },                                      
+                                    ], function (err, result) {
+                                        if(err)
+                                            console.log(err);
+                                        else  
+                                            console.log("Finished matching for "+trip.city);
+                                    });
+
+
+
+                                                                                
+
+                                                                      
+
+
+
+
+
+                                    
                                     
                                 } else {
                                     console.log("Nothing found in DB in Matching");                      
