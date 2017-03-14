@@ -557,7 +557,32 @@ app.get('/my_results', (req, res) => {
 
         delete sess.actionResult;
         delete sess.actionError;
-        res.render('profile_results.ejs', { session: sess, actions: actions });
+ 
+
+        async.map(sess.authed_user.trips, function (trip, callback) {
+
+                db.collection('matchesn').find({tripid:{$eq:trip.id}}).toArray(function (err, result) {
+                    if(err)
+                        callback(err,[]);
+                     callback(null,result);
+                });
+
+        }, function (err, results) {
+            matches=results.filter(tripMatches=>tripMatches.length>0);
+            var matchesByTrips=[];
+            matches.forEach(function(tripMatches){
+                matchesByTrips[tripMatches[0].tripid]=tripMatches;
+            });
+            console.log(matchesByTrips.length);
+            
+
+            res.render('profile_results.ejs', { session: sess, actions: actions, matches:matchesByTrips });
+        });
+
+
+ 
+        
+       
 
     } else {
         res.redirect("/");
@@ -997,8 +1022,9 @@ function findMatches(user, time) {
         return false;
     }
 
+    var userGenres=tech.getUserGenres(user.bands);
 
-
+    //tech.logToFile("francesco_bands.json", bands);
 
      trips.forEach(function (trip) {
 
@@ -1009,17 +1035,20 @@ function findMatches(user, time) {
                 } else {
 
 
-                    db.collection('matches').find({id:{$eq:trip.id}}).toArray(function (err, result) {
+                    db.collection('matchesn').find({tripid:{$eq:trip.id}}).toArray(function (err, result) {
                             if (!err) {
                                 if(result.length>0) {
-
-                                    var tripMatches=result[0];
-
-                                    //1. First tier
-                                    var firstTier = tripMatches.performances.filter(function (match, i, array) {
-                                        if (match.artist_name !== undefined) {
-                                            //check if match.artist_name in bands and band.relation==1
-                                            var findings=bands.filter(function(band){
+                                    
+                                    var firstTier = [];
+                                    var secondTier = [];
+                                    var thirdTier = [];
+                                    
+                                    result.forEach(function(match){
+                                    
+                                      if (match.artist_name !== undefined) {
+                                            var findings=[];
+                                            //1. First tier
+                                            findings=bands.filter(function(band){
                                                 if(
                                                     band.band===match.artist_name.toLowerCase() &&
                                                     band.relation==1
@@ -1027,19 +1056,11 @@ function findMatches(user, time) {
                                                 return false;
 
                                             });
-                                            return findings.length>0;
-                                             
-                                        }
-                                        return false;
-                                    });    
-                                    //console.log("First Tier for "+trip.city);
-                                    //console.log(firstTier);
+                                            if(findings.length>0)
+                                                firstTier.push(match);     
 
-                                    //2. second tier
-                                    var secondTier = tripMatches.performances.filter(function (match, i, array) {
-                                        if (match.artist_name !== undefined) {
-                                            //check if match.artist_name in bands and band.relation==1
-                                            var findings=bands.filter(function(band){
+                                            //2. Second tier
+                                            findings=bands.filter(function(band){
                                                 if(
                                                     band.band===match.artist_name.toLowerCase() &&
                                                     band.relation==2
@@ -1047,16 +1068,41 @@ function findMatches(user, time) {
                                                 return false;
 
                                             });
-                                            return findings.length>0;
-                                             
-                                        }
-                                        return false;
-                                    });    
-                                   
-                                    //console.log("Second Tier for "+trip.city);
-                                    //console.log(secondTier);
+                                            if(findings.length>0)
+                                                secondTier.push(match);     
 
+
+                                            //3.Third Tier - Genres
+                                            findings=userGenres.filter(function(genre){
+                                                if(
+                                                    match.genres && 
+                                                    match.genres.indexOf(genre)                                                    
+                                                    ) return true;
+                                                return false;
+
+                                            });
+                                            if(findings.length>0)
+                                                thirdTier.push(match);                                                    
+                                                
+                                        }                                    
+
+
+                                    });
+
+           
+                                    console.log("First Tier for "+trip.city);
+                                    console.log(firstTier);
  
+                                    console.log("Second Tier for "+trip.city);
+                                    console.log(secondTier);
+
+                                    console.log("Third Tier for "+trip.city);
+                                    console.log(thirdTier);
+                                    /*
+                                    tech.logToFile("1_tier_in_"+trip.city+".json", firstTier);
+                                    tech.logToFile("2_tier_in_"+trip.city+".json", secondTier);
+                                    tech.logToFile("3_tier_in_"+trip.city+".json", thirdTier);
+                                    */
                                     console.log("Finished matching for "+trip.city);
                                     
                                 } else {
@@ -1336,13 +1382,6 @@ function ScheduledGenres() {
                                 );
                             });
                         
-
-
-
-
-
-
-
                     } else {
                         console.log("LastFM genre error");
                         console.log(err.length);
