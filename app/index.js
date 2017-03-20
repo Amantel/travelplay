@@ -1519,10 +1519,10 @@ function ScheduledGenres() {
                                 //matchen update
                                 var setObj;
                                 if(artist.artistGenres.length===0) {
-                                    setObj={ "inDB" : 1 ,"genres":[],"discogsFailed":1};
+                                    setObj={ "inDB" : 0 ,"genres":[],"discogsFailed":1};
                                 }
                                 else {
-                                    setObj= { "inDB" : 0 ,"genres":artist.artistGenres} ;
+                                    setObj= { "inDB" : 1 ,"genres":artist.artistGenres} ;
                                 }
 
                                     
