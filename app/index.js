@@ -1394,49 +1394,6 @@ LONDON TEST
 
 
 
-
-async.mapSeries(['nirvana','metallica','dsfsdfs3','dio','britney spears'],
-function(artistName,callback){
-    disDB.search("",{type:"release",artist:artistName},function(err, data, rateLimit){
-        if(!err) {
-            if(data && data.results && data.results[0]) {
-                var genres = data.results.map(function (result) {
-                    var curGenres = [];
-                    curGenres = curGenres.concat(result.style);
-                    curGenres = curGenres.concat(result.genre);
-                    return curGenres;
-                });
-
-                if (genres.length > 1)
-                    genres = genres.reduce(function (a, b) {
-                        return a.concat(b);
-                    });
-                genreInfoUniq = [...new Set(genres)];
-                if(rateLimit.remaining>220)
-                    callback(null,{artistName:this.artistName, artistGenres:genreInfoUniq});
-                else
-                    setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:genreInfoUniq}), 65000);    
-            } else {
-                console.log("no artist found");
-                if(rateLimit.remaining>220)
-                    callback(null,{artistName:this.artistName, artistGenres:[]});
-                else
-                    setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:[]}), 65000);                        
-            }
-
-        } else {
-            callback(err);
-        }
-
-    }.bind({ artistName: artistName }));
-},
-function(err,result){
-    if(!err) {
-        console.log(result.length);
-    } else {
-        console.log(err);
-    }
-});
  
 
 function queryDiscogs(artistName,callback) {
@@ -1487,9 +1444,148 @@ function queryDiscogsBatch(artistNames) {
     });
     
 }
-
-
 function ScheduledGenres() {
+    //db.collection('matchesn').find().toArray(
+    db.collection('matchesn').find(
+        {
+             $and: [ 
+                 {"inDB":{$ne:1}}, {
+                     $or: [
+                         {"lastFMfailed":{$ne:1}},
+                         {"discogsFailed":{$ne:1}} 
+                     ]}
+                 ] 
+        }
+        ).toArray(
+ 
+
+        function (err, newArtists) {
+            if (!err) {
+                //newArtists=newArtists.slice(100,105);
+                console.log("starting genre finder");
+                console.log(new Date().toLocaleString());
+                async.mapSeries(newArtists,
+                function(artist,callback){
+                    disDB.search("",{type:"release",artist:artist.artist_name},function(err, data, rateLimit){
+                            if(!err) {
+                                if(data && data.results && data.results[0]) {
+                                    console.log("artist found: "+this.artistName+" rateLimit.remaining:"+rateLimit.remaining);
+                                    var genres = data.results.map(function (result) {
+                                        var curGenres = [];
+                                        curGenres = curGenres.concat(result.style);
+                                        curGenres = curGenres.concat(result.genre);
+                                        return curGenres;
+                                    });
+
+                                    if (genres.length > 1)
+                                        genres = genres.reduce(function (a, b) {
+                                            return a.concat(b);
+                                        });
+                                    genreInfoUniq = [...new Set(genres)];
+                                    if(rateLimit.remaining>20)
+                                        callback(null,{artistName:this.artistName, artistGenres:genreInfoUniq});
+                                    else {
+                                        console.log("waiting minute");
+                                        setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:genreInfoUniq}), 65000);    
+                                    }
+                                } else {
+                                    console.log("***no artist found: "+this.artistName+" rateLimit.remaining:"+rateLimit.remaining);
+                                    if(rateLimit.remaining>20)
+                                        callback(null,{artistName:this.artistName, artistGenres:[]});
+                                    else {
+                                        console.log("waiting minute");
+                                        setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:[]}), 65000);                        
+                                    }
+                                }
+
+                            } else {
+                                callback(err);
+                            }
+
+                        }.bind({ artistName: artist.artist_name }));
+                    },
+                    function(err,result){
+                        console.log("Ending genre finder");
+                        console.log(new Date().toLocaleString());                        
+                        if(!err) {
+                            console.log(result.length);
+
+                            
+                            result.forEach(artist=>{
+
+                                //matchen update
+                                var setObj;
+                                if(artist.artistGenres.length===0) {
+                                    setObj={ "inDB" : 1 ,"genres":[],"discogsFailed":1};
+                                }
+                                else {
+                                    setObj= { "inDB" : 0 ,"genres":artist.artistGenres} ;
+                                }
+
+                                    
+
+                                    db.collection('matchesn').update(
+                                        {"artist_name":{$eq:artist.artistName}}, //
+                                        { $set: setObj },
+                                        { 
+                                            multi: true,
+                                            upsert: false
+                                        },
+                                        (err, result) => { 
+                                            if (err) {
+                                                console.log(err);
+                                                return false;
+                                            }  
+                                        console.log("Discogs matchn nModified "+result.result.nModified);
+                                        console.log("Discogs match update finished");                         
+                                        }
+                                    );
+
+
+                                // bandsDB
+                                if(artist.artistGenres.lenght>0) {
+                                db.collection('bandsDB').update(
+                                        {"artist_name":{$eq:artist.artistName}}, //
+                                        { $set: {genres:artist.artistGenres} },
+                                        { 
+                                            upsert: false,
+                                            multi: true 
+                                        },
+                                        (err, result) => { 
+                                            if (err) {
+                                                console.log(err);
+                                                return false;
+                                            }  
+                                        console.log("Discogs genre search finished");                         
+                                        }   
+                                    );
+                                }
+
+
+                                });
+
+
+
+
+
+
+                        } else {
+                            console.log(err);
+                        }
+                    });
+
+
+
+
+
+            } else {
+                console.log("ScheduledGenres DB error");
+            }
+    }); 
+    
+}
+
+function ScheduledGenres2() {
     var genreLag=200; //mlsc
     //db.collection('matchesn').find({ $and: [ {"inDB":{$ne:1}}, {"lastFMfailed":{$ne:1}} ] }).toArray(
         db.collection('matchesn').find().toArray(
