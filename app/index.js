@@ -1443,7 +1443,8 @@ function ScheduledGenres() {
             if (!err) {
 
                 console.log(newArtists.length);
-                newArtists=newArtists.slice(100,101);
+                //newArtists=newArtists.slice(100,150);
+                newArtists=[{artist_name:"some shitty name"}];
                 //console.log(newArtists);
                 // return false;
                     
@@ -1460,12 +1461,16 @@ function ScheduledGenres() {
 
                     var url = "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=ARTIST_NAME&api_key=962b5d8275532aa2ba96bc85084964b5&format=json".
                     replace("ARTIST_NAME", encodeURI(artist.artist_name));
+                    console.log(url);
 
                     request({url: url}, function (error, response, body) {
                         if (!error && response.statusCode == 200) {
                             var json = JSON.parse(body);
                             if (!json) {
                                 setTimeout( callback.bind(this,"find LastFM genres inner error - json not found in request",0), genreLag);
+                            }
+                            if (json.error) {
+                                setTimeout( callback.bind(this,"find LastFM genres inner error - "+json.message,0), genreLag);
                             }
 
                             var genres="";
@@ -1482,10 +1487,11 @@ function ScheduledGenres() {
                         }
                     });
                
-                },
+                }.bind({ artists: 5 }),
                 function (err,result) {
                     if(!err) {
                             //0. filter artists or artist_names
+                            console.log("FINISHED");
                             return false;
                             result=result.filter(artist=>{
                                 if(!artist.artist)
@@ -1569,13 +1575,14 @@ function ScheduledGenres() {
                     }
                     
                     
-                });
+                }.bind(null, { newArtists: newArtists }));
 
 
             } else {
                 console.log("ScheduledGenres DB error");
             }
     }); 
+    
 }
 
 
