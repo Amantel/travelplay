@@ -43,7 +43,16 @@ app.use(bodyParser.urlencoded({limit: '50mb', extended: true, parameterLimit:500
 app.use(express.static(__dirname + '/../public'));
 app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 3000000 }, resave: true, saveUninitialized: true }));
 
+//https://github.com/bartve/disconnect
+var Discogs = require('disconnect').Client;
 
+
+
+var dis = new Discogs('TravelPlay Robot 1/X',{
+	consumerKey: 'dMtrXOKdWZTBkwwXKzob', 
+	consumerSecret: 'zqlNByDrOdMehcgarLqhoXpuChVslpsD'
+});
+var disDB = dis.database();
 
 var sess;
 
@@ -1384,6 +1393,51 @@ LONDON TEST
 
 
 
+
+
+async.mapSeries(['nirvana','metallica','dsfsdfs3','dio','britney spears'],
+function(artistName,callback){
+    disDB.search("",{type:"release",artist:artistName},function(err, data, rateLimit){
+        if(!err) {
+            if(data && data.results && data.results[0]) {
+                var genres = data.results.map(function (result) {
+                    var curGenres = [];
+                    curGenres = curGenres.concat(result.style);
+                    curGenres = curGenres.concat(result.genre);
+                    return curGenres;
+                });
+
+                if (genres.length > 1)
+                    genres = genres.reduce(function (a, b) {
+                        return a.concat(b);
+                    });
+                genreInfoUniq = [...new Set(genres)];
+                if(rateLimit.remaining>220)
+                    callback(null,{artistName:this.artistName, artistGenres:genreInfoUniq});
+                else
+                    setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:genreInfoUniq}), 65000);    
+            } else {
+                console.log("no artist found");
+                if(rateLimit.remaining>220)
+                    callback(null,{artistName:this.artistName, artistGenres:[]});
+                else
+                    setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:[]}), 65000);                        
+            }
+
+        } else {
+            callback(err);
+        }
+
+    }.bind({ artistName: artistName }));
+},
+function(err,result){
+    if(!err) {
+        console.log(result.length);
+    } else {
+        console.log(err);
+    }
+});
+ 
 
 function queryDiscogs(artistName,callback) {
     var url = settings.discogsApiUrl.replace("ARTIST_NAME", encodeURI(artistName));
