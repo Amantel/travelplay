@@ -1446,7 +1446,10 @@ function queryDiscogsBatch(artistNames) {
 }
 function ScheduledGenres() {
     //db.collection('matchesn').find().toArray(
+
     db.collection('matchesn').find(
+    { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
+        /*
         {
              $and: [ 
                  {"inDB":{$ne:1}}, {
@@ -1455,7 +1458,7 @@ function ScheduledGenres() {
                          {"discogsFailed":{$ne:1}} 
                      ]}
                  ] 
-        }
+        }*/
         ).toArray(
  
 
