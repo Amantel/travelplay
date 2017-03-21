@@ -81,6 +81,7 @@ function savePerformancesToTrip(user, performances, trip) {
             function(err,result) {
                 if(!err)
                     console.log(trip.city+" inserted new events: "+result.insertedCount);
+                    
                 else 
                    console.log(err);   
 /*

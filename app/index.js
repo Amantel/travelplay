@@ -131,12 +131,64 @@ db.collection("matchesn").insert(
 
  
         if(server_settings.startFinder) queryEvents(server_settings.doSchedule);
+        if(server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule);
+        if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    
         if(server_settings.startMatching) queryMatches(server_settings.doSchedule);           
-        if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);           
+               
         
 
     });
 });
+
+
+function updateMatches() {
+    db.collection('matchesn').find(
+    { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
+    ).toArray(function (err, result) {
+        if(!err) {
+            var matchesNotInDB=result;
+            if(matchesNotInDB.length>0)
+            {
+                matchesNotInDB.forEach(function(match){
+                    db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
+                    toArray(function(err,result){
+                        
+                        if(!err && result && result.length>0)
+                        {
+                            var genres=result[0].genres;
+                            db.collection('matchesn').update(
+                                {"artist_name":{$eq:this.artistName}}, //
+                                { $set: { "inDB" : 1 ,"genres":genres} },
+                                { 
+                                    multi: true,
+                                    upsert: false
+                                },
+                                (err, result) => { 
+                                    if (err) {
+                                            console.log(err);
+                                    }  
+                                    console.log(this.artistName+" modified");
+                                }   
+                            );                    
+                        }
+
+                    }.bind({artistName:match.artist_name}));                 
+                });
+            } else {
+                console.log("all matches in DB");
+            }
+
+
+
+                                        
+
+
+
+        }
+    });
+}
+
+
  
 function queryEvents(doSchedule) {
     if (!doSchedule) {
@@ -1271,16 +1323,6 @@ function findMatches(user, time) {
 
 
 
-                                                                                
-
-                                                                      
-
-
-
-
-
-                                    
-                                    
                                 } else {
                                     console.log("Nothing found in DB in Matching");                      
                                 } 
