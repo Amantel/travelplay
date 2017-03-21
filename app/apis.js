@@ -131,7 +131,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 replace("PAGE_NUMBER", encodeURI(pageNumber)).
                 replace("DATE_START", start).
                 replace("DATE_END", end);
-             console.log(url);
+             console.log("SongkickFinal  "+url);
             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var foundEvents = [];
