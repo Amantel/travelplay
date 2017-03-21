@@ -79,6 +79,25 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on ' + server_settings.port);
+
+/*
+
+                   var id = new ObjectID("58d0f75729bed32f2caf30eb");
+
+                    db.collection('matchesn').update(
+                                {"_id":{$eq:id}}, //
+                                { $set: { "tier" : 3} },
+                                { 
+                                    upsert: false
+                                },
+                                (err, result) => { 
+                                    if (err) 
+                                        console.log(err);
+                                    else    
+                                        console.log("OK");
+                                }   
+                            );
+*/
  /*
 		db.collection('matchesn').remove({"inDB":{$exists:false}}, function(err, result) {
             if (err) {
@@ -1165,9 +1184,10 @@ function findMatches(user, time) {
                                             //3.Third Tier - Genres
                                             if(match.genres && match.genres.length>0)
                                             {
+                                                match.genres=[].concat.apply([], match.genres);
                                                 findings=match.genres.filter(function(genre){
                                                     if(
-                                                        userGenres.indexOf(genre)>-1                                                    
+                                                        userGenres.indexOf(genre.toLowerCase())>-1                                                    
                                                         ) return true;
                                                     return false;
 
@@ -1211,7 +1231,7 @@ function findMatches(user, time) {
                                         function(callbackm) {
                                             //zeroTier 
                                             db.collection('matchesn').update(
-                                                {}, //
+                                                {tripid:{$eq:trip.id}}, //only in this trip
                                                 { $set: { "tier" : 0} },
                                                 { 
                                                     upsert: false,
@@ -1225,7 +1245,7 @@ function findMatches(user, time) {
                                                 }   
                                             );  
                                             
-                                        },
+                                        }.bind({trip:trip}),
                                        
                                         function(callbackm) {
 
@@ -1246,7 +1266,7 @@ function findMatches(user, time) {
                                                             callback(err);
                                                         else    
                                                             callback(null);                                                 
-                                                    }   
+                                                    }
                                                 );
 
                                             },
@@ -1333,7 +1353,7 @@ function findMatches(user, time) {
                                 //error here - do nothing
                                 console.log("Error in DB in Matching");
                             }
-                        });    
+                        }.bind({trip:trip}));    
  
 
 
