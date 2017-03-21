@@ -79,8 +79,15 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on ' + server_settings.port);
-
-
+ /*
+		db.collection('matchesn').remove({"inDB":{$exists:false}}, function(err, result) {
+            if (err) {
+                console.log(err);
+            }
+            console.log(result);
+        });
+        */
+       
 /*
 
     var tripId="TRIPID";
