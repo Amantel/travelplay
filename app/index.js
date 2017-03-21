@@ -160,10 +160,13 @@ db.collection("matchesn").insert(
 });
 
 
+
 function updateMatches() {
+	console.log("start finding matches in DB");
     db.collection('matchesn').find(
     { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
     ).toArray(function (err, result) {
+		console.log("found non matched matches "+result.length);
         if(!err) {
             var matchesNotInDB=result;
             if(matchesNotInDB.length>0)
@@ -172,24 +175,30 @@ function updateMatches() {
                     db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
                     toArray(function(err,result){
                         
-                        if(!err && result && result.length>0)
+                        if(!err)							
                         {
-                            var genres=result[0].genres;
-                            db.collection('matchesn').update(
-                                {"artist_name":{$eq:this.artistName}}, //
-                                { $set: { "inDB" : 1 ,"genres":genres} },
-                                { 
-                                    multi: true,
-                                    upsert: false
-                                },
-                                (err, result) => { 
-                                    if (err) {
-                                            console.log(err);
-                                    }  
-                                    console.log(this.artistName+" modified");
-                                }   
-                            );                    
-                        }
+							console.log(result);
+							if(result && result.length>0) {
+								var genres=result[0].genres;
+								db.collection('matchesn').update(
+									{"artist_name":{$eq:this.artistName}}, //
+									{ $set: { "inDB" : 1 ,"genres":genres} },
+									{ 
+										multi: true,
+										upsert: false
+									},
+									(err, result) => { 
+										if (err) {
+												console.log(err);
+										}  
+										console.log(this.artistName+" modified");
+									}   
+								);                    
+							}
+                        } else {
+							console.log("error in matching matches to DB");
+							console.log(err);
+						}
 
                     }.bind({artistName:match.artist_name}));                 
                 });
@@ -197,15 +206,13 @@ function updateMatches() {
                 console.log("all matches in DB");
             }
 
-
-
-                                        
-
-
-
+        } else {
+            console.log("matching to DB err");
+            console.log(err);
         }
     });
 }
+
 
 
  
@@ -1517,30 +1524,22 @@ function ScheduledGenres() {
     //db.collection('matchesn').find().toArray(
 
     db.collection('matchesn').find(
-    { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
-        /*
-        {
-             $and: [ 
-                 {"inDB":{$ne:1}}, {
-                     $or: [
-                         {"lastFMfailed":{$ne:1}},
-                         {"discogsFailed":{$ne:1}} 
-                     ]}
-                 ] 
-        }*/
-        ).toArray(
+   {}// { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
+    ).toArray(
  
 
         function (err, newArtists) {
             if (!err) {
-                //newArtists=newArtists.slice(100,105);
+                //newArtists=newArtists.slice(100,101);
+                //newArtists=['nirvana'];
                 console.log("starting genre finder");
                 console.log(new Date().toLocaleString());
                 async.mapSeries(newArtists,
                 function(artist,callback){
                     disDB.search("",{type:"release",artist:artist.artist_name},function(err, data, rateLimit){
                             if(!err) {
-                                if(data && data.results && data.results[0]) {
+                                discongsInfo={};
+                                if(data && data.results) {
                                     console.log("artist found: "+this.artistName+" rateLimit.remaining:"+rateLimit.remaining);
                                     var genres = data.results.map(function (result) {
                                         var curGenres = [];
@@ -1554,11 +1553,12 @@ function ScheduledGenres() {
                                             return a.concat(b);
                                         });
                                     genreInfoUniq = [...new Set(genres)];
+
                                     if(rateLimit.remaining>20)
                                         callback(null,{artistName:this.artistName, artistGenres:genreInfoUniq});
                                     else {
                                         console.log("waiting minute");
-                                        setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:genreInfoUniq}), 65000);    
+                                        setTimeout( callback.bind(this,null,{artistName:this.artistName, artistGenres:genreInfoUniq,}), 65000);    
                                     }
                                 } else {
                                     console.log("***no artist found: "+this.artistName+" rateLimit.remaining:"+rateLimit.remaining);
@@ -1615,12 +1615,12 @@ function ScheduledGenres() {
 
 
                                 // bandsDB
-                                if(artist.artistGenres.lenght>0) {
+                                //if(artist.artistGenres.lenght>0)
                                 db.collection('bandsDB').update(
                                         {"artist_name":{$eq:artist.artistName}}, //
                                         { $set: {genres:artist.artistGenres} },
                                         { 
-                                            upsert: false,
+                                            upsert: true,
                                             multi: true 
                                         },
                                         (err, result) => { 
@@ -1631,23 +1631,16 @@ function ScheduledGenres() {
                                         console.log("Discogs genre search finished");                         
                                         }   
                                     );
-                                }
+                                
 
 
                                 });
-
-
-
-
 
 
                         } else {
                             console.log(err);
                         }
                     });
-
-
-
 
 
             } else {
