@@ -498,7 +498,7 @@ function generatePass() {
 
 function isUS(country) {
     country = country.toLowerCase();
-    if (country == "us" || country == "united states")
+    if (country == "us" || country == "united states" || country=="canada")
         return true;
     else
         return false;

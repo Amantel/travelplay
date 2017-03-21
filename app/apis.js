@@ -38,11 +38,19 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
                     if (totalEntries > 0) {
                         // console.log(cityName + "  " + json.resultsPage.results.location[0].metroArea.id)
 
-                        var cityID = json.resultsPage.results.location[0].metroArea.id;
-                        if (json.resultsPage.results.location.length > 1 &&
-                            tech.isUS(json.resultsPage.results.location[0].metroArea.country.displayName))
-                            cityID = json.resultsPage.results.location[1].metroArea.id;
-                        callback(null, cityID);
+                        var cityID = 0;
+
+                        for(var i=0; i<json.resultsPage.results.location.length;i++) {
+                            location=json.resultsPage.results.location[i];
+                            if(!tech.isUS(location.metroArea.country.displayName)) {
+                                cityID = location.metroArea.id;
+                                callback(null, cityID);
+                                return false;
+                                
+                            }
+                        }
+                        callback("city not found - " + cityName, 0);
+                        
                     } else {
                         //console.log(cityName + "  " + "city not found")
                         callback("city not found - " + cityName, 0);
