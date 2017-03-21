@@ -85,7 +85,7 @@ function savePerformancesToTrip(user, performances, trip) {
                              var bandInfo=bandsInDB[0];
 
                                 
-                            db.collection('matchesn').update(
+                            server.db.collection('matchesn').update(
                                 {"artist_name":{$eq:artist.artist_name}}, //
                                 { $set: { "inDB" : 1 ,"genres":bandInfo.genres} },
                                 { 
