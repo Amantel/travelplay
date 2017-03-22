@@ -213,7 +213,7 @@ $(function () {
                 rbody.trips = "EMPTY";    
         }
 
-        var bandForms = $("[data-band]");
+        var bandForms = $("[data-band]"); 
 
         var bands = [];
         $.each(bandForms, function (i, el) {
@@ -276,6 +276,10 @@ $(function () {
 
     $(".action_link").click(function(){
         $(".loading").removeClass("hidden");                
+    });
+    
+    $("[data-show_tier3]").click(function(){
+        $(this).parents(".trip_content").find(".tier_3").toggle();
     });
 
 });
