@@ -154,10 +154,49 @@ db.collection("matchesn").insert(
         if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    
         if(server_settings.startMatching) queryMatches(server_settings.doSchedule);           
                
-        
+        /*
+        async.waterfall([
+            queryEvents,
+        ], function (err, result) {
+            console.log("waterfall finished");
+            console.log(new Date().toISOString());
+            console.log(err);
+            console.log(result);
+        });
+        */        
+
 
     });
 });
+
+
+
+async.waterfall([
+    f1,    
+],
+function (err,result) {
+    console.log(result);
+});
+
+
+function f1(globalCallbackFuntion) {
+    async.each([0,1,2,3], f1_1, function(err,result){
+        globalCallbackFuntion(null,"all_calls_finished");
+    });
+}
+
+function f1_1(i,innerCallback1) {
+    setTimeout(f1_1_1, 1000, i, innerCallback1); 
+}
+
+
+
+function f1_1_1(i,innerCallback1) {
+  console.log("I is "+i);
+  innerCallback1(null);
+
+}
+
 
 
 
@@ -216,12 +255,16 @@ function updateMatches() {
 
 
  
-function queryEvents(doSchedule) {
+function queryEvents(watercallback) {
+    /*
     if (!doSchedule) {
         ScheduledFind();
     } else {
         later.setInterval(ScheduledFind, later.parse.text('every 8 h'));
-    }
+    }*/
+    ScheduledFind(watercallback);
+    
+
 }
 
 function queryMatches(doSchedule) {
@@ -1098,7 +1141,7 @@ app.get('/save_user_special', (req, res) => {
 
 /**************/
 
-function findEvents(user, time) {
+function findEvents(user, time,watercallback) {
     var trips = user.trips || null;
     var bands = user.bands || null;
 
@@ -1111,7 +1154,7 @@ function findEvents(user, time) {
     artistList = bands.map(function (el, i) {
         return el.band;
     });
-
+    //loop 2
      trips.forEach(function (trip) {
 
             if(new Date(trip.end)>new Date()) {        
@@ -1120,7 +1163,7 @@ function findEvents(user, time) {
                     console.log("US:"+trip.city+" later"); 
                 } else {
                     //SongKick
-                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,watercallback);
                 }
         }
 
@@ -1827,18 +1870,18 @@ function ScheduledMatch() {
 
 }
 
-function ScheduledFind() {
+function ScheduledFind(watercallback) {
 
     var time = new Date();
 
     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
 
         if (!err && (result.length > 0)) {
-
+            //loop
             result.forEach(function (user) {
                 user.genres=tech.getUserGenres(user.bands);
                 //console.log(user.genres);
-                findEvents(user, time);
+                findEvents(user, time,watercallback);
             });
 
         }

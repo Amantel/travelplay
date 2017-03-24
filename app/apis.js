@@ -19,7 +19,7 @@ const server_settings = require("./server_setting");
 
 
 
-function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocationUrl) {
+function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocationUrl,watercallback) {
 
     var cityName = encodeURI(trip.city);
 
@@ -108,7 +108,7 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
         else {
             var N = Math.ceil(totalEntries / 50);
             var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
-            findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time);
+            findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time,watercallback);
         }
 
 
@@ -118,8 +118,8 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
 
 
 
-function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time) {
-    async.map(pagesArray,
+function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time,watercallback) {
+    var functionRes=async.map(pagesArray,
         (function (pageNumber, callback) {
             //var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber));
             var start = trip.start;
@@ -197,11 +197,10 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
                 }
 
-
+                return "finished";
 
             }
         });
-
 
 }
 
