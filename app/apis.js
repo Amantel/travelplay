@@ -20,9 +20,9 @@ const server_settings = require("./server_setting");
 
 
 function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocationUrl,innerCallback2) {
-    return innerCallback2("xxxx");
     var cityName = encodeURI(trip.city);
 
+     
 
 
     async.waterfall([
@@ -30,6 +30,7 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
             var url = apiLocationUrl.replace("CITY_NAME", cityName);
 
             request(url, function (err, response, body) {
+
                 if (!err && response.statusCode == 200) {
                     var json = JSON.parse(body);
                     var totalEntries = json.resultsPage.totalEntries;
@@ -101,6 +102,8 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
         }
 
     ], function (err, totalEntries, cityID) {
+                
+
         if (err) {
             console.log(err);
 
@@ -108,6 +111,7 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
         else {
             var N = Math.ceil(totalEntries / 50);
             var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
+            
             findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time,innerCallback2);
         }
 
@@ -184,7 +188,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
  
                     console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
- 
+                    //THIS SHIT IS TWO ASYNC
                     if (performances.length > 0)
                         tech.savePerformancesToTrip(user, performances, trip);
 
@@ -197,7 +201,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
                 }
                 
-                return innerCallback2();
+                innerCallback2();
 
             }
         });
