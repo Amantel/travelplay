@@ -154,7 +154,7 @@ db.collection("matchesn").insert(
         if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    
         if(server_settings.startMatching) queryMatches(server_settings.doSchedule);           
                
-        /*
+      
         async.waterfall([
             queryEvents,
         ], function (err, result) {
@@ -163,14 +163,14 @@ db.collection("matchesn").insert(
             console.log(err);
             console.log(result);
         });
-        */        
+        
 
 
     });
 });
 
 
-
+/*
 async.waterfall([
     f1,    
 ],
@@ -196,7 +196,7 @@ function f1_1_1(i,innerCallback1) {
   innerCallback1(null);
 
 }
-
+*/
 
 
 
@@ -1141,13 +1141,14 @@ app.get('/save_user_special', (req, res) => {
 
 /**************/
 
-function findEvents(user, time,watercallback) {
+function findEvents(time, user,innerCallback1) {
+    user.genres=tech.getUserGenres(user.bands);
     var trips = user.trips || null;
     var bands = user.bands || null;
 
     if (!trips || !bands) {
         console.log("nothing to search for");
-        return false;
+        return innerCallback1("Nothing to search for in findEvents");
     }
 
 
@@ -1155,6 +1156,26 @@ function findEvents(user, time,watercallback) {
         return el.band;
     });
     //loop 2
+    async.each(trips, 
+    function(trip,innerCallback2) {
+            if(new Date(trip.end)>new Date()) {        
+                if (tech.isUS(trip.country)) {                   
+                    console.log("US:"+trip.city+" later"); 
+                    return innerCallback2("US:"+trip.city+" later");
+                } else {
+                    //SongKick
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,innerCallback2);
+                }
+            }
+    },    
+    function(err,result){
+        console.log("****************<<<<<>>>>>>>>>>>**********");
+        innerCallback1();
+    });
+
+
+
+    /*
      trips.forEach(function (trip) {
 
             if(new Date(trip.end)>new Date()) {        
@@ -1166,9 +1187,8 @@ function findEvents(user, time,watercallback) {
                     apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,watercallback);
                 }
         }
-
-
     });
+    */
  
 }
 
@@ -1878,15 +1898,13 @@ function ScheduledFind(watercallback) {
 
         if (!err && (result.length > 0)) {
             //loop
-            result.forEach(function (user) {
-                user.genres=tech.getUserGenres(user.bands);
-                //console.log(user.genres);
-                findEvents(user, time,watercallback);
+            async.each(result, findEvents.bind(null,time), function(err,result){
+                watercallback(null,"find result");
             });
 
         }
         else {
-            return console.log(err);
+            return watercallback(err);
         }
     });
 

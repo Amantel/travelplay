@@ -19,8 +19,8 @@ const server_settings = require("./server_setting");
 
 
 
-function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocationUrl,watercallback) {
-
+function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocationUrl,innerCallback2) {
+    return innerCallback2("xxxx");
     var cityName = encodeURI(trip.city);
 
 
@@ -108,7 +108,7 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
         else {
             var N = Math.ceil(totalEntries / 50);
             var pagesArray = Array(N).fill(0).map((e, i) => i + 1);
-            findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time,watercallback);
+            findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time,innerCallback2);
         }
 
 
@@ -118,7 +118,7 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
 
 
 
-function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time,watercallback) {
+function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, user, time,innerCallback2) {
     var functionRes=async.map(pagesArray,
         (function (pageNumber, callback) {
             //var url = apiUrl.replace("CITY_ID", cityID).replace("PAGE_NUMBER", encodeURI(pageNumber));
@@ -196,8 +196,8 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
                     tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), foundEvents, performances, "songkick");
                 }
-
-                return "finished";
+                
+                return innerCallback2();
 
             }
         });
