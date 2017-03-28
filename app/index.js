@@ -151,7 +151,7 @@ db.collection("matchesn").insert(
  
         if(server_settings.startFinder) queryEvents(server_settings.doSchedule); //finding events
         if(server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule); //updating matches with info from DB (if there is it)
-        if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    
+        if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    //getting genres. the slowest and the hardest on all
         if(server_settings.startMatching) queryMatches(server_settings.doSchedule);        //matching   
   
         console.log("series finished. Time:");
@@ -161,6 +161,7 @@ db.collection("matchesn").insert(
         async.series([
             queryEvents,
             updateMatches,
+            queryGenres,
         ], function (err, result) {
             console.log("series finished. Time:");
             console.log(new Date().toISOString());
@@ -1087,83 +1088,46 @@ function updateMatches(globalSeriesCallback) {
             var matchesNotInDB=result;
             if(matchesNotInDB.length>0)
             { //loop
-
-
-            async.each(matchesNotInDB, 
-            function(match,innerCallback1) {
-                  db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
-                    toArray(function(err,result){
-                        if(!err)							
-                        {
-							if(result && result.length>0) {
-								var genres=result[0].genres;
-								db.collection('matchesn').update(
-									{"artist_name":{$eq:this.artistName}}, //
-									{ $set: { "inDB" : 1 ,"genres":genres} },
-									{ 
-										multi: true,
-										upsert: false
-									},
-									(err, result) => { 
-										if (err) {
-												console.log(err);
-                                                innerCallback1(err);
-
-										}  
-										console.log(this.artistName+" modified");
-                                        innerCallback1();
-									}   
-								);                    
-							} else {
-                                //do nothing
-                                innerCallback1();
-                            }
-                        } else {
-							console.log("error in matching matches to DB");
-							console.log(err);
-                            innerCallback1(err);
-						}
-
-                    }.bind({artistName:match.artist_name}));   
-            },    
-            function(err,result){
-                globalSeriesCallback(null,"updateBandsinMatchesFinished");
-            });
-
-
-                /*
-                matchesNotInDB.forEach(function(match){
+                async.each(matchesNotInDB, 
+                function(match,innerCallback1) {
                     db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
-                    toArray(function(err,result){
-                        
-                        if(!err)							
-                        {
-							console.log(result);
-							if(result && result.length>0) {
-								var genres=result[0].genres;
-								db.collection('matchesn').update(
-									{"artist_name":{$eq:this.artistName}}, //
-									{ $set: { "inDB" : 1 ,"genres":genres} },
-									{ 
-										multi: true,
-										upsert: false
-									},
-									(err, result) => { 
-										if (err) {
-												console.log(err);
-										}  
-										console.log(this.artistName+" modified");
-									}   
-								);                    
-							}
-                        } else {
-							console.log("error in matching matches to DB");
-							console.log(err);
-						}
+                        toArray(function(err,result){
+                            if(!err)							
+                            {
+                                if(result && result.length>0) {
+                                    var genres=result[0].genres;
+                                    db.collection('matchesn').update(
+                                        {"artist_name":{$eq:this.artistName}}, //
+                                        { $set: { "inDB" : 1 ,"genres":genres} },
+                                        { 
+                                            multi: true,
+                                            upsert: false
+                                        },
+                                        (err, result) => { 
+                                            if (err) {
+                                                    console.log(err);
+                                                    innerCallback1(err);
 
-                    }.bind({artistName:match.artist_name}));                 
+                                            }  
+                                            console.log(this.artistName+" modified");
+                                            innerCallback1();
+                                        }   
+                                    );                    
+                                } else {
+                                    //do nothing
+                                    innerCallback1();
+                                }
+                            } else {
+                                console.log("error in matching matches to DB");
+                                console.log(err);
+                                innerCallback1(err);
+                            }
+
+                        }.bind({artistName:match.artist_name}));   
+                },    
+                function(err,result){
+                    globalSeriesCallback(null,"updateBandsinMatchesFinished");
                 });
-            */
 
             } else {
                 console.log("all matches in DB");
@@ -1186,14 +1150,6 @@ function updateMatches(globalSeriesCallback) {
 function queryMatches(doSchedule) {
     if (!doSchedule) { 
         ScheduledMatch();
-    } else {
-      //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
-    }
-}
-
-function queryGenres(doSchedule) {
-    if (!doSchedule) { 
-        ScheduledGenres();
     } else {
       //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
     }
@@ -1248,22 +1204,6 @@ function findEvents(time, user,innerCallback1) {
         innerCallback1();
     });
 
-
-
-    /*
-     trips.forEach(function (trip) {
-
-            if(new Date(trip.end)>new Date()) {        
-                var apiUrl = "";
-                if (tech.isUS(trip.country)) {                   
-                    console.log("US:"+trip.city+" later"); 
-                } else {
-                    //SongKick
-                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,globalSeriesCallback);
-                }
-        }
-    });
-    */
  
 }
 
@@ -1278,7 +1218,6 @@ function findMatches(user, time) {
 
     var userGenres=tech.getUserGenres(user.bands);
 
-    //tech.logToFile("francesco_bands.json", bands);
 
      trips.forEach(function (trip) {
 
@@ -1661,7 +1600,7 @@ function queryDiscogsBatch(artistNames) {
 
 
 
-function ScheduledGenres() {
+function queryEvents(globalSeriesCallback){
     //db.collection('matchesn').find().toArray(
 
     db.collection('matchesn').find(
