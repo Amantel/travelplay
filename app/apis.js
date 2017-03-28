@@ -153,8 +153,6 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                         callback(null, foundEvents);
                     }
                 } else {
-                    //tech.logError(err);
-                    //tech.logError(response);
                     callback("find Songkick events error", 0);
 
                 }

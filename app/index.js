@@ -150,14 +150,19 @@ db.collection("matchesn").insert(
 
  
         if(server_settings.startFinder) queryEvents(server_settings.doSchedule); //finding events
-        if(server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule); //
+        if(server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule); //updating matches with info from DB (if there is it)
         if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    
         if(server_settings.startMatching) queryMatches(server_settings.doSchedule);        //matching   
   
-        async.waterfall([
+        console.log("series finished. Time:");
+        console.log(new Date().toISOString());
+
+
+        async.series([
             queryEvents,
+            updateMatches,
         ], function (err, result) {
-            console.log("waterfall finished. Time:");
+            console.log("series finished. Time:");
             console.log(new Date().toISOString());
             console.log("Error:");
             console.log(err);
@@ -172,7 +177,7 @@ db.collection("matchesn").insert(
 
 
  /*
-async.waterfall([
+async.series([
     f1,    
 ],
 function (err,result) {
@@ -1072,7 +1077,7 @@ app.get('/save_user_special', (req, res) => {
 
 
 
-function updateMatches(globalWaterfallCallback) {
+function updateMatches(globalSeriesCallback) {
 	console.log("start finding matches in DB");
     db.collection('matchesn').find(
     { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
@@ -1082,6 +1087,51 @@ function updateMatches(globalWaterfallCallback) {
             var matchesNotInDB=result;
             if(matchesNotInDB.length>0)
             { //loop
+
+
+            async.each(matchesNotInDB, 
+            function(match,innerCallback1) {
+                  db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
+                    toArray(function(err,result){
+                        if(!err)							
+                        {
+							if(result && result.length>0) {
+								var genres=result[0].genres;
+								db.collection('matchesn').update(
+									{"artist_name":{$eq:this.artistName}}, //
+									{ $set: { "inDB" : 1 ,"genres":genres} },
+									{ 
+										multi: true,
+										upsert: false
+									},
+									(err, result) => { 
+										if (err) {
+												console.log(err);
+                                                innerCallback1(err);
+
+										}  
+										console.log(this.artistName+" modified");
+                                        innerCallback1();
+									}   
+								);                    
+							} else {
+                                //do nothing
+                                innerCallback1();
+                            }
+                        } else {
+							console.log("error in matching matches to DB");
+							console.log(err);
+                            innerCallback1(err);
+						}
+
+                    }.bind({artistName:match.artist_name}));   
+            },    
+            function(err,result){
+                globalSeriesCallback(null,"updateBandsinMatchesFinished");
+            });
+
+
+                /*
                 matchesNotInDB.forEach(function(match){
                     db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
                     toArray(function(err,result){
@@ -1113,13 +1163,17 @@ function updateMatches(globalWaterfallCallback) {
 
                     }.bind({artistName:match.artist_name}));                 
                 });
+            */
+
             } else {
                 console.log("all matches in DB");
+                globalSeriesCallback(null,"all matches in DB");
             }
 
         } else {
             console.log("matching to DB err");
             console.log(err);
+            globalSeriesCallback("matching to DB err");
         }
     });
 }
@@ -1176,9 +1230,10 @@ function findEvents(time, user,innerCallback1) {
                 console.log(trip.city);
                 if (tech.isUS(trip.country)) {                   
                     console.log("US:"+trip.city+" later"); 
-                    innerCallback2("US:"+trip.city+" later");
+                    innerCallback2();
                 } else {
                     //SongKick
+                    //innerCallback2();
                     apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,innerCallback2);
                 }
             } else {
@@ -1187,7 +1242,7 @@ function findEvents(time, user,innerCallback1) {
             }
     },    
     function(err,result){
-        console.log("****************<<<<<>>>>>>>>>>>**********");
+        console.log("***Finding Events Finished");
         console.log(err);
         console.log(result);
         innerCallback1();
@@ -1204,7 +1259,7 @@ function findEvents(time, user,innerCallback1) {
                     console.log("US:"+trip.city+" later"); 
                 } else {
                     //SongKick
-                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,globalWaterfallCallback);
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,globalSeriesCallback);
                 }
         }
     });
@@ -1910,21 +1965,30 @@ function ScheduledMatch() {
 
 }
 
-function queryEvents(globalWaterfallCallback) {
+function queryEvents(globalSeriesCallback) {
+    console.log("start query Events");
+    /*
+    //globalSeriesCallback();
+    timerId = setTimeout(function() {
+        globalSeriesCallback();
+    }, 6000);
 
-    var time = new Date();
+    return false;
+    */
+
+    var time = new Date(); 
 
     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
 
         if (!err && (result.length > 0)) {
             //loop
             async.each(result, findEvents.bind(null,time), function(err,result){                
-                globalWaterfallCallback(null,"findEventsFinished");
+                globalSeriesCallback(null,"findEventsFinished");
             });
 
         }
         else {
-            return globalWaterfallCallback(err);
+            globalSeriesCallback(err);
         }
     });
 
