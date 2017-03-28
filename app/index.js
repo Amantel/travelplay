@@ -149,17 +149,19 @@ db.collection("matchesn").insert(
 */
 
  
-        if(server_settings.startFinder) queryEvents(server_settings.doSchedule);
-        if(server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule);
+        if(server_settings.startFinder) queryEvents(server_settings.doSchedule); //finding events
+        if(server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule); //
         if(server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    
-        if(server_settings.startMatching) queryMatches(server_settings.doSchedule);           
+        if(server_settings.startMatching) queryMatches(server_settings.doSchedule);        //matching   
   
         async.waterfall([
             queryEvents,
         ], function (err, result) {
-            console.log("waterfall finished");
+            console.log("waterfall finished. Time:");
             console.log(new Date().toISOString());
+            console.log("Error:");
             console.log(err);
+            console.log("Result:");
             console.log(result);
         });
       
@@ -208,90 +210,6 @@ function timeoutFuncInner(i,innerCallback1) {
 }
 */ 
 
-
-
-function updateMatches() {
-	console.log("start finding matches in DB");
-    db.collection('matchesn').find(
-    { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
-    ).toArray(function (err, result) {
-		console.log("found non matched matches "+result.length);
-        if(!err) {
-            var matchesNotInDB=result;
-            if(matchesNotInDB.length>0)
-            {
-                matchesNotInDB.forEach(function(match){
-                    db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
-                    toArray(function(err,result){
-                        
-                        if(!err)							
-                        {
-							console.log(result);
-							if(result && result.length>0) {
-								var genres=result[0].genres;
-								db.collection('matchesn').update(
-									{"artist_name":{$eq:this.artistName}}, //
-									{ $set: { "inDB" : 1 ,"genres":genres} },
-									{ 
-										multi: true,
-										upsert: false
-									},
-									(err, result) => { 
-										if (err) {
-												console.log(err);
-										}  
-										console.log(this.artistName+" modified");
-									}   
-								);                    
-							}
-                        } else {
-							console.log("error in matching matches to DB");
-							console.log(err);
-						}
-
-                    }.bind({artistName:match.artist_name}));                 
-                });
-            } else {
-                console.log("all matches in DB");
-            }
-
-        } else {
-            console.log("matching to DB err");
-            console.log(err);
-        }
-    });
-}
-
-
-
- 
-function queryEvents(watercallback) {
-    /*
-    if (!doSchedule) {
-        ScheduledFind();
-    } else {
-        later.setInterval(ScheduledFind, later.parse.text('every 8 h'));
-    }*/
-    ScheduledFind(watercallback);
-    
-
-}
-
-function queryMatches(doSchedule) {
-    if (!doSchedule) { 
-        ScheduledMatch();
-    } else {
-      //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
-    }
-}
-
-function queryGenres(doSchedule) {
-    if (!doSchedule) { 
-        ScheduledGenres();
-    } else {
-      //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
-    }
-}
 
 app.post('/change_user', (req, res) => {
     if ((req.body.save || null) && (req.body.id || null)) {
@@ -1151,6 +1069,92 @@ app.get('/save_user_special', (req, res) => {
 
 /**************/
 
+
+
+
+function updateMatches(globalWaterfallCallback) {
+	console.log("start finding matches in DB");
+    db.collection('matchesn').find(
+    { $and: [ {"inDB":{$ne:1}}, {"discogsFailed":{$ne:1}} ] }
+    ).toArray(function (err, result) {
+		console.log("found non matched matches "+result.length);
+        if(!err) {
+            var matchesNotInDB=result;
+            if(matchesNotInDB.length>0)
+            { //loop
+                matchesNotInDB.forEach(function(match){
+                    db.collection('bandsDB').find({"artist_name":{$eq:match.artist_name}}).
+                    toArray(function(err,result){
+                        
+                        if(!err)							
+                        {
+							console.log(result);
+							if(result && result.length>0) {
+								var genres=result[0].genres;
+								db.collection('matchesn').update(
+									{"artist_name":{$eq:this.artistName}}, //
+									{ $set: { "inDB" : 1 ,"genres":genres} },
+									{ 
+										multi: true,
+										upsert: false
+									},
+									(err, result) => { 
+										if (err) {
+												console.log(err);
+										}  
+										console.log(this.artistName+" modified");
+									}   
+								);                    
+							}
+                        } else {
+							console.log("error in matching matches to DB");
+							console.log(err);
+						}
+
+                    }.bind({artistName:match.artist_name}));                 
+                });
+            } else {
+                console.log("all matches in DB");
+            }
+
+        } else {
+            console.log("matching to DB err");
+            console.log(err);
+        }
+    });
+}
+
+
+
+ 
+ 
+
+function queryMatches(doSchedule) {
+    if (!doSchedule) { 
+        ScheduledMatch();
+    } else {
+      //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
+    }
+}
+
+function queryGenres(doSchedule) {
+    if (!doSchedule) { 
+        ScheduledGenres();
+    } else {
+      //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 function findEvents(time, user,innerCallback1) {
     user.genres=tech.getUserGenres(user.bands);
     var trips = user.trips || null;
@@ -1175,7 +1179,6 @@ function findEvents(time, user,innerCallback1) {
                     innerCallback2("US:"+trip.city+" later");
                 } else {
                     //SongKick
-                    //return innerCallback2("SOMES");
                     apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,innerCallback2);
                 }
             } else {
@@ -1201,7 +1204,7 @@ function findEvents(time, user,innerCallback1) {
                     console.log("US:"+trip.city+" later"); 
                 } else {
                     //SongKick
-                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,watercallback);
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl,globalWaterfallCallback);
                 }
         }
     });
@@ -1907,7 +1910,7 @@ function ScheduledMatch() {
 
 }
 
-function ScheduledFind(watercallback) {
+function queryEvents(globalWaterfallCallback) {
 
     var time = new Date();
 
@@ -1916,12 +1919,12 @@ function ScheduledFind(watercallback) {
         if (!err && (result.length > 0)) {
             //loop
             async.each(result, findEvents.bind(null,time), function(err,result){                
-                watercallback(null,"find result");
+                globalWaterfallCallback(null,"findEventsFinished");
             });
 
         }
         else {
-            return watercallback(err);
+            return globalWaterfallCallback(err);
         }
     });
 

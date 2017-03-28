@@ -39,204 +39,207 @@ const server_settings = require("./server_setting");
 
 
 
-function savePerformancesToTrip(user, performances, trip) {
-    var tripid=trip.id; 
-    performances=performances.map(p=>{
-        p.tripid=tripid; 
-        return p;  
+function savePerformancesToTrip(user, performances, trip, callbackFunction) {
+    var tripid = trip.id;
+    performances = performances.map(p => {
+        p.tripid = tripid;
+        return p;
     });
-        
-    server.db.collection('matchesn').find({tripid:{$eq:tripid}}).toArray(function (err, result) {
-        if(result.length>0)
-        {
-            newPerformances=performances.filter(function(newPerformance){
 
-                var isInDBArr=result.filter(function(oldPerformance){
-                    if(
-                        oldPerformance.artist_name.toLowerCase()==newPerformance.artist_name.toLowerCase() &&
-                        oldPerformance.venue_name.toLowerCase()==newPerformance.venue_name.toLowerCase() &&
-                        oldPerformance.start_date.toLowerCase()==newPerformance.start_date.toLowerCase() &&                       
-                        oldPerformance.source.toLowerCase()==newPerformance.source.toLowerCase() 
-                    )   
-                    return true;
+    server.db.collection('matchesn').find({ tripid: { $eq: tripid } }).toArray(function (err, result) {
+        if (result.length > 0) {
+            newPerformances = performances.filter(function (newPerformance) {
+
+                var isInDBArr = result.filter(function (oldPerformance) {
+                    if (
+                        oldPerformance.artist_name.toLowerCase() == newPerformance.artist_name.toLowerCase() &&
+                        oldPerformance.venue_name.toLowerCase() == newPerformance.venue_name.toLowerCase() &&
+                        oldPerformance.start_date.toLowerCase() == newPerformance.start_date.toLowerCase() &&
+                        oldPerformance.source.toLowerCase() == newPerformance.source.toLowerCase()
+                    )
+                        return true;
 
                     return false;
 
-                });       
+                });
 
-                if(isInDBArr.length>0)
+                if (isInDBArr.length > 0)
                     return false; //if there is one or more performances in DB   
                 else
                     return true;  //if there is no performance in DB           
-            }); 
-        }
-          else {
-            newPerformances=performances;
-          }
-        
-        if(newPerformances.length>0) 
-        {
-            server.db.collection("matchesn").insert(
-            newPerformances,
-            function(err,result) {
-                if(!err)
-                    console.log(trip.city+" inserted new events: "+result.insertedCount);
-                    
-                else 
-                   console.log(err);   
-/*
-WE ARE ADDING GENRES HERE. NOT FOR NOW
-                async.map(performances, function (artist, callback){
-                    var artistIns=artist.artist_name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    artistIns=new RegExp("^" + artistIns,"i");                    
-                    server.db.collection('bandsDB').find( 
-                         { $or: [ { artist_name: {$regex:artistIns} }, { "artist.name": {$regex:artistIns} } ] }                         
-                         ).toArray(function (err, bandsInDB) {
-
-                        if (!err && (bandsInDB.length > 0)) {
-                             var bandInfo=bandsInDB[0];
-
-                                
-                            server.db.collection('matchesn').update(
-                                {"artist_name":{$eq:artist.artist_name}}, //
-                                { $set: { "inDB" : 1 ,"genres":bandInfo.genres} },
-                                { 
-                                    multi: true,
-                                    upsert: false
-                                },
-                                (err, result) => { 
-                                    if (err) {
-                                            return callback(err,0);
-                                    }  
-                                    return callback(null,result.result.nModified);                     
-                                }   
-                            );
-                            
-                        }
-                        else {
-                            return callback(err,0);
-                        }
-                    });
-
-                    
-                }, function(err, results) {
-                    console.log(err);
-                    console.log("Already in DB");
-                    console.log(results.length);
-                });
-                
-
-
-*/
-            }.bind({trip:trip}));        
-        }
-        else 
-            console.log("no new events for trip to "+trip.city);
-    }.bind({trip:trip}));
-}
-
-
- /*
-function savePerformancesToTrip(user, performances, trip) {
-    var id=trip.id; 
-    
-
-//EXAMPLE:
-   var performances=[
-        { 
-            "artist_name": "artist_name_1",  
-            "venue_name": "venue_name_1", 
-            "uri": "someuri", 
-            "start_date": "20.11.2017", 
-            "source": "songkick",                                         
-            "genres": [],
-            "inDB": 0
-        } ,   
-        { 
-            "artist_name": "artist_name_2",  
-            "venue_name": "venue_name_2", 
-            "uri": "someuri", 
-            "start_date": "20.11.2017", 
-            "source": "songkick",                                         
-            "genres": [],
-            "inDB": 0
-        } ,           
-    ];
- 
-db.matchesn.update(
-   { artist_name: {$in : ["artist_name_1","artist_name_2"]} },
-   { upsert: true,
-    multi:true 
-    },
-   { $push: { $each: performances  } },
-   function(err,result) {
-    console.log(err);
-    console.log(result.result);
-   }
-);
- 
-    //1. Find trip in matches collection
-    server.db.collection('matches').find({id:{$eq:id}}).toArray(function (err, result) {
-
-        if (!err) {
-            if(result.length>0) {
-                //2.1 compare
-                newPerformances=[];
-                var oldPerformances=result[0].performances;
-
-                newPerformances=performances.filter(function(newPerformance){
-                    var diffArr=oldPerformances.filter(function(oldPerformance){
-                        if(
-                            oldPerformance.artist_name.toLowerCase()==newPerformance.artist_name.toLowerCase() &&
-                            oldPerformance.venue_name.toLowerCase()==newPerformance.venue_name.toLowerCase() &&
-                            oldPerformance.start_date.toLowerCase()==newPerformance.start_date.toLowerCase() &&                       
-                            oldPerformance.source.toLowerCase()==newPerformance.source.toLowerCase() 
-                        )   return true;
-
-                        return false;
-
-                    });
-
-
-                    if(diffArr.length>0)
-                        return false;
-                    else
-                        return true;    
-                });
-
-                if(newPerformances.length>0) 
-                    server.db.collection('matches').update({ _id: result[0]._id }, { $push: { performances: { $each: newPerformances } } },
-                    (err, result) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                        console.log('saved newPerformances to database: '+newPerformances.length);
-                    });
-
-
-                
-            } else {
-                //2.2 save
-                server.db.collection('matches').save({id:id, performances:performances},
-                (err, result) => {
-                    if (err) {
-                        console.log(err);
-                    } 
-                    console.log('saved performances to database: '+performances.length);
-                });                        
-            } 
-
-           
+            });
         }
         else {
-            //error here - do nothing
+            newPerformances = performances;
         }
-    });    
+
+        if (newPerformances.length > 0) {
+            server.db.collection("matchesn").insert(
+                newPerformances,
+                function (err, result) {
+                    if (!err) {
+                        console.log(trip.city + " inserted new events: " + result.insertedCount);
+                        callbackFunction();
+                    }
+                    else {
+                        console.log(err);
+                        callbackFunction(err);
+                    }
+                    /*
+                    WE ARE ADDING GENRES HERE. NOT FOR NOW
+                                    async.map(performances, function (artist, callback){
+                                        var artistIns=artist.artist_name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                                        artistIns=new RegExp("^" + artistIns,"i");                    
+                                        server.db.collection('bandsDB').find( 
+                                             { $or: [ { artist_name: {$regex:artistIns} }, { "artist.name": {$regex:artistIns} } ] }                         
+                                             ).toArray(function (err, bandsInDB) {
+                    
+                                            if (!err && (bandsInDB.length > 0)) {
+                                                 var bandInfo=bandsInDB[0];
+                    
+                                                    
+                                                server.db.collection('matchesn').update(
+                                                    {"artist_name":{$eq:artist.artist_name}}, //
+                                                    { $set: { "inDB" : 1 ,"genres":bandInfo.genres} },
+                                                    { 
+                                                        multi: true,
+                                                        upsert: false
+                                                    },
+                                                    (err, result) => { 
+                                                        if (err) {
+                                                                return callback(err,0);
+                                                        }  
+                                                        return callback(null,result.result.nModified);                     
+                                                    }   
+                                                );
+                                                
+                                            }
+                                            else {
+                                                return callback(err,0);
+                                            }
+                                        });
+                    
+                                        
+                                    }, function(err, results) {
+                                        console.log(err);
+                                        console.log("Already in DB");
+                                        console.log(results.length);
+                                    });
+                                    
+                    
+                    
+                    */
+                }.bind({ trip: trip }));
+        }
+        else {
+            console.log("no new events for trip to " + trip.city);
+            callbackFunction();
+        }
+    }.bind({ trip: trip }));
+}
+
+
+/*
+function savePerformancesToTrip(user, performances, trip) {
+   var id=trip.id; 
    
+
+//EXAMPLE:
+  var performances=[
+       { 
+           "artist_name": "artist_name_1",  
+           "venue_name": "venue_name_1", 
+           "uri": "someuri", 
+           "start_date": "20.11.2017", 
+           "source": "songkick",                                         
+           "genres": [],
+           "inDB": 0
+       } ,   
+       { 
+           "artist_name": "artist_name_2",  
+           "venue_name": "venue_name_2", 
+           "uri": "someuri", 
+           "start_date": "20.11.2017", 
+           "source": "songkick",                                         
+           "genres": [],
+           "inDB": 0
+       } ,           
+   ];
+ 
+db.matchesn.update(
+  { artist_name: {$in : ["artist_name_1","artist_name_2"]} },
+  { upsert: true,
+   multi:true 
+   },
+  { $push: { $each: performances  } },
+  function(err,result) {
+   console.log(err);
+   console.log(result.result);
+  }
+);
+ 
+   //1. Find trip in matches collection
+   server.db.collection('matches').find({id:{$eq:id}}).toArray(function (err, result) {
+
+       if (!err) {
+           if(result.length>0) {
+               //2.1 compare
+               newPerformances=[];
+               var oldPerformances=result[0].performances;
+
+               newPerformances=performances.filter(function(newPerformance){
+                   var diffArr=oldPerformances.filter(function(oldPerformance){
+                       if(
+                           oldPerformance.artist_name.toLowerCase()==newPerformance.artist_name.toLowerCase() &&
+                           oldPerformance.venue_name.toLowerCase()==newPerformance.venue_name.toLowerCase() &&
+                           oldPerformance.start_date.toLowerCase()==newPerformance.start_date.toLowerCase() &&                       
+                           oldPerformance.source.toLowerCase()==newPerformance.source.toLowerCase() 
+                       )   return true;
+
+                       return false;
+
+                   });
+
+
+                   if(diffArr.length>0)
+                       return false;
+                   else
+                       return true;    
+               });
+
+               if(newPerformances.length>0) 
+                   server.db.collection('matches').update({ _id: result[0]._id }, { $push: { performances: { $each: newPerformances } } },
+                   (err, result) => {
+                       if (err) {
+                           console.log(err);
+                       }
+                       console.log('saved newPerformances to database: '+newPerformances.length);
+                   });
+
+
+               
+           } else {
+               //2.2 save
+               server.db.collection('matches').save({id:id, performances:performances},
+               (err, result) => {
+                   if (err) {
+                       console.log(err);
+                   } 
+                   console.log('saved performances to database: '+performances.length);
+               });                        
+           } 
+
+          
+       }
+       else {
+           //error here - do nothing
+       }
+   });    
+  
 
 }
 
-  */
+ */
 
 
 function saveEvents(user, foundEvents, trip) {
@@ -275,14 +278,14 @@ function saveEvents(user, foundEvents, trip) {
 
 function logToFile(file_name, jsonResult) {
 
- fs.writeFile(file_name, JSON.stringify(jsonResult), function (err) {
-                if (err) {
-                    console.log(err);
-                    return false;
-                } else {
-                    console.log(file_name+" written");
-                }
-        });
+    fs.writeFile(file_name, JSON.stringify(jsonResult), function (err) {
+        if (err) {
+            console.log(err);
+            return false;
+        } else {
+            console.log(file_name + " written");
+        }
+    });
 }
 
 
@@ -400,7 +403,7 @@ function checkGenres(url) {
 }
 
 function getUserGenres(bands) {
-    if(bands.length<1)
+    if (bands.length < 1)
         return [];
 
     genreInfo = bands.map(band => band.genres).
@@ -422,18 +425,18 @@ function getUserGenres(bands) {
         return b[1] - a[1];
     });
 
-    genreInfoUniq=sortable.filter(x=>x[1]>Math.ceil(bands.length/100)).map(x=>x[0]);
-//logToFile("francesco_genres.json", genreInfoUniq);
-/*
-     genreInfoUniq= [...new Set(genreInfo)];
-
-    if(genreInfoUniq.length==1 && genreInfoUniq[0]===undefined)
-        genreInfoUniq=[];
-*/
-     return genreInfoUniq;
+    genreInfoUniq = sortable.filter(x => x[1] > Math.ceil(bands.length / 100)).map(x => x[0]);
+    //logToFile("francesco_genres.json", genreInfoUniq);
+    /*
+         genreInfoUniq= [...new Set(genreInfo)];
     
+        if(genreInfoUniq.length==1 && genreInfoUniq[0]===undefined)
+            genreInfoUniq=[];
+    */
+    return genreInfoUniq;
 
-    
+
+
 }
 
 
@@ -452,8 +455,8 @@ function randomString(length, chars) {
 
 
 function sendMail(email, subject, html) {
-     //console.log('Message %s sent: %s');
-    
+    //console.log('Message %s sent: %s');
+
     var transporter = nodemailer.createTransport(server_settings.smtpConfig);
     var mailData = {
         from: server_settings.mailFrom,
@@ -470,7 +473,7 @@ function sendMail(email, subject, html) {
         }
         console.log('Message %s sent: %s', info.messageId, info.response);
     });
- 
+
     return true;
 
 }
@@ -498,7 +501,7 @@ function generatePass() {
 
 function isUS(country) {
     country = country.toLowerCase();
-    if (country == "us" || country == "united states" || country=="canada")
+    if (country == "us" || country == "united states" || country == "canada")
         return true;
     else
         return false;
