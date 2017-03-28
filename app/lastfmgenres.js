@@ -57,8 +57,7 @@ function ScheduledGenres2() {
                 function (err,result) {
                     if(!err) {
                             //0. filter artists or artist_names
-                            console.log("FINISHED");
-                            return false;
+
                             result=result.filter(artist=>{
                                 if(!artist.artist)
                                     return false;

@@ -159,9 +159,10 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
 
         async.series([
-            queryEvents,
-            updateMatches,
-            queryGenres,
+          //  queryEvents,
+         //   updateMatches,
+        //    queryGenres,
+            queryMatches
         ], function (err, result) {
             console.log("series finished. Time:");
             console.log(new Date().toISOString());
@@ -1145,15 +1146,7 @@ function updateMatches(globalSeriesCallback) {
 
 
 
-function queryMatches(doSchedule) {
-    if (!doSchedule) {
-        ScheduledMatch();
-    } else {
-        //  later.setInterval(ScheduledFind, later.parse.text('every 1 h'));
-    }
-}
-
-
+ 
 
 
 
@@ -1170,7 +1163,8 @@ function findEvents(time, user, innerCallback1) {
 
     if (!trips || !bands) {
         console.log("nothing to search for");
-        innerCallback1("Nothing to search for in findEvents");
+        innerCallback1();
+        return false;
     }
 
 
@@ -1205,24 +1199,29 @@ function findEvents(time, user, innerCallback1) {
 
 }
 
-function findMatches(user, time) {
+function findMatches(time, user,innerCallback1) {
     var trips = user.trips || null;
     var bands = user.bands || null;
 
     if (!trips || !bands) {
         console.log("nothing to search for");
+        innerCallback1();
         return false;
     }
 
     var userGenres = tech.getUserGenres(user.bands);
 
+    //loop 2
+ 
 
-    trips.forEach(function (trip) {
+    async.map(trips,
+        function (trip, innerCallback2) {
 
         if (new Date(trip.end) > new Date()) {
             var apiUrl = "";
             if (tech.isUS(trip.country)) {
                 console.log("US:" + trip.city + " later");
+                innerCallback2();
             } else {
 
 
@@ -1287,28 +1286,12 @@ function findMatches(user, time) {
 
 
                             });
-                            /*
-                                                              tech.logToFile(trip.city+"_failedGenres.json", failedGenres);
-                                                              
-                                                              
-                                                              console.log("First Tier for "+trip.city);
-                                                              console.log(firstTier);
-                           
-                                                              console.log("Second Tier for "+trip.city);
-                                                              console.log(secondTier);
-                          
-                                                              console.log("Third Tier for "+trip.city);
-                                                              console.log(thirdTier);
-                                                             
-                                                              tech.logToFile(Math.random()+"1403_1_tier_in_"+trip.city+".json", firstTier);
-                                                              tech.logToFile(Math.random()+"1403_2_tier_in_"+trip.city+".json", secondTier);
-                                                              tech.logToFile(Math.random()+"1403_3_tier_in_"+trip.city+".json", thirdTier);
-                                                               */
+ 
 
                             //Update TIER to matches
 
 
-                            async.waterfall([
+                            async.series([
                                 function (callbackm) {
                                     //zeroTier 
                                     db.collection('matchesn').update(
@@ -1322,7 +1305,7 @@ function findMatches(user, time) {
                                             if (err)
                                                 callbackm(err);
                                             else
-                                                callbackm(null);
+                                                callbackm();
                                         }
                                     );
 
@@ -1346,13 +1329,13 @@ function findMatches(user, time) {
                                                     if (err)
                                                         callback(err);
                                                     else
-                                                        callback(null);
+                                                        callback();
                                                 }
                                             );
 
                                         },
                                         function (err, results) {
-                                            callbackm(null);
+                                            callbackm();
                                         });
 
 
@@ -1375,13 +1358,13 @@ function findMatches(user, time) {
                                                     if (err)
                                                         callback(err);
                                                     else
-                                                        callback(null);
+                                                        callback();
                                                 }
                                             );
 
                                         },
                                         function (err, results) {
-                                            callbackm(null);
+                                            callbackm();
                                         });
 
 
@@ -1404,28 +1387,34 @@ function findMatches(user, time) {
                                                     if (err)
                                                         callback(err);
                                                     else
-                                                        callback(null);
+                                                        callback();
                                                 }
                                             );
 
                                         },
                                         function (err, results) {
-                                            callbackm(null);
+                                            callbackm();
                                         });
 
 
                                 },
                             ], function (err, result) {
-                                if (err)
+                                if (err) {
                                     console.log(err);
-                                else
+                                    innerCallback2(err);
+                                }
+                                else {
                                     console.log("Finished matching for " + trip.city);
+                                    var obj={firstTier:firstTier,secondTier:secondTier,thirdTier:thirdTier};
+                                    innerCallback2(null,obj);
+                                }
                             });
 
 
 
                         } else {
-                            console.log("Nothing found in DB in Matching");
+                            console.log("No matches to match");
+                            innerCallback2();
                         }
 
 
@@ -1433,6 +1422,8 @@ function findMatches(user, time) {
                     else {
                         //error here - do nothing
                         console.log("Error in DB in Matching");
+                        innerCallback2(err);
+
                     }
                 }.bind({ trip: trip }));
 
@@ -1440,12 +1431,24 @@ function findMatches(user, time) {
 
 
 
-
             }
+        } else {
+            innerCallback2();
         }
 
+    },
+    function (err, result) {
+        console.log("***Matching Events Finished");
+        if (err) {
+            console.log(err);
+            innerCallback1(err);
+        }
+        else {
+            console.log(result);
+            innerCallback1(null,result);
+        }
 
-    });
+    }.bind({ user: user })); //add user here
 
 }
 
@@ -1740,23 +1743,36 @@ function queryGenres(globalSeriesCallback) {
 }
 
 
-function ScheduledMatch() {
+function queryMatches(globalSeriesCallback) {
 
     var time = new Date();
 
     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
 
         if (!err && (result.length > 0)) {
-
+            //loop
             result.forEach(function (user) {
                 user.genres = tech.getUserGenres(user.bands);
-                //console.log(user.genres);
-                findMatches(user, time);
             });
+
+
+           //loop
+            async.each(result, findMatches.bind(null, time), function (err, result) {
+                if(err)
+                    globalSeriesCallback(err);
+                else {
+                    globalSeriesCallback(null, result);
+                }    
+                
+            });
+
+            //We will not go Inside. This is quick and last operation, so we will end here
+            //globalSeriesCallback(null,"matchingMatchesFinished");
+
 
         }
         else {
-            return console.log(err);
+            globalSeriesCallback(err);
         }
     });
 

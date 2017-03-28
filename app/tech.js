@@ -403,7 +403,7 @@ function checkGenres(url) {
 }
 
 function getUserGenres(bands) {
-    if (bands.length < 1)
+    if (!bands || bands.length < 1)
         return [];
 
     genreInfo = bands.map(band => band.genres).
