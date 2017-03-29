@@ -1281,8 +1281,9 @@ function findMatches(time, user,innerCallback1) {
                                             return false;
 
                                         });
-                                        if (findings.length > 0)
+                                        if (findings.length > 0) {
                                             thirdTier.push(match);
+                                        }
                                         else {
                                             //console.log(match.genres.join()+" no in user genres");
                                             failedGenres.push(match.genres);
@@ -1291,19 +1292,31 @@ function findMatches(time, user,innerCallback1) {
 
                                     }
 
+
+
                                 }
 
 
                             });
  
+                            //clear thirdTier
+                            //console.log(thirdTier.length);
+                            if(thirdTier.length>0) {
+                                tiersMatches=firstTier.map(x=>x.artist_name).concat(secondTier.map(x=>x.artist_name));
+                                thirdTier=thirdTier.filter((match)=>{
+                                    return tiersMatches.indexOf(match.artist_name)==-1;
+                                });
+                            }
+                            //console.log(thirdTier.length);
 
                                         //send mails
+                                       
                             if(user && user.active && user.email && ((firstTier.length+secondTier.length+thirdTier.length)>prevTiers.length)) {
 
-                                var html = '<html><body>New findigs for trip to '+trip.city+'. Visit <a href="' +
+                                var html = '<html><body>New findings for trip to '+trip.city+'. Visit <a href="' +
                                 server_settings.appUrl +
                                 'protected?code='+user.code+'&r=my_results" target="_blank"> here </a></body></html>';
-                                tech.sendMail(user.email, "New findings  on trip to '+trip.city+' " + server_settings.appName + " ", html);
+                                tech.sendMail(user.email, "New findings  on trip to "+trip.city+" " + server_settings.appName + " ", html);
                                 tech.sendMail(settings.adminMail, "New findings for user on " + server_settings.appName + " ", html);
                             }                            
 
