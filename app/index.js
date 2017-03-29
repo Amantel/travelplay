@@ -1233,6 +1233,15 @@ function findMatches(time, user,innerCallback1) {
                             var secondTier = [];
                             var thirdTier = [];
                             var failedGenres = [];
+                            var prevTiers=[];
+
+                            
+                            result.forEach(function (match) {
+                                if(match.tier>0) 
+                                 prevTiers.push(match);
+                            });
+
+
                             result.forEach(function (match) {
 
                                 if (match.artist_name !== undefined) {
@@ -1287,6 +1296,17 @@ function findMatches(time, user,innerCallback1) {
 
                             });
  
+
+                                        //send mails
+                            if(user && user.active && user.email && ((firstTier.length+secondTier.length+thirdTier.length)>prevTiers.length)) {
+
+                                var html = '<html><body>New findigs for trip to '+trip.city+'. Visit <a href="' +
+                                server_settings.appUrl +
+                                'protected?code='+user.code+'&r=my_results" target="_blank"> here </a></body></html>';
+                                tech.sendMail(user.email, "New findings  on trip to '+trip.city+' " + server_settings.appName + " ", html);
+                                tech.sendMail(settings.adminMail, "New findings for user on " + server_settings.appName + " ", html);
+                            }                            
+
 
                             //Update TIER to matches
 
@@ -1444,7 +1464,8 @@ function findMatches(time, user,innerCallback1) {
             innerCallback1(err);
         }
         else {
-            console.log(result);
+            //console.log(result);
+          
             innerCallback1(null,result);
         }
 
@@ -1747,20 +1768,21 @@ function queryMatches(globalSeriesCallback) {
 
     var time = new Date();
 
-    db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
+    db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, users) {
 
-        if (!err && (result.length > 0)) {
+        if (!err && (users.length > 0)) {
             //loop
-            result.forEach(function (user) {
+            users.forEach(function (user) {
                 user.genres = tech.getUserGenres(user.bands);
             });
 
 
            //loop
-            async.each(result, findMatches.bind(null, time), function (err, result) {
+            async.map(users, findMatches.bind(null, time), function (err, result) {
                 if(err)
                     globalSeriesCallback(err);
                 else {
+                    console.log("matching without problems");
                     globalSeriesCallback(null, result);
                 }    
                 
