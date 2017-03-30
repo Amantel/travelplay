@@ -157,20 +157,21 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         console.log("series finished. Time:");
         console.log(new Date().toISOString());
 
-
-        async.series([
-          //  queryEvents,
-         //   updateMatches,
-        //    queryGenres,
-            queryMatches
-        ], function (err, result) {
-            console.log("series finished. Time:");
-            console.log(new Date().toISOString());
-            console.log("Error:");
-            console.log(err);
-            console.log("Result:");
-            console.log(result);
-        });
+        if(server_settings.startAll) {
+            async.series([
+                queryEvents,
+                updateMatches,
+                queryGenres,
+                queryMatches
+            ], function (err, result) {
+                console.log("series finished. Time:");
+                console.log(new Date().toISOString());
+                console.log("Error:");
+                console.log(err);
+                console.log("Result:");
+                console.log(result);
+            });
+        }
 
 
 
