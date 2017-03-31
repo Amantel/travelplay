@@ -85,50 +85,7 @@ function savePerformancesToTrip(user, performances, trip, callbackFunction) {
                         console.log(err);
                         callbackFunction(err);
                     }
-                    /*
-                    WE ARE ADDING GENRES HERE. NOT FOR NOW
-                                    async.map(performances, function (artist, callback){
-                                        var artistIns=artist.artist_name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                                        artistIns=new RegExp("^" + artistIns,"i");                    
-                                        server.db.collection('bandsDB').find( 
-                                             { $or: [ { artist_name: {$regex:artistIns} }, { "artist.name": {$regex:artistIns} } ] }                         
-                                             ).toArray(function (err, bandsInDB) {
-                    
-                                            if (!err && (bandsInDB.length > 0)) {
-                                                 var bandInfo=bandsInDB[0];
-                    
-                                                    
-                                                server.db.collection('matchesn').update(
-                                                    {"artist_name":{$eq:artist.artist_name}}, //
-                                                    { $set: { "inDB" : 1 ,"genres":bandInfo.genres} },
-                                                    { 
-                                                        multi: true,
-                                                        upsert: false
-                                                    },
-                                                    (err, result) => { 
-                                                        if (err) {
-                                                                return callback(err,0);
-                                                        }  
-                                                        return callback(null,result.result.nModified);                     
-                                                    }   
-                                                );
-                                                
-                                            }
-                                            else {
-                                                return callback(err,0);
-                                            }
-                                        });
-                    
-                                        
-                                    }, function(err, results) {
-                                        console.log(err);
-                                        console.log("Already in DB");
-                                        console.log(results.length);
-                                    });
-                                    
-                    
-                    
-                    */
+                   
                 }.bind({ trip: trip }));
         }
         else {
@@ -137,109 +94,6 @@ function savePerformancesToTrip(user, performances, trip, callbackFunction) {
         }
     }.bind({ trip: trip }));
 }
-
-
-/*
-function savePerformancesToTrip(user, performances, trip) {
-   var id=trip.id; 
-   
-
-//EXAMPLE:
-  var performances=[
-       { 
-           "artist_name": "artist_name_1",  
-           "venue_name": "venue_name_1", 
-           "uri": "someuri", 
-           "start_date": "20.11.2017", 
-           "source": "songkick",                                         
-           "genres": [],
-           "inDB": 0
-       } ,   
-       { 
-           "artist_name": "artist_name_2",  
-           "venue_name": "venue_name_2", 
-           "uri": "someuri", 
-           "start_date": "20.11.2017", 
-           "source": "songkick",                                         
-           "genres": [],
-           "inDB": 0
-       } ,           
-   ];
- 
-db.matchesn.update(
-  { artist_name: {$in : ["artist_name_1","artist_name_2"]} },
-  { upsert: true,
-   multi:true 
-   },
-  { $push: { $each: performances  } },
-  function(err,result) {
-   console.log(err);
-   console.log(result.result);
-  }
-);
- 
-   //1. Find trip in matches collection
-   server.db.collection('matches').find({id:{$eq:id}}).toArray(function (err, result) {
-
-       if (!err) {
-           if(result.length>0) {
-               //2.1 compare
-               newPerformances=[];
-               var oldPerformances=result[0].performances;
-
-               newPerformances=performances.filter(function(newPerformance){
-                   var diffArr=oldPerformances.filter(function(oldPerformance){
-                       if(
-                           oldPerformance.artist_name.toLowerCase()==newPerformance.artist_name.toLowerCase() &&
-                           oldPerformance.venue_name.toLowerCase()==newPerformance.venue_name.toLowerCase() &&
-                           oldPerformance.start_date.toLowerCase()==newPerformance.start_date.toLowerCase() &&                       
-                           oldPerformance.source.toLowerCase()==newPerformance.source.toLowerCase() 
-                       )   return true;
-
-                       return false;
-
-                   });
-
-
-                   if(diffArr.length>0)
-                       return false;
-                   else
-                       return true;    
-               });
-
-               if(newPerformances.length>0) 
-                   server.db.collection('matches').update({ _id: result[0]._id }, { $push: { performances: { $each: newPerformances } } },
-                   (err, result) => {
-                       if (err) {
-                           console.log(err);
-                       }
-                       console.log('saved newPerformances to database: '+newPerformances.length);
-                   });
-
-
-               
-           } else {
-               //2.2 save
-               server.db.collection('matches').save({id:id, performances:performances},
-               (err, result) => {
-                   if (err) {
-                       console.log(err);
-                   } 
-                   console.log('saved performances to database: '+performances.length);
-               });                        
-           } 
-
-          
-       }
-       else {
-           //error here - do nothing
-       }
-   });    
-  
-
-}
-
- */
 
 
 function saveEvents(user, foundEvents, trip) {
@@ -314,7 +168,6 @@ function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents, apiName) {
                     return false;
                 }
 
-                //console.log("The file was saved!");
             });
             fs.writeFile(dir + "apiurl.json", apiUrl, function (err) {
                 if (err) {
@@ -322,7 +175,6 @@ function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents, apiName) {
                     return false;
                 }
 
-                //console.log("The file was saved!");
             });
 
             fs.writeFile(dir + "found.json", JSON.stringify(foundEvents), function (err) {
@@ -331,7 +183,6 @@ function logEvents(time, user, trip, apiUrl, jsonResult, foundEvents, apiName) {
                     return false;
                 }
 
-                // console.log("The file was saved!");
             });
         }
 
@@ -427,12 +278,7 @@ function getUserGenres(bands) {
 
     genreInfoUniq = sortable.filter(x => x[1] > Math.ceil(bands.length / 100)).map(x => x[0]);
     //logToFile("francesco_genres.json", genreInfoUniq);
-    /*
-         genreInfoUniq= [...new Set(genreInfo)];
-    
-        if(genreInfoUniq.length==1 && genreInfoUniq[0]===undefined)
-            genreInfoUniq=[];
-    */
+
     return genreInfoUniq;
 
 
@@ -446,7 +292,6 @@ function getUserGenres(bands) {
 
 
 function randomString(length, chars) {
-    //console.log(randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'));     
     var result = '';
     for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
     return result;
@@ -455,7 +300,6 @@ function randomString(length, chars) {
 
 
 function sendMail(email, subject, html) {
-    //console.log('Message %s sent: %s');
 
     var transporter = nodemailer.createTransport(server_settings.smtpConfig);
     var mailData = {

@@ -1,5 +1,4 @@
 
-//pm2 restart /srv/nodeapps/tp/index.js
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -39,7 +38,6 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
 
 
-//app.use(express.static('public'));
 app.use(express.static(__dirname + '/../public'));
 app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 3000000 }, resave: true, saveUninitialized: true }));
 
@@ -80,84 +78,16 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
         console.log('listening on ' + server_settings.port);
 
-        /*
-        
-                           var id = new ObjectID("58d0f75729bed32f2caf30eb");
-        
-                            db.collection('matchesn').update(
-                                        {"_id":{$eq:id}}, //
-                                        { $set: { "tier" : 3} },
-                                        { 
-                                            upsert: false
-                                        },
-                                        (err, result) => { 
-                                            if (err) 
-                                                console.log(err);
-                                            else    
-                                                console.log("OK");
-                                        }   
-                                    );
-        */
-        /*
-               db.collection('matchesn').remove({"inDB":{$exists:false}}, function(err, result) {
-                   if (err) {
-                       console.log(err);
-                   }
-                   console.log(result);
-               });
-               */
-
-        /*
-        
-            var tripId="TRIPID";
-        
-            var performances=[
-                { 
-                    "artist_name": "artist_name_1",  
-                    "venue_name": "venue_name_1", 
-                    "uri": "someuri", 
-                    "start_date": "20.11.2017", 
-                    "source": "songkick",                                         
-                    "genres": [],
-                    "inDB": 0
-                } ,   
-                { 
-                    "artist_name": "artist_name_2",  
-                    "venue_name": "venue_name_2", 
-                    "uri": "someuri", 
-                    "start_date": "20.11.2017", 
-                    "source": "songkick",                                         
-                    "genres": [],
-                    "inDB": 0
-                } ,           
-            ];
-        performances=performances.map(p=>{
-            p.tripid=tripId; 
-            return p;
-        });
-        
-        
-        
-        
-        db.collection("matchesn").insert(
-           performances,
-           function(err,result) {
-            console.log(err);
-            console.log(result.result);
-           }
-        );
-        */
-
-
         if (server_settings.startFinder) queryEvents(server_settings.doSchedule); //finding events
         if (server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule); //updating matches with info from DB (if there is it)
         if (server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    //getting genres. the slowest and the hardest on all
         if (server_settings.startMatching) queryMatches(server_settings.doSchedule);        //matching   
 
-        console.log("series finished. Time:");
-        console.log(new Date().toISOString());
 
         if(server_settings.startAll) {
+            console.log("series started. Time:");
+            console.log(new Date().toISOString());
+            
             async.series([
                 queryEvents,
                 updateMatches,
@@ -177,46 +107,6 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
     });
 });
-
-
-/*
-async.series([
-   f1,    
-],
-function (err,result) {
-   console.log("CALL FINISHED");
-   console.log(result);
-});
-
-
-function f1(globalCallbackFuntion) {
-   async.each([0,1,2,3], f2, function(err,result){
-       console.log("F1 LOOP FINISHED");
-       globalCallbackFuntion(null,"all_calls_finished");
-   });
-}
-
-
-function f2(i,innerCallback_f1) {
-   async.each([10,20,30,40], timeoutFunc, function(err,result){
-       console.log("F2 LOOP FINISHED");
-       innerCallback_f1(null,"all_calls_finished_f2");
-   });
-}
-
-
-
-function timeoutFunc(i,innerCallback1) {
-   setTimeout(timeoutFuncInner, 1000, i, innerCallback1); 
-}
-
-
-function timeoutFuncInner(i,innerCallback1) {
- console.log("I is "+i);
- innerCallback1(null);
-
-}
-*/
 
 
 app.post('/change_user', (req, res) => {
@@ -261,12 +151,12 @@ app.post('/change_user', (req, res) => {
 app.get('/uchange', (req, res) => {
 
     sess = req.session;
-    /*
+ 
     if (sess.auth != 2) {
         res.redirect('/');
         return false;
     }
-*/
+
     db.collection('users').find().toArray(function (err, result) {
 
         if (!err) {
@@ -371,14 +261,6 @@ app.post('/save_user', (req, res) => {
         doSave = true;
         if (json.bands !== "EMPTY") {
             saveObj.bands = json.bands;
-            /*
-            saveObj.bands = json.bands.map(band =>
-                ({
-                    band: band.band.toLowerCase(),
-                    additional_info: { band_name_original: band.band }
-                })
-            );
-            */
         }
         else {
             saveObj.bands = [];
@@ -387,20 +269,16 @@ app.post('/save_user', (req, res) => {
 
 
         if (saveObj.bands.length > 0) {
-            //console.log(saveObj.bands[0]);
             saveObj.bands.forEach(bandObj => {
                 db.collection('bands').update(
                     { "bandName": { $eq: bandObj.band } }, //
-                    //{'$set': {"lastFound":new Date().toISOString()} }, // 
                     { $set: bandObj },
                     { upsert: true },
                     (err, result) => {
                         if (err) {
-                            //res.send({ error: err });
                             console.log(err);
                             return false;
                         }
-                        //console.log(result);
                     }
                 );
             });
@@ -696,9 +574,6 @@ app.get('/logout', (req, res) => {
 app.get('/', (req, res) => {
     sess = req.session;
 
-    //       var html = '<html><body>Visit <a href="'+server_settings.appUrl+'" target="_blank"> here </a></body></html>';
-    //        tech.sendMail(settings.adminMail, "New registration on "+server_settings.appName+" ", html);
-
     var actions = {};
 
     actions.actionResult = sess.actionResult;
@@ -721,7 +596,6 @@ app.get('/', (req, res) => {
         res.render('profile.ejs', { session: sess, actions: actions });
     }
     if (sess.auth == 2) {
-        //   res.render('users.ejs', { session: sess, actions: actions });
         res.render('first.ejs', {
             session: sess,
             actions: actions,
@@ -758,7 +632,6 @@ app.get('/tripitrequesttoken', (req, res) => {
 
 app.get('/tripitcallback', (req, res) => {
     var sess = req.session;
-    //res.send({oauth_token:req.query.oauth_token});
     var token = req.query.oauth_token,
         secret = sess.requestTokenSecrets[token],
         verifier = null;
@@ -843,13 +716,7 @@ function artistsInfo(info) {
 
     var found_artists = basicInfo.body.artists.items;
     var all_artists;
-    /*
-        spotTest(info);
-    
-        res.redirect('/my_artists');
-    
-        return false;
-    */
+
     Promise.all(found_artists.map(function (artist) {
         return localSpotifyApi.getArtistRelatedArtists(artist.id);
     })).then(function (allRelatedArtists) {
@@ -858,8 +725,6 @@ function artistsInfo(info) {
 
 
         all_artists = found_artists;
-        // console.log("all_artists "+all_artists.length);
-        // console.log(all_artists);
 
         var distinct = [];
 
@@ -887,13 +752,7 @@ function artistsInfo(info) {
             }
 
         }
-        /*
-        artistsDistinct.sort(function (a, b) {
-            if (a < b) return -1;
-            if (a > b) return 1;
-            return 0;
-        });
-        */
+
         artistsDistinct.sort(function (a, b) {
             if (a.relation < b.relation) return -1;
             if (a.relation > b.relation) return 1;
@@ -903,7 +762,6 @@ function artistsInfo(info) {
 
 
         console.log("Followed and Related (c) Spotify: " + artistsDistinct.length);
-        //res.send({result:artistsDistinct, err:""});
         sess.spotifyResult = artistsDistinct.map(function (el, i) {
             return {
                 band: el.name.toLowerCase(),
@@ -924,31 +782,6 @@ function artistsInfo(info) {
 
 
 
-/*
-app.get('/deactivate', (req, res) => {
-    sess = req.session;
-    if (sess.auth == 1) {
-        if (sess.authed_user) {
-            var id = new ObjectID(sess.authed_user._id);
-            console.log(id);
-
-            db.collection('users').update({ _id: id }, { $set: { active: 0 } },
-                (err, result) => {
-                    if (err) {
-                        res.send({ error: err });
-                    }
-
-                    console.log('deactivated');
-                    res.send("OK");
-                });
-        }
-
-    } else {
-        res.redirect("/");
-    }
-
-});
-*/
 app.get('/protected', (req, res) => {
     sess = req.session;
     var r = req.query.r || null;
@@ -1488,98 +1321,6 @@ function findMatches(time, user,innerCallback1) {
 }
 
 
-//SongKick for non US, Eventful & TicketMaster for US.
-function findEventsOld(user, time) {
-    var trips = user.trips || null;
-    var bands = user.bands || null;
-
-    if (!trips || !bands) {
-        console.log("nothing to search for");
-        return false;
-    }
-
-
-    artistList = bands.map(function (el, i) {
-        return el.band;
-    });
-
-    if (artistList.length < 1) {
-        console.log("bands to few for test");
-        return false;
-    }
-
-
-    /*
-    LONDON TEST
-            var trip=trips[0];
-                if(new Date(trip.end)>new Date()) {        
-                    var apiUrl = "";
-                    if (tech.isUS(trip.country)) {
-                        //Tickemaster
-                        apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
-                    } else {
-                        //SongKick
-                        apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
-                    }
-                }
-    */
-
-
-
-
-
-
-
-
-
-    (function myLoop(i) {
-        var trip = trips[i];
-        setTimeout(function () {
-
-            if (new Date(trip.end) > new Date()) {
-                var apiUrl = "";
-                if (tech.isUS(trip.country)) {
-                    //Tickemaster
-                    apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
-                } else {
-                    //SongKick
-                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
-                }
-            }
-
-            i--;
-            if (i != -1) myLoop(i);
-        }, 60000); //launch every minute
-
-    })(trips.length - 1);
-
-
-    /*
-    trips.forEach(function (trip) {
-
-            if(new Date(trip.end)>new Date()) {        
-                var apiUrl = "";
-                if (tech.isUS(trip.country)) {
-                    //Eventful + Tickemaster
-                    //apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
-                    apis.findTicketMasterEvents(settings.TicketMasterUrl, trip, artistList, user, time);
-                    //console.log("US:"+trip.city); 
-                } else {
-                    //SongKick
-                    //console.log("NonUS:"+trip.city);
-                    //apis.findEventfulEvents(settings.eventfulURL, trip, artistList, user, time);
-                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl);
-                }
-        }
-
-
-    });
-    */
-
-}
-
-
-
 
 
 
@@ -1722,8 +1463,6 @@ function queryGenres(globalSeriesCallback) {
                                                         console.log(err);
                                                         innerCallback2(err);     
                                                     }  
-                                                    //console.log("Discogs matchn nModified "+result.result.nModified);
-                                                    //console.log("Discogs match update finished");        
                                                     innerCallback2();                 
                                                 }
                                             );
@@ -1743,7 +1482,6 @@ function queryGenres(globalSeriesCallback) {
                                                         console.log(err);
                                                         innerCallback2(err);   
                                                     }  
-                                                    //console.log("Discogs genre search finished");                         
                                                     innerCallback2();   
                                                 }   
                                             );
@@ -1802,9 +1540,6 @@ function queryMatches(globalSeriesCallback) {
                 
             });
 
-            //We will not go Inside. This is quick and last operation, so we will end here
-            //globalSeriesCallback(null,"matchingMatchesFinished");
-
 
         }
         else {
@@ -1817,14 +1552,6 @@ function queryMatches(globalSeriesCallback) {
 
 function queryEvents(globalSeriesCallback) {
     console.log("start query Events");
-    /*
-    //globalSeriesCallback();
-    timerId = setTimeout(function() {
-        globalSeriesCallback();
-    }, 6000);
-
-    return false;
-    */
 
     var time = new Date();
 
@@ -1845,37 +1572,6 @@ function queryEvents(globalSeriesCallback) {
 
 }
 
-/*
-function spotTest1() {
-        id = new ObjectID("588738df79ec3c0b3409d8ee");
-
-        db.collection('users').find({
-            _id: { $eq: id }
-        }).toArray(function (err, result) {
-
-            if (!err) {
-                if (result.length > 0) {
-                    console.log("USER FOUND");
-                    var user=result[0];
-                    console.log("bands length "+user.bands.length)
-                    fs.writeFile("bands.json", JSON.stringify(user.bands), function (err) {
-                        if (err) {
-                            console.log(err);
-                            return false;
-                        }
-                    });                    
-                }
-            }
-            else {
-                console.log({ error: err });
-
-            }
-        });
-
-
- 
-} 
-*/
 
 function spotTest(info) {
     console.log("*********SPOT TEST START**********");
@@ -1959,14 +1655,10 @@ function loadArtist(artistID, callback) {
     request(url, function (err, response, body) {
         if (!err && response.statusCode == 200) {
             var json = JSON.parse(body);
-            //console.log(json);
             callback(null, json);
         } else {
-            //console.log("request error");
-            //console.log(err);
             callback(err, 0);
 
         }
     });
 }
-//tech.checkGenres(settings.discogsApiUrl.replace("ARTIST_NAME",encodeURI("Trash Talk")));
