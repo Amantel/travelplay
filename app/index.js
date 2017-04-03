@@ -78,35 +78,40 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
         console.log('listening on ' + server_settings.port);
 
-        if (server_settings.startFinder) queryEvents(server_settings.doSchedule); //finding events
-        if (server_settings.startMatchUpdater) updateMatches(server_settings.doSchedule); //updating matches with info from DB (if there is it)
-        if (server_settings.startGenresFind) queryGenres(server_settings.doSchedule);    //getting genres. the slowest and the hardest on all
-        if (server_settings.startMatching) queryMatches(server_settings.doSchedule);        //matching   
-
-
-        if(server_settings.startAll) {
-            console.log("series started. Time:");
-            console.log(new Date().toISOString());
-            
-            async.series([
-                queryEvents,
-                updateMatches,
-                queryGenres,
-                queryMatches
-            ], function (err, result) {
-                console.log("series finished. Time:");
-                console.log(new Date().toISOString());
-                console.log("Error:");
-                console.log(err);
-                console.log("Result:");
-                console.log(result);
-            });
+        if(server_settings.startAll && server_settings.doShedule) {
+           later.setInterval(launchMain, later.parse.text('every 8 h'));
+        } else {
+            launchMain();
         }
+        
 
 
 
     });
 });
+
+function launchMain() {
+    if(server_settings.startAll) {
+        console.log("series started. Time:");
+        console.log(new Date().toISOString());
+        
+        async.series([
+            queryEvents,
+            updateMatches,
+            queryGenres,
+            queryMatches
+        ], function (err, result) {
+            console.log("series finished. Time:");
+            console.log(new Date().toISOString());
+            console.log("Error:");
+            console.log(err);
+            console.log("Result:");
+            console.log(result);
+        });
+    }
+}
+
+
 
 
 app.post('/change_user', (req, res) => {
