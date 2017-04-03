@@ -12,6 +12,7 @@ module.exports.addIdsToTrips = addIdsToTrips;
 module.exports.checkGenres = checkGenres;
 module.exports.getUserGenres = getUserGenres;
 module.exports.logToFile = logToFile;
+module.exports.logT = logT;
 
 
 const nodemailer = require('nodemailer');
@@ -336,6 +337,11 @@ function logError(err, result) {
     }
 }
 
+function logT(text,verbose)
+{
+    if(verbose)
+        console.log(new Date().toISOString()+" >>> "+text);
+}
 
 
 

@@ -996,7 +996,8 @@ function findEvents(time, user, innerCallback1) {
     var bands = user.bands || null;
 
     if (!trips || !bands) {
-        console.log("nothing to search for");
+
+        tech.logT("nothing to search for",server_settings.queryEventsVerb);
         innerCallback1();
         return false;
     }
@@ -1009,9 +1010,9 @@ function findEvents(time, user, innerCallback1) {
     async.each(trips,
         function (trip, innerCallback2) {
             if (new Date(trip.end) > new Date()) {
-                console.log(trip.city);
+                tech.logT(trip.city,server_settings.queryEventsVerb);
                 if (tech.isUS(trip.country)) {
-                    console.log("US:" + trip.city + " later");
+                    tech.logT("US:" + trip.city + " later",server_settings.queryEventsVerb);
                     innerCallback2();
                 } else {
                     //SongKick
@@ -1038,7 +1039,7 @@ function findMatches(time, user,innerCallback1) {
     var bands = user.bands || null;
 
     if (!trips || !bands) {
-        console.log("nothing to search for");
+        tech.logT("nothing to search for",server_settings.matchEventsVerb);
         innerCallback1();
         return false;
     }
@@ -1054,7 +1055,7 @@ function findMatches(time, user,innerCallback1) {
         if (new Date(trip.end) > new Date()) {
             var apiUrl = "";
             if (tech.isUS(trip.country)) {
-                console.log("US:" + trip.city + " later");
+                tech.logT("US:" + trip.city + " later",server_settings.matchEventsVerb);
                 innerCallback2();
             } else {
 
@@ -1271,7 +1272,7 @@ function findMatches(time, user,innerCallback1) {
                                     innerCallback2(err);
                                 }
                                 else {
-                                    console.log("Finished matching for " + trip.city);
+                                    tech.logT("Finished matching for " + trip.city,server_settings.matchEventsVerb);
                                     var obj={firstTier:firstTier,secondTier:secondTier,thirdTier:thirdTier};
                                     innerCallback2(null,obj);
                                 }
@@ -1280,7 +1281,7 @@ function findMatches(time, user,innerCallback1) {
 
 
                         } else {
-                            console.log("No matches to match");
+                            tech.logT("No matches to match",server_settings.matchEventsVerb);
                             innerCallback2();
                         }
 
@@ -1305,7 +1306,8 @@ function findMatches(time, user,innerCallback1) {
 
     },
     function (err, result) {
-        console.log("***Matching Events Finished");
+       tech.logT("***Matching Events Finished",server_settings.matchEventsVerb);
+        
         if (err) {
             console.log(err);
             innerCallback1(err);
@@ -1358,21 +1360,7 @@ function queryDiscogs(artistName, callback) {
     });
 }
 
-function queryDiscogsBatch(artistNames) {
-    var pause = 60000; //1m
-    async.map(artistNames, queryDiscogs, function (err, results) {
-        setTimeout(
-            function () {
-                console.log("1");
-                //console.log(results);
-                console.log(err);
-                if (!err)
-                    return results;
-            },
-            1000, err);
-    });
 
-}
 
 
 
@@ -1395,7 +1383,7 @@ function queryGenres(globalSeriesCallback) {
                             if (!err) {
                                 discongsInfo = {};
                                 if (data && data.results) {
-                                    console.log("artist found: " + this.artistName + " rateLimit.remaining:" + rateLimit.remaining);
+                                    tech.logT("artist found: " + this.artistName + " rateLimit.remaining:" + rateLimit.remaining,server_settings.discogsEventsVerb);
                                     var genres = data.results.map(function (result) {
                                         var curGenres = [];
                                         curGenres = curGenres.concat(result.style);
@@ -1411,16 +1399,18 @@ function queryGenres(globalSeriesCallback) {
 
                                     if (rateLimit.remaining > 20)
                                         callback(null, { artistName: this.artistName, artistGenres: genreInfoUniq });
-                                    else {
-                                        console.log("waiting minute");
+                                    else {                                        tech.logT("waiting minute",server_settings.discogsEventsVerb);
+                                        
                                         setTimeout(callback.bind(this, null, { artistName: this.artistName, artistGenres: genreInfoUniq, }), 65000);
                                     }
                                 } else {
-                                    console.log("***no artist found: " + this.artistName + " rateLimit.remaining:" + rateLimit.remaining);
+                                    tech.logT("***no artist found: " + this.artistName + " rateLimit.remaining:" + rateLimit.remaining,server_settings.discogsEventsVerb);
+
+
                                     if (rateLimit.remaining > 20)
                                         callback(null, { artistName: this.artistName, artistGenres: [] });
                                     else {
-                                        console.log("waiting minute");
+                                        tech.logT("waiting minute",server_settings.discogsEventsVerb);
                                         setTimeout(callback.bind(this, null, { artistName: this.artistName, artistGenres: [] }), 65000);
                                     }
                                 }
@@ -1432,8 +1422,8 @@ function queryGenres(globalSeriesCallback) {
                         }.bind({ artistName: artist.artist_name }));
                     },
                     function (err, result) {
-                        console.log("Ending genre finder from Discogs");
-                        console.log(new Date().toLocaleString());
+                        tech.logT("Ending genre finder from Discogs",server_settings.discogsEventsVerb);
+                        tech.logT(new Date().toLocaleString(),server_settings.discogsEventsVerb);
                         if (!err) {
                             //console.log(result.length);
 
@@ -1495,9 +1485,11 @@ function queryGenres(globalSeriesCallback) {
 
                                 },
                                 function (err, result) {
-                                    console.log("***gGenreFindDiscogsFinished");
-                                    console.log(err);
-                                    console.log(result);
+                                    if(err) {
+                                        console.log(err);
+                                    } else {
+                                        tech.logT("***gGenreFindDiscogsFinished",server_settings.discogsEventsVerb);
+                                    }
                                     globalSeriesCallback(null,"gGenreFindDiscogsFinished");
                                 });
                         } else {
@@ -1534,7 +1526,7 @@ function queryMatches(globalSeriesCallback) {
                 if(err)
                     globalSeriesCallback(err);
                 else {
-                    console.log("matching without problems");
+                    //console.log("matching without problems");
                     globalSeriesCallback(null, result);
                 }    
                 
@@ -1551,7 +1543,9 @@ function queryMatches(globalSeriesCallback) {
 }
 
 function queryEvents(globalSeriesCallback) {
-    console.log("start query Events");
+
+    tech.logT("start query Events",server_settings.queryEventsVerb);
+    
 
     var time = new Date();
 
