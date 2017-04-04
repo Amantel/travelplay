@@ -282,5 +282,9 @@ $(function () {
         $(this).parents(".trip_content").find(".tier_3").toggle();
     });
 
+    $("[data-show_old]").click(function(){
+        $(".old_trips").toggle();
+    });    
+
 });
 
