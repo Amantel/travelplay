@@ -65,6 +65,7 @@ const ObjectID = mongodb.ObjectID;
 
 
 var db;
+          //  tech.sendMail(settings.adminMail, "New matches on TravelPlay", "send");
 
 
 MongoClient.connect(server_settings.mongoUrl, (err, database) => {
@@ -588,7 +589,7 @@ app.get('/', (req, res) => {
     delete sess.actionError;
 
     if (sess.auth != 1 && sess.auth != 2)
-        res.render('first.ejs', {
+        res.render('login.ejs', {
             session: sess,
             actions: actions,
             authUrl: settings.spotifyApiUrl,
@@ -1153,10 +1154,16 @@ function findMatches(time, user,innerCallback1) {
                                        
                             if(user && user.active && user.email && ((firstTier.length+secondTier.length+thirdTier.length)>prevTiers.length)) {
 
-                                var html = '<html><body>New findings for trip to '+trip.city+'. Visit <a href="' +
+                                var html = '<html><body>Hi,<br> we have found a few interesting concerts you can attend'+
+                                ' during your upcoming trip to '+trip.city+'. Click <a href="' +
                                 server_settings.appUrl +
-                                'protected?code='+user.code+'&r=my_results" target="_blank"> here </a></body></html>';
-                                tech.sendMail(user.email, "New findings  on trip to "+trip.city+" " + server_settings.appName + " ", html);
+                                'protected?code='+user.code+'&r=my_results" target="_blank">here</a> to see our recommendations!'+
+                                '<br><br>BR<br>'+server_settings.appName+'</body></html>';
+                                
+                                
+                                tech.sendMail(user.email, server_settings.appName+" - Some musical suggestions for your trip to "+trip.city+" ", html);
+
+
                                 tech.sendMail(settings.adminMail, "New findings for user on " + server_settings.appName + " ", html);
                             }                            
 

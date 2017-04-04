@@ -58,7 +58,7 @@
         <p class="lead text-center">Some punchline text</p>
         <hr>
         <div class="text-center">
-            <form method="POST">
+            <form method="POST" action="/login">
 
                 <h2>Login form</h2>
 
@@ -66,13 +66,13 @@
                     <input name="email" type="email" class="form-control" placeholder="Email" required autofocus>
                 </div>
                 <div class="form-group">
-                    <input name="password" type="text" class="form-control" placeholder="Password" required>
+                    <input name="password" type="password" class="form-control" placeholder="Password" required>
                 </div>
                 <div class="form-group">
                     <input type="submit" class="btn btn-primary btn" name="login" value="Enter">
                 </div>
             </form>
-            <%if(authError) { %>  
+            <%if(locals.authError) { %>  
             <div class="alert alert-warning alert-dismissible" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <strong>Error</strong> <%=authError%>
