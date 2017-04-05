@@ -93,7 +93,7 @@
                 for(i=0;i<trips.length; i++) {  
                     var trip=trips[i];
                     finished="";
-                    if(new Date(trip.end)<new Date()) {
+                    if(new Date(trip.end).setHours(23,59)<new Date()) {
                         finished="trip_finished";
                     }
 
@@ -113,7 +113,7 @@
                                                 </td>
                                                 <td>
                                                     <span class="trip_start_text"><%=trip.end%></span>
-                                                </td>
+                                                </td> 
                                                 <td>
                                                     <span class="trip_country_text"><%=trip.country%></span>
                                                 </td>

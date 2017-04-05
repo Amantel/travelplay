@@ -1016,7 +1016,7 @@ function findEvents(time, user, innerCallback1) {
     //loop 2
     async.each(trips,
         function (trip, innerCallback2) {
-            if (new Date(trip.end) > new Date()) {
+            if (new Date(trip.end).setHours(23,59) > new Date()) {
                 tech.logT(trip.city,server_settings.queryEventsVerb);
                 if (tech.isUS(trip.country)) {
                     tech.logT("US:" + trip.city + " later",server_settings.queryEventsVerb);
@@ -1059,7 +1059,7 @@ function findMatches(time, user,innerCallback1) {
     async.map(trips,
         function (trip, innerCallback2) {
 
-        if (new Date(trip.end) > new Date()) {
+        if (new Date(trip.end).setHours(23,59) > new Date()) {
             var apiUrl = "";
             if (tech.isUS(trip.country)) {
                 tech.logT("US:" + trip.city + " later",server_settings.matchEventsVerb);

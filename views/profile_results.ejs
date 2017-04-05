@@ -54,15 +54,15 @@
         var trips=session.authed_user.trips || [];
 
         var trips_upcoming=trips.filter((t)=>{
-             return new Date(t.start)>=new Date()
+             return new Date(t.end).setHours(23,59)>=new Date()
         });
         var trips_past=trips.filter((t)=>{
-            return new Date(t.start)<new Date()
+            return new Date(t.end).setHours(23,59)<new Date()
             });
 
         if(trips_upcoming.length>0) {
         %>
-            <h3>Upcoming trips (<%=trips_upcoming.length%>)</h3>
+            <h3>Current & Upcoming trips (<%=trips_upcoming.length%>)</h3>
         <%
             echoTrips(trips_upcoming);
         }
