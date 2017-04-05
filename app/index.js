@@ -71,7 +71,7 @@ var db;
 //Test Mail
 //tech.sendMail(settings.adminMail, "New matches on TravelPlay", "send");
 
-/*
+ 
 MongoClient.connect(server_settings.mongoUrl, (err, database) => {
     if (err) return console.log(err);
     db = database;
@@ -94,7 +94,7 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
     });
 });
-*/
+ 
 
 function launchMain() {
     if(server_settings.startAll) {
@@ -1023,12 +1023,12 @@ function findEvents(time, user, innerCallback1) {
             if (new Date(trip.end).setHours(23,59) > new Date()) {
                 tech.logT(trip.city,server_settings.queryEventsVerb);
                 if (tech.isUS(trip.country)) {
-                    tech.logT("US:" + trip.city + " later",server_settings.queryEventsVerb);
-                    innerCallback2();
+                    //tech.logT("US:" + trip.city + " later",server_settings.queryEventsVerb);
+                    apis.findEventsTicketMaster(settings.TicketMasterUrl, trip, artistList, user, time,innerCallback2);
                 } else {
                     //SongKick
-                    //innerCallback2();
-                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl, innerCallback2);
+                    innerCallback2();
+                    //apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl, innerCallback2);
                 }
             } else {
                 //do nothing
@@ -1065,258 +1065,252 @@ function findMatches(time, user,innerCallback1) {
 
         if (new Date(trip.end).setHours(23,59) > new Date()) {
             var apiUrl = "";
-            if (tech.isUS(trip.country)) {
-                tech.logT("US:" + trip.city + " later",server_settings.matchEventsVerb);
-                innerCallback2();
-            } else {
 
 
-                db.collection('matchesn').find({ tripid: { $eq: trip.id } }).toArray(function (err, result) {
-                    if (!err) {
-                        if (result.length > 0) {
 
-                            var firstTier = [];
-                            var secondTier = [];
-                            var thirdTier = [];
-                            var failedGenres = [];
-                            var prevTiers=[];
+            db.collection('matchesn').find({ tripid: { $eq: trip.id } }).toArray(function (err, result) {
+                if (!err) {
+                    if (result.length > 0) {
 
-                            
-                            result.forEach(function (match) {
-                                if(match.tier>0) 
-                                 prevTiers.push(match);
-                            });
+                        var firstTier = [];
+                        var secondTier = [];
+                        var thirdTier = [];
+                        var failedGenres = [];
+                        var prevTiers=[];
+
+                        
+                        result.forEach(function (match) {
+                            if(match.tier>0) 
+                                prevTiers.push(match);
+                        });
 
 
-                            result.forEach(function (match) {
+                        result.forEach(function (match) {
 
-                                if (match.artist_name !== undefined) {
-                                    var findings = [];
-                                    //1. First tier
-                                    findings = bands.filter(function (band) {
+                            if (match.artist_name !== undefined) {
+                                var findings = [];
+                                //1. First tier
+                                findings = bands.filter(function (band) {
+                                    if (
+                                        band.band === match.artist_name.toLowerCase() &&
+                                        band.relation == 1
+                                    ) return true;
+                                    return false;
+
+                                });
+                                if (findings.length > 0)
+                                    firstTier.push(match);
+
+                                //2. Second tier
+                                findings = bands.filter(function (band) {
+                                    if (
+                                        band.band === match.artist_name.toLowerCase() &&
+                                        band.relation == 2
+                                    ) return true;
+                                    return false;
+
+                                });
+                                if (findings.length > 0)
+                                    secondTier.push(match);
+
+
+                                //3.Third Tier - Genres
+                                if (match.genres && match.genres.length > 0) {
+                                    match.genres = [].concat.apply([], match.genres);
+                                    findings = match.genres.filter(function (genre) {
                                         if (
-                                            band.band === match.artist_name.toLowerCase() &&
-                                            band.relation == 1
+                                            userGenres.indexOf(genre.toLowerCase()) > -1
                                         ) return true;
                                         return false;
 
                                     });
-                                    if (findings.length > 0)
-                                        firstTier.push(match);
-
-                                    //2. Second tier
-                                    findings = bands.filter(function (band) {
-                                        if (
-                                            band.band === match.artist_name.toLowerCase() &&
-                                            band.relation == 2
-                                        ) return true;
-                                        return false;
-
-                                    });
-                                    if (findings.length > 0)
-                                        secondTier.push(match);
-
-
-                                    //3.Third Tier - Genres
-                                    if (match.genres && match.genres.length > 0) {
-                                        match.genres = [].concat.apply([], match.genres);
-                                        findings = match.genres.filter(function (genre) {
-                                            if (
-                                                userGenres.indexOf(genre.toLowerCase()) > -1
-                                            ) return true;
-                                            return false;
-
-                                        });
-                                        if (findings.length > 0) {
-                                            thirdTier.push(match);
-                                        }
-                                        else {
-                                            //console.log(match.genres.join()+" no in user genres");
-                                            failedGenres.push(match.genres);
-                                        }
-
-
+                                    if (findings.length > 0) {
+                                        thirdTier.push(match);
+                                    }
+                                    else {
+                                        //console.log(match.genres.join()+" no in user genres");
+                                        failedGenres.push(match.genres);
                                     }
 
 
-
                                 }
 
 
-                            });
- 
-                            //clear thirdTier
-                            //console.log(thirdTier.length);
-                            if(thirdTier.length>0) {
-                                tiersMatches=firstTier.map(x=>x.artist_name).concat(secondTier.map(x=>x.artist_name));
-                                thirdTier=thirdTier.filter((match)=>{
-                                    return tiersMatches.indexOf(match.artist_name)==-1;
-                                });
+
                             }
-                            //console.log(thirdTier.length);
-
-                                        //send mails
-                                       
-                            if(user && user.active && user.email && ((firstTier.length+secondTier.length+thirdTier.length)>prevTiers.length)) {
-
-                                var html = '<html><body>Hi,<br> we have found a few interesting concerts you can attend'+
-                                ' during your upcoming trip to '+trip.city+'. Click <a href="' +
-                                server_settings.appUrl +
-                                'protected?code='+user.code+'&r=my_results" target="_blank">here</a> to see our recommendations!'+
-                                '<br><br>BR<br>'+server_settings.appName+'</body></html>';
-                                
-                                
-                                tech.sendMail(user.email, server_settings.appName+" - Some musical suggestions for your trip to "+trip.city+" ", html);
 
 
-                                tech.sendMail(settings.adminMail, "New findings for user on " + server_settings.appName + " ", html);
-                            }                            
+                        });
 
-
-                            //Update TIER to matches
-
-
-                            async.series([
-                                function (callbackm) {
-                                    //zeroTier 
-                                    db.collection('matchesn').update(
-                                        { tripid: { $eq: trip.id } }, //only in this trip
-                                        { $set: { "tier": 0 } },
-                                        {
-                                            upsert: false,
-                                            multi: true
-                                        },
-                                        (err, result) => {
-                                            if (err)
-                                                callbackm(err);
-                                            else
-                                                callbackm();
-                                        }
-                                    );
-
-                                }.bind({ trip: trip }),
-
-                                function (callbackm) {
-
-                                    async.map(thirdTier,
-
-                                        function (performance, callback) {
-
-                                            var id = new ObjectID(performance._id);
-
-                                            db.collection('matchesn').update(
-                                                { "_id": { $eq: performance._id } }, //
-                                                { $set: { "tier": 3 } },
-                                                {
-                                                    upsert: false
-                                                },
-                                                (err, result) => {
-                                                    if (err)
-                                                        callback(err);
-                                                    else
-                                                        callback();
-                                                }
-                                            );
-
-                                        },
-                                        function (err, results) {
-                                            callbackm();
-                                        });
-
-
-                                },
-                                function (callbackm) {
-
-                                    async.map(secondTier,
-
-                                        function (performance, callback) {
-
-                                            var id = new ObjectID(performance._id);
-
-                                            db.collection('matchesn').update(
-                                                { "_id": { $eq: performance._id } }, //
-                                                { $set: { "tier": 2 } },
-                                                {
-                                                    upsert: false
-                                                },
-                                                (err, result) => {
-                                                    if (err)
-                                                        callback(err);
-                                                    else
-                                                        callback();
-                                                }
-                                            );
-
-                                        },
-                                        function (err, results) {
-                                            callbackm();
-                                        });
-
-
-                                },
-                                function (callbackm) {
-
-                                    async.map(firstTier,
-
-                                        function (performance, callback) {
-
-                                            var id = new ObjectID(performance._id);
-
-                                            db.collection('matchesn').update(
-                                                { "_id": { $eq: performance._id } }, //
-                                                { $set: { "tier": 1 } },
-                                                {
-                                                    upsert: false
-                                                },
-                                                (err, result) => {
-                                                    if (err)
-                                                        callback(err);
-                                                    else
-                                                        callback();
-                                                }
-                                            );
-
-                                        },
-                                        function (err, results) {
-                                            callbackm();
-                                        });
-
-
-                                },
-                            ], function (err, result) {
-                                if (err) {
-                                    console.log(err);
-                                    innerCallback2(err);
-                                }
-                                else {
-                                    tech.logT("Finished matching for " + trip.city,server_settings.matchEventsVerb);
-                                    var obj={firstTier:firstTier,secondTier:secondTier,thirdTier:thirdTier};
-                                    innerCallback2(null,obj);
-                                }
+                        //clear thirdTier
+                        //console.log(thirdTier.length);
+                        if(thirdTier.length>0) {
+                            tiersMatches=firstTier.map(x=>x.artist_name).concat(secondTier.map(x=>x.artist_name));
+                            thirdTier=thirdTier.filter((match)=>{
+                                return tiersMatches.indexOf(match.artist_name)==-1;
                             });
-
-
-
-                        } else {
-                            tech.logT("No matches to match",server_settings.matchEventsVerb);
-                            innerCallback2();
                         }
+                        //console.log(thirdTier.length);
+
+                                    //send mails
+                                    
+                        if(user && user.active && user.email && ((firstTier.length+secondTier.length+thirdTier.length)>prevTiers.length)) {
+
+                            var html = '<html><body>Hi,<br> we have found a few interesting concerts you can attend'+
+                            ' during your upcoming trip to '+trip.city+'. Click <a href="' +
+                            server_settings.appUrl +
+                            'protected?code='+user.code+'&r=my_results" target="_blank">here</a> to see our recommendations!'+
+                            '<br><br>BR<br>'+server_settings.appName+'</body></html>';
+                            
+                            
+                            tech.sendMail(user.email, server_settings.appName+" - Some musical suggestions for your trip to "+trip.city+" ", html);
 
 
+                            tech.sendMail(settings.adminMail, "New findings for user on " + server_settings.appName + " ", html);
+                        }                            
+
+
+                        //Update TIER to matches
+
+
+                        async.series([
+                            function (callbackm) {
+                                //zeroTier 
+                                db.collection('matchesn').update(
+                                    { tripid: { $eq: trip.id } }, //only in this trip
+                                    { $set: { "tier": 0 } },
+                                    {
+                                        upsert: false,
+                                        multi: true
+                                    },
+                                    (err, result) => {
+                                        if (err)
+                                            callbackm(err);
+                                        else
+                                            callbackm();
+                                    }
+                                );
+
+                            }.bind({ trip: trip }),
+
+                            function (callbackm) {
+
+                                async.map(thirdTier,
+
+                                    function (performance, callback) {
+
+                                        var id = new ObjectID(performance._id);
+
+                                        db.collection('matchesn').update(
+                                            { "_id": { $eq: performance._id } }, //
+                                            { $set: { "tier": 3 } },
+                                            {
+                                                upsert: false
+                                            },
+                                            (err, result) => {
+                                                if (err)
+                                                    callback(err);
+                                                else
+                                                    callback();
+                                            }
+                                        );
+
+                                    },
+                                    function (err, results) {
+                                        callbackm();
+                                    });
+
+
+                            },
+                            function (callbackm) {
+
+                                async.map(secondTier,
+
+                                    function (performance, callback) {
+
+                                        var id = new ObjectID(performance._id);
+
+                                        db.collection('matchesn').update(
+                                            { "_id": { $eq: performance._id } }, //
+                                            { $set: { "tier": 2 } },
+                                            {
+                                                upsert: false
+                                            },
+                                            (err, result) => {
+                                                if (err)
+                                                    callback(err);
+                                                else
+                                                    callback();
+                                            }
+                                        );
+
+                                    },
+                                    function (err, results) {
+                                        callbackm();
+                                    });
+
+
+                            },
+                            function (callbackm) {
+
+                                async.map(firstTier,
+
+                                    function (performance, callback) {
+
+                                        var id = new ObjectID(performance._id);
+
+                                        db.collection('matchesn').update(
+                                            { "_id": { $eq: performance._id } }, //
+                                            { $set: { "tier": 1 } },
+                                            {
+                                                upsert: false
+                                            },
+                                            (err, result) => {
+                                                if (err)
+                                                    callback(err);
+                                                else
+                                                    callback();
+                                            }
+                                        );
+
+                                    },
+                                    function (err, results) {
+                                        callbackm();
+                                    });
+
+
+                            },
+                        ], function (err, result) {
+                            if (err) {
+                                console.log(err);
+                                innerCallback2(err);
+                            }
+                            else {
+                                tech.logT("Finished matching for " + trip.city,server_settings.matchEventsVerb);
+                                var obj={firstTier:firstTier,secondTier:secondTier,thirdTier:thirdTier};
+                                innerCallback2(null,obj);
+                            }
+                        });
+
+
+
+                    } else {
+                        tech.logT("No matches to match",server_settings.matchEventsVerb);
+                        innerCallback2();
                     }
-                    else {
-                        //error here - do nothing
-                        console.log("Error in DB in Matching");
-                        innerCallback2(err);
-
-                    }
-                }.bind({ trip: trip }));
 
 
+                }
+                else {
+                    //error here - do nothing
+                    console.log("Error in DB in Matching");
+                    innerCallback2(err);
+
+                }
+            }.bind({ trip: trip }));
 
 
 
-            }
         } else {
             innerCallback2();
         }
@@ -1675,6 +1669,7 @@ function loadArtist(artistID, callback) {
 }
 
 
+/*
 ticketMasterTest();
 function ticketMasterTest() {
     var tempTrip={
@@ -1686,3 +1681,4 @@ function ticketMasterTest() {
     
 
 }
+*/

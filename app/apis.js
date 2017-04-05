@@ -126,7 +126,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                 replace("DATE_START", start).
                 replace("DATE_END", end);
 
-            console.log("SongkickFinal  " + url);
+            //console.log("SongkickFinal  " + url);
 
             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
@@ -181,7 +181,8 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
                     console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
                     if (performances.length > 0)
                         tech.savePerformancesToTrip(user, performances, trip, innerCallback2);
-
+                    else     
+                        innerCallback2();
 
 
                 } else {
@@ -202,7 +203,7 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 
 
-function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
+function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time,innerCallback2T) {
     var cityName = encodeURI(trip.city);
     var start = trip.start + "T00:00:00Z";
     var end = trip.end + "T00:00:00Z";
@@ -229,20 +230,21 @@ function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
         }
     ], function (err, pages) {
         if (err) {
-            console.log("findTicketMasterEventsStart error");
+            innerCallback2T(err);
         }
         else {
-            findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time);
+            findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time,innerCallback2T);
         }
     });
 }
-function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
+function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time,innerCallback2T) {
     if (!pages)
         pages = 0;
     var pagesArray = Array(pages * 1).fill(0).map((e, i) => i );
     async.map(pagesArray,
         (function (pageNumber, callback) {
             var url = apiUrl + "&page=" + pageNumber;
+            //console.log(url);
             request(url, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var foundEvents = [];
@@ -291,23 +293,22 @@ function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
         }),
         function (err, results) {
             if (err) {
-                console.log(err);
+                innerCallback2T(err);
                 console.log("ticketmaster finished with error");
             } else {
-                var flattened = [];
-                var events = [];
+                var performances = [];
                 if (results.length > 0) {
-                    flattened = results.reduce(function (a, b) {
+                    performances = results.reduce(function (a, b) {
                         return a.concat(b);
                     });
           
                 }
-                events=flattened;
-                console.log("Ticketmaster " + trip.city + " Results: " + flattened.length + " " + "Events: " + events.length);
-                /*
-                if (events.length > 0)
-                    tech.saveEvents(user, events, trip);
-                */
+                console.log("Ticketmaster " + trip.city + " Events: " + performances.length);
+                if (performances.length > 0)
+                    tech.savePerformancesToTrip(user, performances, trip, innerCallback2T);
+                else     
+                    innerCallback2T();
+ 
             }
         });
 }
