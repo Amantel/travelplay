@@ -1027,8 +1027,8 @@ function findEvents(time, user, innerCallback1) {
                     apis.findEventsTicketMaster(settings.TicketMasterUrl, trip, artistList, user, time,innerCallback2);
                 } else {
                     //SongKick
-                    innerCallback2();
-                    //apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl, innerCallback2);
+                    //innerCallback2();
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl, innerCallback2);
                 }
             } else {
                 //do nothing
