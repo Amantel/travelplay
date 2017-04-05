@@ -19,6 +19,7 @@
 
 
 <body>
+
     <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_results">My findings</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_trips">My trips</a>
@@ -54,11 +55,11 @@
         var trips=session.authed_user.trips || [];
 
         var trips_upcoming=trips.filter((t)=>{
-             return new Date(t.end).setHours(23,59)>=new Date()
+             return !moment().isAfter(t.end, "day");
         });
         var trips_past=trips.filter((t)=>{
-            return new Date(t.end).setHours(23,59)<new Date()
-            });
+                return moment().isAfter(t.end, "day");
+         });
 
         if(trips_upcoming.length>0) {
         %>

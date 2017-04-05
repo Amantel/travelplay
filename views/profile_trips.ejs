@@ -17,13 +17,14 @@
 
 
 
-<body>
+<body> 
     <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_results">My findings</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_trips">My trips</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_artists">My artists</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a>
     <div class="clearfix"><br></div>
+    
     <div class="container">
 
         <%if(actions && actions.actionResult) { %>
@@ -93,7 +94,7 @@
                 for(i=0;i<trips.length; i++) {  
                     var trip=trips[i];
                     finished="";
-                    if(new Date(trip.end).setHours(23,59)<new Date()) {
+                    if(moment().isAfter(trip.end, "day")) {
                         finished="trip_finished";
                     }
 

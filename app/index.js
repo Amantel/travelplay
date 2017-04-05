@@ -14,6 +14,9 @@ const async = require('async');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const moment = require('moment');
+
+
 
 /*Inner modules*/
 const apis = require("./apis");
@@ -489,7 +492,7 @@ app.get('/my_trips', (req, res) => {
 
         var tripItResult = sess.tripItResult;
         delete sess.tripItResult;
-        res.render('profile_trips.ejs', { session: sess, actions: actions, tripItResult: tripItResult });
+        res.render('profile_trips.ejs', { session: sess, actions: actions, tripItResult: tripItResult,moment: moment });
     } else {
         res.redirect("/");
     }
@@ -555,7 +558,7 @@ app.get('/my_results', (req, res) => {
             matches.forEach(function (tripMatches) {
                 matchesByTrips[tripMatches[0].tripid] = tripMatches;
             });
-            res.render('profile_results.ejs', { session: sess, actions: actions, matches: matchesByTrips });
+            res.render('profile_results.ejs', { session: sess, actions: actions, matches: matchesByTrips,moment: moment });
 
         });
 
