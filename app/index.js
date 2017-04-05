@@ -65,7 +65,8 @@ const ObjectID = mongodb.ObjectID;
 
 
 var db;
-          //  tech.sendMail(settings.adminMail, "New matches on TravelPlay", "send");
+//Test Mail
+//tech.sendMail(settings.adminMail, "New matches on TravelPlay", "send");
 
 
 MongoClient.connect(server_settings.mongoUrl, (err, database) => {
