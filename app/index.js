@@ -71,7 +71,7 @@ var db;
 //Test Mail
 //tech.sendMail(settings.adminMail, "New matches on TravelPlay", "send");
 
-
+/*
 MongoClient.connect(server_settings.mongoUrl, (err, database) => {
     if (err) return console.log(err);
     db = database;
@@ -94,6 +94,7 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
     });
 });
+*/
 
 function launchMain() {
     if(server_settings.startAll) {
@@ -1671,4 +1672,17 @@ function loadArtist(artistID, callback) {
 
         }
     });
+}
+
+
+ticketMasterTest();
+function ticketMasterTest() {
+    var tempTrip={
+        "city":"New York",
+        "start":"2017-06-16",
+        "end":"2017-06-21"
+    };
+    apis.findEventsTicketMaster(settings.TicketMasterUrl, tempTrip, [], {}, new Date());
+    
+
 }

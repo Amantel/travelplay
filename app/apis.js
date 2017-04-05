@@ -1,4 +1,5 @@
 module.exports.findSongKickEvents = findSongKickEventsStart;
+module.exports.findEventsTicketMaster = findEventsTicketMasterStart;
 
 
 const request = require('request');
@@ -196,103 +197,117 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 }
 
 
+ 
 
-function findSongKickEventsFinalGenres(artistList, cityID, performances, apiUrl, trip, user, time) {
 
-    async.mapLimit(performances, 10,
-        (function (performance, callback) {
-            var url = settings.discogsApiUrl.replace("ARTIST_NAME", encodeURI(performance.event_title));
 
-            request({
-                url: url,
-                headers: {
-                    'User-Agent': 'TravelPlay Robot 1/X'
-                }
-            }, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
+
+function findEventsTicketMasterStart(apiUrl, trip, artistList, user, time) {
+    var cityName = encodeURI(trip.city);
+    var start = trip.start + "T00:00:00Z";
+    var end = trip.end + "T00:00:00Z";
+    apiUrl = apiUrl.replace("CITY_NAME", cityName).replace("DATE_START", start).replace("DATE_END", end);
+    async.waterfall([
+        function (callback) {
+            var url = apiUrl;
+            request(url, function (err, response, body) {
+                if (!err && response.statusCode == 200) {
                     var json = JSON.parse(body);
-                    if (!json) {
-                        callback("find Discogs genres error inner", 0);
+                    if (!json.page) {
+                        tech.logError(json);
+                        callback("error in ticketmaster primary search in json", 0);
                     }
-                    var genres = json.results.map(function (result) {
-                        var curGenres = [];
-                        curGenres = curGenres.concat(result.style);
-                        curGenres = curGenres.concat(result.genre);
-                        return curGenres;
-                    });
-
-                    if (genres.length > 1)
-                        genres = genres.reduce(function (a, b) {
-                            return a.concat(b);
-                        });
-                    genreInfoUniq = [...new Set(genres)];
-                    performance.genres = genreInfoUniq;
-                    callback(null, performance);
+                    else {
+                        callback(null, json.page.totalPages);
+                    }
                 } else {
-                    callback("find Discogs genres error", 0);
-
+                    //tech.logError(err);
+                    //tech.logError(response);
+                    callback("error in ticketmaster primary search", 0);
                 }
             });
+        }
+    ], function (err, pages) {
+        if (err) {
+            console.log("findTicketMasterEventsStart error");
+        }
+        else {
+            findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time);
+        }
+    });
+}
+function findTicketMasterFinish(pages, apiUrl, trip, artistList, user, time) {
+    if (!pages)
+        pages = 0;
+    var pagesArray = Array(pages * 1).fill(0).map((e, i) => i );
+    async.map(pagesArray,
+        (function (pageNumber, callback) {
+            var url = apiUrl + "&page=" + pageNumber;
+            request(url, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var foundEvents = [];
+                    var json = JSON.parse(body);
+                    if (!json || !json._embedded || !json._embedded.events) {
+                        if (!json) {
+                            callback("find Ticketmaster events error inner", 0);
+                        }
+                        else {
+                            callback(null, []);
+                        }
+                    } else {
+                        if(json && json._embedded && json._embedded.events) {
+                            foundEvents = json._embedded.events.filter((event)=>{return event.name;}); 
 
+                            foundEvents = json._embedded.events.map(function (event) {
+                                var venue="";
+                                if(
+                                    event._embedded &&
+                                    event._embedded.venues &&
+                                    event._embedded.venues.length>0 &&
+                                    event._embedded.venues[0].name
+                                )
+                                    venue=event._embedded.venues[0].name;
+                                return {
+                                    "artist_name": event.name,
+                                    "venue_name": venue,
+                                    "uri": event.url,
+                                    "start_date": event.dates.start.localDate,
+                                    "source": "ticketmaster"
+                                };
 
+                            });
+                            
+                        } else {
+                            foundEvents=[];
+                        }
+                        callback(null, foundEvents);
+                    }
+                } else {
+                    //tech.logError(err);
+                    //tech.logError(response);
+                    callback("find Ticketmaster events error", 0);
+                }
+            });
         }),
         function (err, results) {
-            if (err && !results) {
-                console.log("Discogs Genre error ZERO");
-            }
-
-            if (results && results.length > 0) {
-                if (err) {
-                    console.log("Discogs Genre error after " + results.length);
-                }
-
-
-                //toLowerCase genres
-                performances = performances.map(function (performance) {
-                    var genres = "";
-                    if (performance.genres && performance.genres.length > 0) {
-                        genres = performance.genres.
-                            filter(g => typeof (g) === "string").
-                            map(g => g.toLowerCase());
-                    }
-
-                    performance.genres = genres;
-                    return performance;
-
-                });
-
-
-                //filter by bands
-                performances12 = performances.filter(function (elem, i, array) {
-                    if (elem.event_title !== undefined) {
-                        return artistList.indexOf(elem.event_title.toLowerCase()) > -1;
-                    }
-                    return false;
-
-                });
-
-                performances3 = performances.filter(function (performance, i, array) {
-
-                    final = user.genres.filter(function (el) {
-                        return performance.genres.indexOf(el) !== -1;
+            if (err) {
+                console.log(err);
+                console.log("ticketmaster finished with error");
+            } else {
+                var flattened = [];
+                var events = [];
+                if (results.length > 0) {
+                    flattened = results.reduce(function (a, b) {
+                        return a.concat(b);
                     });
-
-                    return final.length;
-
-                });
-
+          
+                }
+                events=flattened;
+                console.log("Ticketmaster " + trip.city + " Results: " + flattened.length + " " + "Events: " + events.length);
+                /*
+                if (events.length > 0)
+                    tech.saveEvents(user, events, trip);
+                */
             }
-            console.log("Songkick " + trip.city + " Results: " + performances.length + " " + "Events: " + performances3.length);
-
-            if (performances3.length > 0)
-                tech.saveEvents(user, performances3, trip);
-
-            tech.logEvents(time, user, trip, apiUrl.replace("CITY_ID", cityID), performances3, performances, "songkick");
-
-
-
-
         });
-
 }
-
