@@ -1,0 +1,126 @@
+
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        Wanderlust
+    </title>
+
+    <link href="./css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    
+
+    <style>
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  background-color: #f5f5f5;
+}
+.container .text-muted {
+  margin: 20px 0;
+}
+
+.form-signin {
+      max-width: 330px;
+    padding: 15px;
+    margin: 0 auto;
+}
+
+    </style>
+
+</head>
+
+
+
+<body>
+    <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a> <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a> 
+
+<div class="clearfix"><br></div>
+    <div class="container" style="max-width: 500px">
+      
+        
+
+      <div class="text-center">
+        <h1>Wanderlust</h1>
+      </div>
+      <p class="lead text-center">Some punchline text</p>
+    <h2>Change password</h2>
+
+    <div>
+            <form class="" method="POST">
+ 
+            <div class="form-group">
+                <label for="inputPasswordOld" class="sr-only control-label">Old password</label>
+                <input name="oldpass" type="password" class="form-control" id="inputPasswordOld" placeholder="Type old password">
+            </div>
+            <div class="form-group">
+                <label for="inputPasswordNew1" class="sr-only control-label">New password</label>
+                <input name="newpass1" type="password" class="form-control" id="inputPasswordNew1" placeholder="Type new password">
+            </div>        
+            <div class="form-group">
+                <label for="inputPasswordNew2" class="sr-only control-label">New password again</label>
+                <input name="newpass2" type="password" class="form-control" id="inputPasswordNew2" placeholder="Repeat new password">
+            </div>                      
+            
+            <div class="form-group">
+                <button type="submit" value="1" name="passchange" class="btn btn-default">Save</button>
+            </div>
+            </form>
+
+    </div>
+      <%if(locals.actions && actions.actionResult) { %>  
+        <div class="alert alert-success alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <%=actions.actionResult%>
+        </div>
+        <%}%>    
+    <%if(actions && actions.actionError) { %>  
+        <div class="alert alert-warning alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <%=actions.actionError%>
+        </div>
+      <%}%>      
+
+ 
+
+ 
+      </div>      
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted text-center">
+            For questions and suggestions please contact us at <a href="mailto:info@wanderlust.cloud">info@wanderlust.cloud</a>
+        </p>
+      </div>
+    </footer>
+
+
+
+
+    <script type='text/javascript' src="./js/jquery-latest.js"></script>
+    <script type='text/javascript' src="./js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+    $(function () {
+          $('[data-toggle="tooltip"]').tooltip()
+
+    });
+    </script>
+
+
+
+</body>
+
+</html>

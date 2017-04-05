@@ -54,13 +54,13 @@
     <div class="clearfix"><br></div>
     <div class="container" >
         
-      <%if(actions && actions.actionResult) { %>  
+      <%if(locals.actions && actions.actionResult) { %>  
         <div class="alert alert-success alert-dismissible" role="alert">
           <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
           <%=actions.actionResult%>
         </div>
         <%}%>
-        <%if(actions && actions.actionError) { %>  
+        <%if(locals.actions && actions.actionError) { %>  
         <div class="alert alert-warning alert-dismissible" role="alert">
           <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <%=actions.actionError%>
@@ -83,6 +83,10 @@
                 <a href="/my_artists" class="btn btn-primary btn-block">My artists</a>
             </div>
         </div>
+        <div class="text-center" style="margin-top: 20px;">
+            <h3><a href="/change_pass">Change password</a></h3>
+        </div>
+
         <div class="text-center" style="margin-top: 60px;">
             If you with to deactivate your profile, please click <a href="/deactivate?user_id=<%=session.authed_user._id%>">this link</a>.
             We will be grateful for any <a href="mailto:info@wanderlust.cloud">comments</a> 

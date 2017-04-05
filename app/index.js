@@ -582,6 +582,100 @@ app.get('/logout', (req, res) => {
     res.redirect("/");
 });
 
+
+
+
+app.all('/change_pass', (req, res) => {
+    
+    sess = req.session;
+
+    //req.body.save
+
+    var actions = {};
+
+    actions.actionResult = sess.actionResult;
+    actions.actionError = sess.actionError;
+
+    delete sess.actionResult;
+    delete sess.actionError;
+    if(req.body.passchange && sess.auth == 1) {
+        if(!req.body.oldpass || !req.body.newpass1 || !req.body.newpass1) {
+            actions.actionError="Please, fill all fields";
+            res.render('change_pass.ejs', { session: sess, actions: actions });
+        }
+        else if(!req.body.oldpass) {
+            actions.actionError="You forgot to type in your old password";
+            res.render('change_pass.ejs', { session: sess, actions: actions });
+        } else if(req.body.newpass1!==req.body.newpass2) {
+            actions.actionError="New password mismatch. You should type your new password twice";
+            res.render('change_pass.ejs', { session: sess, actions: actions });
+        } else {
+            //check if old pass is valid and then render  
+
+    
+            db.collection('users').find({
+                email: { $eq: sess.authed_user.email },
+                password: { $eq: req.body.oldpass }
+            }).toArray(function (err, result) {
+
+                if (!err) {
+                    if (result.length > 0) {
+                         //update this user password
+                        var id = new ObjectID(sess.authed_user._id);
+
+                        db.collection('users').update(
+                            { "_id": { $eq: id } }, //
+                            { $set: { "password": req.body.newpass1 } },
+                            {
+                                upsert: false
+                            },
+                            (err, result) => {
+                                if (err) {
+                                   actions.actionError="Database error - can not update password. Please contact us.";
+                                   res.render('change_pass.ejs', { session: sess, actions: actions });
+                                }                                    
+                                else
+                                 {
+                                   if(result.result.nModified>0)  {
+                                        actions.actionResult="Password updated. You can use it on your next login.";
+                                   } else {
+                                        actions.actionError="Can not update password. Please contact us.";
+                                   }
+                                   res.render('change_pass.ejs', { session: sess, actions: actions });
+
+                                 }
+                            }
+                        );                         
+                    }
+                    else {
+                        actions.actionError="Old password seems wrong";
+                        res.render('change_pass.ejs', { session: sess, actions: actions });
+                    }
+
+                }
+                else {
+                    actions.actionError="Database error. Please contact us.";
+                    res.render('change_pass.ejs', { session: sess, actions: actions });
+                }
+            });
+
+
+ 
+
+
+        }
+    } else {
+        if (sess.auth == 1) {
+            res.render('change_pass.ejs', { session: sess, actions: actions });
+        }
+        else {
+            res.redirect("/");
+        }
+    }
+
+});
+
+
 app.get('/', (req, res) => {
     sess = req.session;
 
@@ -593,6 +687,8 @@ app.get('/', (req, res) => {
     delete sess.actionResult;
     delete sess.actionError;
 
+
+
     if (sess.auth != 1 && sess.auth != 2)
         res.render('login.ejs', {
             session: sess,
@@ -603,7 +699,6 @@ app.get('/', (req, res) => {
         });
 
     if (sess.auth == 1) {
-        console.log(actions);
         res.render('profile.ejs', { session: sess, actions: actions });
     }
     if (sess.auth == 2) {
