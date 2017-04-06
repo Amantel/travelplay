@@ -53,11 +53,12 @@
 
                     <% 
                 var bands=[]; 
+                var fromSpotify=false;
                 if(session.authed_user.bands && session.authed_user.bands.length>0)
-                bands=bands.concat(session.authed_user.bands);
+                    bands=bands.concat(session.authed_user.bands);
 
                 if( typeof spotifyResult !== 'undefined' && spotifyResult)  {
-
+                    fromSpotify=true;
                     //console.log(spotifyResult[0].additional_info.total_info.genres.join('|'));
 
 
@@ -78,7 +79,15 @@
            
                     
                 }
+
+
+                if(bands.length>0) {
+                        bands.sort(function(a, b) {
+                            return a.relation - b.relation;
+                        });
+                }
                 //getGenres(bands);
+                /*
                     if(bands.length>0)
                         getGenres(bands.filter(band=>band.relation==1)); //first related
 
@@ -105,14 +114,16 @@
                         //console.log(sortable.length);
         
 
-                        /*
-                        genreInfoUniq=new Set(genreInfo);
+                        
+                        //genreInfoUniq=new Set(genreInfo);
 
                         //console.log(Array.from(genreInfoUniq.length); 
-                        */
+                        
                     }
+                    */
             %>
-
+            <h2>Total: <%=bands.length%></h2>
+            
                              
                         <table class="table" >
                             <thead>
@@ -181,7 +192,7 @@
                                             <span class="btn btn-danger hidden" data-remove_selected>Remove selected</span>
                                         </td>                                        
                                     </tr>
-                                    <%  }  %>
+                                    <%  }  %> 
                             </tbody>
                         </table>
 
@@ -192,7 +203,7 @@
 
                     <%                }             %>
 
-                        <h4>Add Artist</h4>
+                        <h4>Add Artists</h4>
                         <!--
                         <form class="form-inline" data-add_band_form>
                             <div class="form-group">
@@ -212,7 +223,7 @@
                         <div class="clearfix" style="margin: 50px 0"></div>
 
 
-                        <div class="text-center">
+                        <div class="text-center hidden">
                             <a id="brb" href="#" class="btn btn-default btn-lg">Save</a>
                         </div>
 
@@ -242,10 +253,18 @@
 
         <script type='text/javascript' src="./js/jquery-latest.js"></script>
         <script type='text/javascript' src="./js/bootstrap.min.js"></script>
-        <script src="./js/jquery.inputmask.bundle.min.js"></script>
+        <script  type='text/javascript' src="./js/jquery.inputmask.bundle.min.js"></script>
 
-        <script src="./js/main.js"></script>
+        <script  type='text/javascript' src="./js/main.js"></script>
+        <% if(fromSpotify) { %>
+        <script type='text/javascript'>
+        $( document ).ready(function() {
+            //save fresh from spotify
+            $("#brb").click();
+        });        
+        </script>
 
+        <% } %>
 
 
 </body>
