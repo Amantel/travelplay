@@ -1,4 +1,5 @@
-function createBand(band, i) {
+function createBand(band,genres, i) {
+    /*
     return '<tr class="band" data-band>' +
         '<td><input type="checkbox" data-mass_select></td>'+    
         '<td>' +
@@ -13,6 +14,26 @@ function createBand(band, i) {
         '</td>' +
         '</tr>' +
         '';
+        */
+        var genresString="";
+        if(genres.length>0)
+            genresString=genres.join('|');
+
+        return '<tr class="band relation_1 source_website" data-band="">'+
+            '<td><input type="checkbox" data-mass_select=""></td>'+
+            '<td>'+
+                '<input type="hidden" data-band_name_original="" value="' + band + '">'+
+                '<input type="hidden" data-band_source="" value="website">'+
+                '<input type="hidden" data-band_relation="" value="1">'+
+                '<input type="hidden" data-band_genre_string="" value="'+genresString+'">'+   
+                '<span class="band_name" data-toggle="tooltip" data-placement="top" title="" data-original-title="'+genresString+'">' + band + '</span>'+
+            '</td>'+
+            '<td class="text-right">'+
+                '<span class="btn btn-warning" data-remove_row="">Remove</span>'+
+                '<span class="btn btn-danger hidden" data-remove_selected="">Remove selected</span>'+
+            '</td>'+
+        '</tr>';
+
 }
 
 function createTrip(city, start, end, country, i, id) {
@@ -82,7 +103,7 @@ function randomString(length, chars) {
     for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
     return result;
 } 
-
+ 
 $(function () {
     console.log($("tr").length);
     $("table").on("click", "[data-remove_row]", function (e) {
@@ -120,7 +141,10 @@ $(function () {
  
     });
 
-    $('[data-toggle="tooltip"]').tooltip();
+ 
+    $('body').tooltip({
+        selector: '[data-toggle="tooltip"]'
+    });
     $('[data-date_mask]').inputmask("9999-99-99");
 
     $("#more_trips").click(function (e) {
@@ -162,14 +186,23 @@ $(function () {
 
         //check all;
         if (band) {
-            var bandtr = createBand(
-                band,
-                $("[data-trip]").length + 1
-            );
-            $('[data-bands]').prepend(bandtr);
-
+            
+            var bandName=encodeURI(band);
             $(".loading").removeClass("hidden");            
-            $("#brb").click();
+            $.get( "https://api.spotify.com/v1/search?q="+bandName+"&type=artist", function( data ) {
+                var genres=[];
+                if(data.artists && data.artists.items && data.artists.items.length>0 && data.artists.items[0].genres)
+                    genres=data.artists.items[0].genres;
+                var bandtr = createBand(band,genres, $("[data-trip]").length + 1);                
+                $('[data-bands]').prepend(bandtr);
+                //$(".loading").addClass("hidden");          
+                $('body').animate({scrollTop:0}, '500');  
+                $("#brb").click();
+            });
+
+            
+
+            
             /*            
             $("#save_call").removeClass("hidden");
             setTimeout(() => { $("#save_call").addClass("hidden"); }, 2000);

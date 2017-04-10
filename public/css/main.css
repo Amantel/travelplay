@@ -134,6 +134,12 @@ tr.band.relation_2 {
 
 tr.band.source_spotify .band_name {
     border-bottom: 1px dashed #2ebd59;
+    cursor: pointer;
+}
+
+tr.band.source_website .band_name {
+      border-bottom: 1px dashed #000;
+      cursor: pointer;
 }
 
 
@@ -189,3 +195,4 @@ display:none;
 .show_hidden_tiers:hover {
     background: #b566dc;
     }
+
