@@ -71,6 +71,7 @@ var db;
 //Test Mail
 //tech.sendMail(settings.adminMail, "New matches on TravelPlay", "send");
 
+var interval;
  
 MongoClient.connect(server_settings.mongoUrl, (err, database) => {
     if (err) return console.log(err);
@@ -83,10 +84,19 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
 
         console.log('listening on ' + server_settings.port);
 
-        if(server_settings.startAll && server_settings.doShedule) {
-           later.setInterval(launchMain, later.parse.text('every 8 h'));
+
+        if(server_settings.startAll && server_settings.doSchedule) {
+           //later.setInterval(launchMain, later.parse.text('every 8 h'));
+		   console.log("start scheduling");
+		   var schedulingTime=8*60*60*1000;
+		   console.log("schedule each "+schedulingTime+" ms");
+		   interval=setInterval(function(){console.log(new Date());},schedulingTime);
+
         } else {
-            launchMain();
+			if(server_settings.startAll) {
+				console.log("start without scheduling");
+				launchMain();
+			}
         }
         
 
