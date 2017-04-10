@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        Wanderlust
+        Wanderlust.cloud - My gigs
     </title>
 
     <link href="./css/bootstrap.min.css" rel="stylesheet" type="text/css">
@@ -43,9 +43,14 @@
         <%}%>      
 
         <div class="text-center">
-            <h1>Wanderlust</h1>
+            <h1>Wanderlust.cloud - My gigs</h1>
         </div>
-        <p class="lead text-center">Some punchline text</p>
+        <p class="lead text-center">On this page, you can see our recommendations for gigs you might like to attend during your upcoming trips.</p>
+        <p>Recommendations are scored based on how close the results match your musical taste.
+        <ul><li><strong>Tier 1</strong> recommendations are perfect matches: these are gigs of artists you actively listen to, which we assume means you quite like them.</li>
+          <li><strong>Tier 2</strong> recommendations include artists that are very similar to the ones you typically listen to. These suggestions are a great occasions to discover new artists you are likely to enjoy.</li>
+          <strong>Tier 3</strong> recommendations are based on genre similarity. These are hidden by default: there might be a few unexpected pearls here, but potentially also a lot of crap :)</li></ul>
+          <p><strong>Please note</strong>: the system takes a bit of time to find suitable suggestions for you, so don't expect to see results here 2 seconds after you have added a new trip. No need to stress though, we'll email you when you have new suggestions to check out.</p>
         <hr>
 
         <div>
@@ -120,17 +125,17 @@
 
                                 <div class="event_text_block artist_name" 
                                 data-toggle="tooltip" data-placement="top" title="<%=match.genres.join(', ');%>"
-                                ><span class="intro">Band:</span> <%=match.artist_name%></div>
-                                
+                                ><span class="intro">Artist/Band:</span> <%=match.artist_name%></div>
+
                                 <div class="event_text_block venue_name"><span class="intro">Venue:</span> <%=match.venue_name%></div>
                                 <div class="event_text_block source_name"><span class="intro">Source:</span> <%=match.source%></div>
 
-                                <div class="event_text_block uri_link"><a class="btn btn-xs btn-info" target="_blank" href="<%=match.uri%>">Link</a></div>
+                                <div class="event_text_block uri_link"><a class="btn btn-xs btn-info" target="_blank" href="<%=match.uri%>">More info (external link)</a></div>
                             </div>
                          <%  } ); %>
                          <% if(hasTier3) {
                             %>
-                          <span class="show_hidden_tiers" data-show_tier3>Toggle display of bands found by genre similarities</span>
+                          <span class="show_hidden_tiers" data-show_tier3>Display also Tier 3 suggestions for gigs based on genre</span>
                           <% } %>
                          <% } %>
 

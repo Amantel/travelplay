@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        Wanderlust
+        Wanderlust.cloud - My trips
     </title>
 
     <link href="./css/bootstrap.min.css" rel="stylesheet" type="text/css">
@@ -19,7 +19,7 @@
 
 <body> 
     <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a>
-    <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_results">My findings</a>
+    <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_results">My gigs</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_trips">My trips</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/my_artists">My artists</a>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a>
@@ -41,9 +41,10 @@
                     <%}%>
 
                         <div class="text-center">
-                            <h1>Wanderlust</h1>
+                            <h1>Wanderlust.cloud - My trips</h1>
                         </div>
-                        <p class="lead text-center">Some punchline text</p>
+                        <p class="lead text-center">Here you can import your trips directly from Tripit, or add them manually. Please note that if your trip includes multiple cities, only the main one will be imported automatically. If you have a multi-city trip coming up, just add each city and dates individually using the form below.</p>
+
                         <hr>
                         <input type="hidden" data-user_id value="<%=session.authed_user._id%>">
                         <div class="trips_block">
