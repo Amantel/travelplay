@@ -179,7 +179,9 @@ $(function () {
         }
     });
 
-
+    $("[data-show_old_trips]").click(function (e) {
+        $(".trip_finished").toggle();
+    });
     $("#more_bands").click(function (e) {
         e.preventDefault();
         var band = $("[data-new_band]").val();

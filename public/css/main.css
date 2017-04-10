@@ -182,6 +182,7 @@ display:none;
 .trip_finished {
     background-color: #FCFCFC;
     color: #CCC;
+    display: none;
 }
 
 .show_hidden_tiers {
