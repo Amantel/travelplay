@@ -91,15 +91,19 @@
                                     </thead>
                                     <tbody data-trips>
                                         <%
-                
-                for(i=0;i<trips.length; i++) {  
-                    var trip=trips[i];
-                    finished="";
-                    if(moment().isAfter(trip.end, "day")) {
-                        finished="trip_finished";
-                    }
+                                            var finishedC=0;
+                                            trips.sort(function(a, b) {
+                                                return a.start < b.start;
+                                                });
+                                            for(i=0;i<trips.length; i++) {  
+                                                var trip=trips[i];
+                                                finished="";
+                                                if(moment().isAfter(trip.end, "day")) {
+                                                    finished="trip_finished";
+                                                    finishedC++;
+                                                }
 
-                %>
+                                            %>
                                             <tr class="trip <%=finished%>"  data-trip>
                                                 <td>
                                                     <input type="hidden" data-trip_city value="<%= trip.city%>">
@@ -129,6 +133,9 @@
                                             <%  }  %>
                                     </tbody>
                                 </table>
+                                <% if(finishedC>0) { %>
+                                    <span class="btn btn-info" data-show_old_trips>Toggle display of finished trips</span>
+                                <%  }  %>
 
                         </div>
 
