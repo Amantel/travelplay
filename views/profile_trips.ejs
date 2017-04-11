@@ -57,12 +57,13 @@
 
                 if( typeof tripItResult !== 'undefined' && tripItResult) 
                     trips=trips.concat(tripItResult);
-
+/*
                 trips.sort(function (a, b) {
-                            if (new Date(a.start)<new Date(b.start)) return -1;
-                            if (new Date(a.start)>new Date(b.start)) return 1;
-                            return 0;
-                        });
+                    if (new Date(a.start)<new Date(b.start)) return -1;
+                    if (new Date(a.start)>new Date(b.start)) return 1;
+                    return 0;
+                });
+                */
             %>
 
 
@@ -92,9 +93,16 @@
                                     <tbody data-trips>
                                         <%
                                             var finishedC=0;
-                                            trips.sort(function(a, b) {
-                                                return a.start < b.start;
-                                                });
+                                            trips.sort(function (a, b) {
+                                                if (new Date(a.start)<new Date(b.start)) return -1;
+                                                if (new Date(a.start)>new Date(b.start)) return 1;
+                                                return 0;
+                                            });
+                                            trips.sort(function (a, b) {
+                                                if (new Date(a.start)>new Date()) return -1;
+                                                if (new Date(a.start)<new Date()) return 1;
+                                                return 0;
+                                            });                                            
                                             for(i=0;i<trips.length; i++) {  
                                                 var trip=trips[i];
                                                 finished="";
