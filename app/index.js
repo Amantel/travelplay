@@ -88,7 +88,7 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
     if(server_settings.startAll && server_settings.doSchedule) {
            //later.setInterval(launchMain, later.parse.text('every 8 h'));
 		   console.log("start scheduling");
-		   var schedulingTime=8*60*60*1000;
+		   var schedulingTime=23*60*60*1000;
 		   console.log("schedule each "+schedulingTime+" ms");
 		   interval=setInterval(function(){launchMain();},schedulingTime);
 
