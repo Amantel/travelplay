@@ -34,17 +34,24 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
                     var totalEntries = json.resultsPage.totalEntries;
                     if (!totalEntries)
                         totalEntries = 0;
-                    if (totalEntries > 0) {
+                    if (totalEntries > 0) { 
 
                         var cityID = 0;
+                        var trip=this.trip;
 
-                        for (var i = 0; i < json.resultsPage.results.location.length; i++) {
-                            location = json.resultsPage.results.location[i];
-                            if (!tech.isUS(location.metroArea.country.displayName)) {
-                                cityID = location.metroArea.id;
-                                callback(null, cityID);
-                                return false;
+                        if(tech.isUS(trip.country)) {
+                            cityID = json.resultsPage.results.location[0].metroArea.id;
+                        } else
+                        {
+                            //searching for non US cities
+                            for (var i = 0; i < json.resultsPage.results.location.length; i++) {
+                                location = json.resultsPage.results.location[i];
+                                if (!tech.isUS(location.metroArea.country.displayName)) {
+                                    cityID = location.metroArea.id;
+                                    callback(null, cityID);
+                                    return false;
 
+                                }
                             }
                         }
                         callback("city not found - " + cityName, 0);
@@ -56,8 +63,8 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
                     callback("city finding error - " + cityName, 0);
 
                 }
-            });
-        },
+            }.bind({ trip: this.trip }));
+        }.bind({ trip: trip }),
 
         function (cityID, callback) {
 
