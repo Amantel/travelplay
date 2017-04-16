@@ -1129,7 +1129,9 @@ function findEvents(time, user, innerCallback1) {
                 tech.logT(trip.city,server_settings.queryEventsVerb);
                 if (tech.isUS(trip.country)) {
                     //tech.logT("US:" + trip.city + " later",server_settings.queryEventsVerb);
-                    apis.findEventsTicketMaster(settings.TicketMasterUrl, trip, artistList, user, time,innerCallback2);
+                    //apis.findEventsTicketMaster(settings.TicketMasterUrl, trip, artistList, user, time,innerCallback2);
+                    apis.findSongKickEvents(settings.SongKickUrl, trip, artistList, user, time, settings.SongKickLocationUrl, innerCallback2);
+
                 } else {
                     //SongKick
                     //innerCallback2();
