@@ -47,6 +47,8 @@
 
 <body>
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a>
+    <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/reg">Register</a>
+    
     <div class="clearfix"><br></div>
     <div class="container" style="max-width: 500px">
 
@@ -58,6 +60,12 @@
         <p class="lead text-center">Helping you finding cool live gigs when you are on the road</p>
         <hr>
         <div class="text-center">
+            <%if(locals.actions && actions.actionResult) { %>  
+            <div class="alert alert-success alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <%=actions.actionResult%>
+            </div>
+            <%}%>        
             <form method="POST" action="/login">
 
                 <h2>Login form</h2>

@@ -208,8 +208,7 @@ app.post('/register_user', (req, res) => {
 
         if (!err) {
             if (result.length > 0) {
-                sess.actionResult = "User registred";
-                console.log("user updated");
+                sess.actionError = "Email already registred. Please wait for the approval.";                
                 res.redirect("/");
                 return true;
             }
@@ -234,9 +233,9 @@ app.post('/register_user', (req, res) => {
                         return false;
                     }
 
-                    sess.actionResult = "User registred";
+                    sess.actionResult = "User registred. Please wait for approval";
 
-                    var html = '<html><body>Visit <a href="' + server_settings.appUrl + 'users" target="_blank"> here </a></body></html>';
+                    var html = '<html><body>Visit <a href="' + server_settings.appUrl + 'admin_login" target="_blank"> here </a></body></html>';
                     tech.sendMail(settings.adminMail, "New registration on " + server_settings.appName + " ", html);
 
                     console.log(sess.actionResult);
@@ -342,14 +341,14 @@ app.post('/save_user', (req, res) => {
 app.all('/admin_login', (req, res) => {
     sess = req.session;
 
+    if(sess.auth==2)
+        res.redirect('/users');
 
     if (req.body.password || null) {
 
 
         if (req.body.password == settings.superSecretKey) {
             sess.auth = "2"; //AUTH COMPLETED
-
-
             res.redirect('/users');
         } else {
             res.render('admin_login.ejs', { authError: "Wrong Password" });
@@ -721,6 +720,15 @@ app.get('/', (req, res) => {
         });
 
     }
+});
+
+
+
+
+app.get('/reg', (req, res) => {
+    
+       res.render('first.ejs', {});
+
 });
 
 

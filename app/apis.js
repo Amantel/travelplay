@@ -41,6 +41,8 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
 
                         if(tech.isUS(trip.country)) {
                             cityID = json.resultsPage.results.location[0].metroArea.id;
+                            callback(null, cityID);
+                            return false;                            
                         } else
                         {
                             //searching for non US cities
