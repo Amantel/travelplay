@@ -1185,7 +1185,7 @@ function findMatches(time, user,innerCallback1) {
 
                         
                         result.forEach(function (match) {
-                            if(match.tier>0) 
+                            if(match.tier>0 && match.tier<3) 
                                 prevTiers.push(match);
                         });
 
@@ -1259,7 +1259,7 @@ function findMatches(time, user,innerCallback1) {
 
                                     //send mails
                                     
-                        if(user && user.active && user.email && ((firstTier.length+secondTier.length+thirdTier.length)>prevTiers.length)) {
+                        if(user && user.active && user.email && ((firstTier.length+secondTier.length)>prevTiers.length)) {
 
                             var html = '<html><body>Hi,<br> we have found a few interesting concerts you can attend'+
                             ' during your upcoming trip to '+trip.city+'. Click <a href="' +
