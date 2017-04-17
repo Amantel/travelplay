@@ -203,6 +203,8 @@ app.post('/register_user', (req, res) => {
 
     var json = req.body;
     json.email = json.email.trim();
+    var name=json.name || "";
+    var surname=json.surname || "";
 
     db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
 
@@ -224,6 +226,10 @@ app.post('/register_user', (req, res) => {
                 new_user.bands = [];
                 new_user.matches = [];
                 new_user.update = new Date();
+                new_user.name = [];
+                new_user.name= name;
+                new_user.surname=surname; 
+
 
                 db.collection('users').save(json, (err, result) => {
                     if (err) {
@@ -435,9 +441,19 @@ app.post("/approve_user", (req, res) => {
 
                 if ((req.body.email || null) && approved) {
 
-                    var html = '<html><body>You can now access <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> with your email and password: ' + password + ' </body></html>';
-
-                    tech.sendMail(req.body.email, "Approved on " + server_settings.appName + "", html);
+                    //var html = '<html><body>You can now access <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> with your email and password: ' + password + ' </body></html>';
+                    var html = '<html><body>'+
+                        '<p><strong>Welcome to Wanderlust.cloud!</strong></p>'+
+                        '<p>You can access your account on <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> using your email as username and this password: ' + password + ' (you can change the password after you login)</p>'+
+                        '<p>Wanderlust.cloud is the easiest system to get relevant suggestions for live gigs you might like during your travels.<br/>'+
+                        'You can easily link your Spotify profile or add a list of your favourite artists manually. You can then also do the same with your upcoming trips, linking your Tripit account so we can automatically retrieve your travel schedule, or adding trips manually through the interface.<br/>'+
+                        'Every time we have new suggestions for you, you will receive an email notification and you can easily check the list of events in your account on Wanderlust.cloud.</p>'+
+                        '<p><strong>Please Note</strong>: Wanderlust.cloud is currently in a very early stage of development, so we will be happy to get your feedback on your experience with it. Send your questions, comments and suggestions to <a href="mailto:info@wanderlust.cloud">info@wanderlust.cloud</a>.</p>'+
+                        '<p>Thanks!</p>'+
+                        '<p>Francesco</p>'+
+                        '</body></html>';
+                    
+                    tech.sendMail(req.body.email, "Welcome to " + server_settings.appName, html);
                 }
 
 

@@ -53,9 +53,13 @@ body {
         
 
       <div class="text-center">
-        <h1>Wanderlust</h1>
+        <h1>Wanderlust.cloud</h1>
       </div>
-      <p class="lead text-center">Some punchline text</p>
+      <p class="lead text-center">Helping you finding cool live gigs when you are on the road.</p>
+      <hr>
+      <div class="text-center">
+        <p>Check the checkbox and click "save" button</p>
+      </div>
       <hr>
       <div class="text-center">
                 <% 
@@ -76,6 +80,7 @@ body {
                     <label data-toggle="tooltip" data-placement="top" title="<%=result[i]._id%>" >
                         <input class="checkbox" type="checkbox" <%=checked%> name="approved" value="1"  > 
                         <%=result[i].email%> 
+                        (<%=result[i].name%>  <%=result[i].Surname%>)
                    
                     </label>
 
