@@ -52,3 +52,5 @@ tech/
 /nbproject/private/
 *.properties
 nbproject/project.xml
+/app/settings.js
+/app/server_setting.js
