@@ -38,6 +38,10 @@ body {
     margin: 0 auto;
 }
 
+.deactivated {
+    background-color:#f5f5f5;
+}
+
     </style>
 
 </head>
@@ -48,7 +52,7 @@ body {
     <a class="btn btn-default pull-right" style="margin: 20px 5px" href="/logout">Exit</a> <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a> 
 
 <div class="clearfix"><br></div>
-    <div class="container" style="max-width: 500px">
+    <div class="container" style="">
       
         
 
@@ -61,39 +65,66 @@ body {
         <p>Check the checkbox and click "save" button</p>
       </div>
       <hr>
-      <div class="text-center">
-                <% 
+<table class="table">
+<thead>
+    <th>Email</th>
+    <th>Name & Surname</th>
+    <th>Source</th>
+    <th>Action</th>
+</thead>
+<tbody>
+            <% 
                 if(locals.result) {
                     var checked="";
                     for(i=0; i<result.length; i++) {
-                        checked="";
-                        if(result[i].approved==1)
-                            checked="checked";
+                        var active_class="";
+                        if(!result[i].active)
+                            active_class="deactivated";
                             
                     
                 %>     
-                    <form method="POST" class="form-inline text-left" style="margin:10px;"  action="/approve_user">
+                    <tr class=" <%=active_class%> " >
+                        <td>
+                            <span data-toggle="tooltip" data-placement="top" title="<%=result[i]._id%>" >
+                            <%=result[i].email%> 
+                            </span>
+                        </td>
+                        <td>                           
+                              <%=result[i].surname%> <%=result[i].name%>
+                        </td>   
+                        <td>
+                            Private                     
+                        </td>
+                        <td>
+                            <form method="POST" class="form-inline text-left" action="/approve_user">
 
-                    <input type="hidden" name="id" value="<%=result[i]._id%>">
-                    <input type="hidden" name="email" value="<%=result[i].email%>">
-                    <input type="hidden" name="password" value="<%=result[i].password%>">
-                    <label data-toggle="tooltip" data-placement="top" title="<%=result[i]._id%>" >
-                        <input class="checkbox" type="checkbox" <%=checked%> name="approved" value="1"  > 
-                        <%=result[i].email%> 
-                        (<%=result[i].name%>  <%=result[i].Surname%>)
-                   
-                    </label>
+                            <input type="hidden" name="id" value="<%=result[i]._id%>">
+                            <input type="hidden" name="email" value="<%=result[i].email%>">
+                            <input type="hidden" name="password" value="<%=result[i].password%>">
 
-                    <input type="submit" class="btn btn-primary btn-sm pull-right" name="save" value="save">
+                            <% if(result[i].approved) { %>
+                                <input type="hidden" name="approved" value="0">
+                                <input type="submit" class="btn btn-warning btn-sm" name="save" value="disapprove">
+                            <% } else { %>
+                                <input type="hidden" name="approved" value="1">
+                                <input type="submit" class="btn btn-primary btn-sm " name="save" value="approve">                            
+                            <% } %>
+                                <input type="submit" class="btn btn-danger btn-sm btn-proxy" data-proxy-text="Sure?" name="delete" value="delete">
+                        
 
-                    </form>
+                            
+
+                            </form>                            
+                        </td>
+                    </tr>
                 <% 
                     }
                 }
-                %>
+                %>                    
+</tbody>
 
- 
-      </div>
+</table>      
+
        
     </div>
 
@@ -115,6 +146,23 @@ body {
           $('[data-toggle="tooltip"]').tooltip()
 
     });
+    $( document ).ready(function() {
+        $(".btn-proxy").click(function(e){
+            e.preventDefault();
+            var text=$(this).attr("data-proxy-text");
+            var answer=false;
+            if(text) {
+                answer = confirm(text);
+            }
+            if(answer) {
+                $(this).parents("form").append('<input type="hidden" name="'+$(this).attr("name")+'" value="'+$(this).val()+'">')                
+                $(this).parents("form").submit();
+            }
+        })
+    });
+
+     
+
     </script>
 
 

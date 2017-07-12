@@ -50,19 +50,20 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
                                 location = json.resultsPage.results.location[i];
                                 if (!tech.isUS(location.metroArea.country.displayName)) {
                                     cityID = location.metroArea.id;
+									console.log("NON US CITY ID "+trip.city+" in "+trip.country+" is "+cityID);
                                     callback(null, cityID);
                                     return false;
 
                                 }
                             }
                         }
-                        callback("city not found - " + cityName, 0);
+                        callback("city not found (???)- " + cityName, 0);
 
                     } else {
-                        callback("city not found - " + cityName, 0);
+                        callback("city not found (no entries) - " + cityName, 0);
                     }
                 } else {
-                    callback("city finding error - " + cityName, 0);
+                    callback("city finding error (err in api call) - " + cityName, 0);
 
                 }
             }.bind({ trip: this.trip }));
@@ -106,7 +107,7 @@ function findSongKickEventsStart(apiUrl, trip, artistList, user, time, apiLocati
 
         if (err) {
             console.log(err);
-
+			innerCallback2("city finding err "+err);
         }
         else {
             var N = Math.ceil(totalEntries / 50);
@@ -188,13 +189,19 @@ function findSongKickEventsFinal(artistList, cityID, pagesArray, apiUrl, trip, u
 
 
                     console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
-                    if (performances.length > 0)
-                        tech.savePerformancesToTrip(user, performances, trip, innerCallback2);
-                    else     
-                        innerCallback2();
+                    if (performances.length > 0) {
+						console.log("1+ performances - saving to DB");
+						tech.savePerformancesToTrip(user, performances, trip, innerCallback2);
+					}                        
+                    else   {
+						console.log("zero performances - going back");
+						innerCallback2();
+					}
+                        
 
 
                 } else {
+					console.log("zero results - going back");
                     console.log("Songkick " + trip.city + " Results: " + flattened.length + " " + "Events: " + performances.length);
                     innerCallback2();
 

@@ -15,7 +15,7 @@ const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const moment = require('moment');
-
+ 
 
 
 /*Inner modules*/
@@ -202,9 +202,9 @@ app.post('/register_user', (req, res) => {
 
 
     var json = req.body;
-    json.email = json.email.trim();
+    var email = json.email.trim();
     var name=json.name || "";
-    var surname=json.surname || "";
+    var surname=json.Surname || "";
 
     db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
 
@@ -221,17 +221,15 @@ app.post('/register_user', (req, res) => {
                 new_user.code = tech.randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
                 new_user.active = 1;
                 new_user.approved = 0;
-                new_user.email = req.body.email;
+                new_user.email = email;
                 new_user.trips = [];
                 new_user.bands = [];
-                new_user.matches = [];
                 new_user.update = new Date();
-                new_user.name = [];
                 new_user.name= name;
                 new_user.surname=surname; 
 
 
-                db.collection('users').save(json, (err, result) => {
+                db.collection('users').save(new_user, (err, result) => {
                     if (err) {
                         sess.actionError = "Error with database in: save user";
                         console.log(err);
@@ -244,7 +242,7 @@ app.post('/register_user', (req, res) => {
                     var html = '<html><body>Visit <a href="' + server_settings.appUrl + 'admin_login" target="_blank"> here </a></body></html>';
                     tech.sendMail(settings.adminMail, "New registration on " + server_settings.appName + " ", html);
 
-                    console.log(sess.actionResult);
+                    //console.log(sess.actionResult);
                     res.redirect("/");
                     return true;
 
@@ -369,11 +367,11 @@ app.all('/admin_login', (req, res) => {
 
 app.all('/login', (req, res) => {
     sess = req.session;
-
+    var actions={};
     if ((req.body.login || null) && (req.body.password || null) && (req.body.email || null)) {
         db.collection('users').find({
-            email: { $eq: req.body.email },
-            password: { $eq: req.body.password }
+            email: { $eq: req.body.email.trim() },
+            password: { $eq: req.body.password.trim() }
         }).toArray(function (err, result) {
 
             if (!err) {
@@ -382,15 +380,19 @@ app.all('/login', (req, res) => {
 
                     if (result[0].approved) {
                         console.log("USER AUTHED");
+                        sess.freshAuth=1;
                         sess.auth = "1"; //AUTH COMPLETED
                         sess.authed_user = result[0];
                         sess.authed_user.current_auth = sess.auth;
                         res.redirect("/");
+                        //res.redirect("/my_trips");
                     } else {
                         sess.auth = "0";
                         sess.authed_user = {};
-                        console.log("Not approved");
-                        res.render('login.ejs', { authError: "User not approved", authSuccess: "" });
+                        console.log("Not approved");                        
+                        actions.actionResult="";
+                        actions.actionError="User not approved";
+                        res.render('login.ejs', {actions });
 
                     }
                 }
@@ -398,7 +400,10 @@ app.all('/login', (req, res) => {
                     sess.auth = "0";
                     sess.authed_user = {};
                     console.log("Wrong credentials");
-                    res.render('login.ejs', { authError: "Wrong credentials", authSuccess: "" });
+                    actions.actionResult="";
+                    actions.actionError="Wrong credentials";
+                    
+                    res.render('login.ejs', {actions });
                 }
 
             }
@@ -422,17 +427,23 @@ app.all('/login', (req, res) => {
 
 
 app.post("/approve_user", (req, res) => {
+    if ((req.body.delete || null) && (req.body.id || null)) {
+        id = new ObjectID(req.body.id);
+        db.collection('users').remove( {"_id": id});
+        res.redirect("/users");
+
+    }
+
+
     if ((req.body.save || null) && (req.body.id || null)) {
         var approved = 0;
-        var password = null;
-        if (req.body.approved) {
+        if (req.body.approved && req.body.approved==1) {
             approved = 1;
-            password = tech.generatePass();
         }
 
-        var id = new ObjectID(req.body.id);
+        id = new ObjectID(req.body.id);
 
-        db.collection('users').update({ _id: id }, { $set: { approved: approved, password: password } },
+        db.collection('users').update({ _id: id }, { $set: { approved: approved } },
             (err, result) => {
                 if (err) {
                     res.send({ error: err });
@@ -444,7 +455,7 @@ app.post("/approve_user", (req, res) => {
                     //var html = '<html><body>You can now access <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> with your email and password: ' + password + ' </body></html>';
                     var html = '<html><body>'+
                         '<p><strong>Welcome to Wanderlust.cloud!</strong></p>'+
-                        '<p>You can access your account on <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> using your email as username and this password: ' + password + ' (you can change the password after you login)</p>'+
+                        '<p>You can access your account on <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> using your email as username and this password: ' + req.body.password + ' (you can change the password after you login)</p>'+
                         '<p>Wanderlust.cloud is the easiest system to get relevant suggestions for live gigs you might like during your travels.<br/>'+
                         'You can easily link your Spotify profile or add a list of your favourite artists manually. You can then also do the same with your upcoming trips, linking your Tripit account so we can automatically retrieve your travel schedule, or adding trips manually through the interface.<br/>'+
                         'Every time we have new suggestions for you, you will receive an email notification and you can easily check the list of events in your account on Wanderlust.cloud.</p>'+
@@ -584,6 +595,7 @@ app.get('/my_results', (req, res) => {
             matches.forEach(function (tripMatches) {
                 matchesByTrips[tripMatches[0].tripid] = tripMatches;
             });
+
             res.render('profile_results.ejs', { session: sess, actions: actions, matches: matchesByTrips,moment: moment });
 
         });
@@ -708,7 +720,7 @@ app.get('/', (req, res) => {
 
     actions.actionResult = sess.actionResult;
     actions.actionError = sess.actionError;
-
+    
     delete sess.actionResult;
     delete sess.actionError;
 
@@ -724,7 +736,13 @@ app.get('/', (req, res) => {
         });
 
     if (sess.auth == 1) {
-        res.render('profile.ejs', { session: sess, actions: actions });
+        if(sess.freshAuth!=1)
+            res.render('profile.ejs', { session: sess, actions: actions });
+        else 
+            {
+                sess.freshAuth=0;
+                res.redirect("/my_trips");
+            }    
     }
     if (sess.auth == 2) {
         res.render('first.ejs', {
@@ -785,6 +803,8 @@ app.get('/tripitcallback', (req, res) => {
         settings.tripItClient.requestResource("/list/trip", "GET", sess.tripItAccessToken, sess.tripItAccessTokenSecret).then(function (results) {
             var response = JSON.parse(results[0]);
             var trips = [];
+            if(!(response.Trip instanceof Array))
+                response.Trip=[response.Trip];			
             response.Trip.forEach(function (pre_trip) {
                 var trip = {};
                 trip.city = pre_trip.PrimaryLocationAddress.city.toLowerCase();
@@ -1131,6 +1151,7 @@ function updateMatches(globalSeriesCallback) {
 
 
 function findEvents(time, user, innerCallback1) {
+	tech.logT("USER: "+user.email,server_settings.queryEventsVerb);
     user.genres = tech.getUserGenres(user.bands);
     var trips = user.trips || null;
     var bands = user.bands || null;
@@ -1687,24 +1708,26 @@ function queryMatches(globalSeriesCallback) {
 function queryEvents(globalSeriesCallback) {
 
     tech.logT("start query Events",server_settings.queryEventsVerb);
-    
+ 
 
     var time = new Date();
-
+	//db.collection('users').find({ active: { $eq: 1 },email:{$eq: "mikael.johansson12@yahoo.se"} }).toArray(function (err, result) {
     db.collection('users').find({ active: { $eq: 1 } }).toArray(function (err, result) {
-
         if (!err && (result.length > 0)) {
+			console.log("Active users"+result.length);
             //loop
             async.each(result, findEvents.bind(null, time), function (err, result) {
+				tech.logT("queryEvents ending for all users",server_settings.queryEventsVerb);
                 globalSeriesCallback(null, "findEventsFinished");
             });
 
         }
         else {
+			tech.logT("Error in quering for Users",server_settings.queryEventsVerb);
             globalSeriesCallback(err);
         }
     });
 
-
+ 
 }
 

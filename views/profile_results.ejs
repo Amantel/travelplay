@@ -58,6 +58,8 @@
 
         <%         
         var trips=[];
+        var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
         if(session && session.authed_user) {     
             trips=session.authed_user.trips || [];
         }
@@ -102,6 +104,57 @@
             var trip=tripsArr[i];
             var trip_matches=matches[trip.id] || [];
             
+                trip_matches.sort(function (a, b) {
+                    if (a.start_date < b.start_date) return -1;
+                    if (a.start_date > b.start_date) return 1;
+                    return 0;
+                });
+                /*
+                trip_matches.sort(function (a, b) {
+                    if (a.tier < b.tier) return -1;
+                    if (a.tier > b.tier) return 1;
+                    return 0;
+                });     
+                */        
+
+                //matching by event, not band
+                matchesByEventDatePlace=[];
+                matchesByEvent=[];
+                trip_matches.forEach(function(artistMatch,index) {
+
+
+
+                    //{"venue_name":"","start_date":"","artists":[]};
+                    foundMatchArr=matchesByEventDatePlace.filter(
+                        ev=>{
+                            if(ev.venue_name==artistMatch.venue_name && ev.start_date==artistMatch.start_date) 
+                            return true
+                        }
+                    );
+//debugger;
+                    if(foundMatchArr.length==1) {
+                        foundMatchArr[0].artists.push(artistMatch);
+                        foundMatchArr[0].tier=Math.min(artistMatch.tier,foundMatchArr[0].tier);
+                    }
+                    if(foundMatchArr.length==0)    
+                        matchesByEventDatePlace.push({"venue_name":artistMatch.venue_name,
+                        "start_date":artistMatch.start_date,
+                        "tier":artistMatch.tier,
+                        "artists":[artistMatch]
+                        });
+
+
+
+
+
+                    
+                    
+                    
+
+                    matchesByEvent.push(artistMatch);
+                });
+
+
         %>
                 <div class="panel panel-default trip_content">
                     <div class="panel-body">
@@ -118,20 +171,24 @@
                             
                              %>
 
-                            <% trip_matches.forEach(function(match) {
+                            <% matchesByEventDatePlace.forEach(function(match) {
                                 if(match.tier===3)
                                     hasTier3=true;
                                  %>
                             <div class="event_div tier_<%=match.tier%>">
                                 <h5>Tier <%=match.tier%></h5>
-                                <div class="event_text_block start_date"><span class="intro">Start:</span> <%=match.start_date%></div>
-
-                                <div class="event_text_block artist_name" 
-                                data-toggle="tooltip" data-placement="top" title="<%=match.genres.join(', ');%>"
-                                ><span class="intro">Artist/Band:</span> <%=match.artist_name%></div>
-
+                                <div class="event_text_block start_date"><span class="intro">Start:</span> <%=match.start_date%>
+                                    <% var d=new Date(match.start_date).getDay(); %>
+                                    (<%=days[d];%>)
+                                </div>
+                                <% match.artists.forEach(function(artist){ %>
+                                
+                                    <div class="event_text_block artist_name" 
+                                    data-toggle="tooltip" data-placement="top" title="<%=artist.genres.join(', ');%>">
+                                    <span class="intro">Artist/Band:</span> <%=artist.artist_name%>
+                                    </div>
+                                <% }); %>
                                 <div class="event_text_block venue_name"><span class="intro">Venue:</span> <%=match.venue_name%></div>
-                                <div class="event_text_block source_name"><span class="intro">Source:</span> <%=match.source%></div>
 
                                 <div class="event_text_block uri_link"><a class="btn btn-xs btn-info" target="_blank" href="<%=match.uri%>">More info (external link)</a></div>
                             </div>

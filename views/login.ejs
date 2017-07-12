@@ -66,7 +66,7 @@
             </div>
             <%}%>        
             <form method="POST" action="/login">
-
+ 
                 <h2>Login form</h2>
 
                 <div class="form-group">
@@ -79,10 +79,10 @@
                     <input type="submit" class="btn btn-primary btn" name="login" value="Enter">
                 </div>
             </form>
-            <%if(locals.authError) { %>  
+            <%if(locals.actions && actions.actionError) { %>  
             <div class="alert alert-warning alert-dismissible" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <strong>Error</strong> <%=authError%>
+            <strong>Error</strong> <%=actions.actionError%>
             </div>
             <%}%>
 
