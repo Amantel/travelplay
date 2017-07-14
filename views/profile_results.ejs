@@ -177,9 +177,10 @@
                                  %>
                             <div class="event_div tier_<%=match.tier%>">
                                 <h5>Tier <%=match.tier%></h5>
-                                <div class="event_text_block start_date"><span class="intro">Start:</span> <%=match.start_date%>
+                                <div class="event_text_block start_date"><span class="intro">Start:</span> 
                                     <% var d=new Date(match.start_date).getDay(); %>
                                     (<%=days[d];%>)
+                                    <%=match.start_date%>
                                 </div>
                                 <% match.artists.forEach(function(artist){ %>
                                 
