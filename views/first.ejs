@@ -44,10 +44,100 @@ body {
 
 
 <body>
+ 
+<script>
+  function statusChangeCallback(response) {
+    console.log('statusChangeCallback');
+    console.log(response);
+    if (response.status === 'connected') {
+      // Logged into your app and Facebook.
+      loginFacebook();
+    } else {
+      // The person is not logged into your app or we are unable to tell.
+     /* document.getElementById('status').innerHTML = 'Please log ' +
+        'into this app.';*/
+    }
+  }
+
+  function checkLoginState() {
+    FB.getLoginStatus(function(response) {
+      statusChangeCallback(response);
+    });
+  }
+
+
+
+  function loginFacebook() {
+    FB.api('/me', {fields: 'name, email'}, function(response) {
+        //for registration:
+        if(document.getElementById("register_form")!=null)
+        {
+          if(response.id)
+            document.getElementById("fbId").value=response.id;
+
+
+          if(response.email)
+            document.getElementById("inputEmail").value=response.email;
+          
+          if(response.name) 
+            document.getElementById("inputName").value=response.name.split(" ")[0];                      
+          
+          if(response.name && response.name.split("").length>1) 
+            document.getElementById("inputSurname").value=response.name.split(" ")[1];           
+
+            
+
+        }
+
+    });
+  }
+</script>
+
+ 
+
 
 <a class="btn btn-info pull-right" style="margin: 20px 5px" href="./login">Enter</a> 
 <div class="clearfix"><br></div>
     <div class="container" style="max-width: 500px">
+
+        
+
+      <div class="text-center">
+        <h1>Wanderlust.cloud</h1>
+      </div>
+      <p class="lead text-center">Helping you finding cool live gigs when you are on the road.</p>
+      <hr>
+      <div class="text-center">
+        <p>This service is currently under development, and only intended for a few friends and family.</p>
+        <p>If you have been invited to join, please fill in your email address below to get started, we'll be in touch soon.</p>
+      </div>
+      <div class="text-center">
+      <h4>You can use facebook to start with Wanderlust</h4>
+    <div class="fb-login-button" id="loginbutton" disabled  scope="public_profile,email" onlogin="checkLoginState();" data-max-rows="1" data-size="medium" data-button-type="continue_with" data-show-faces="false" data-auto-logout-link="true" data-use-continue-as="false"></div>
+    </div>
+
+      <div class="text-left" id="register_form">
+        <form class="form-signin" method="POST" action="./register_user">
+          <label for="inputEmail" class="sr-only">Email address</label>
+          <input type="email" id="inputEmail" name="email" class="form-control" placeholder="Email address*" required autofocus>
+          <br/>
+          <label for="inputName" class="sr-only">Name</label>          
+          <input type="text" id="inputName" name="name" class="form-control" placeholder="Name" >
+          <br/>
+          <label for="inputSurname" class="sr-only">Surname</label>          
+          <input type="text" id="inputSurname" name="surname" class="form-control" placeholder="Surname" >          
+          <br/>
+          <input type="hidden" id="fbId" name="fbId" value="">
+          <button class="btn  btn-primary btn-block" type="submit">Join alpha</button>
+          <small></small>
+
+      
+  
+
+
+        </form>
+      </div>
+
       <%if(locals.actions && actions.actionResult) { %>  
         <div class="alert alert-success alert-dismissible" role="alert">
           <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -60,39 +150,8 @@ body {
         <%=actions.actionError%>
         </div>
       <%}%>      
-        
-
-      <div class="text-center">
-        <h1>Wanderlust.cloud</h1>
-      </div>
-      <p class="lead text-center">Helping you finding cool live gigs when you are on the road.</p>
-      <hr>
-      <div class="text-center">
-        <p>This service is currently under development, and only intended for a few friends and family.</p>
-        <p>If you have been invited to join, please fill in your email address below to get started, we'll be in touch soon.</p>
-      </div>
-      <div class="text-left" id="register_form">
-        <form class="form-signin" method="POST" action="./register_user">
-          <label for="inputEmail" class="sr-only">Email address</label>
-          <input type="email" id="inputEmail" name="email" class="form-control" placeholder="Email address*" required autofocus>
-          <br/>
-          <label for="inputName" class="sr-only">Name</label>          
-          <input type="text" id="inputName" name="name" class="form-control" placeholder="Name" >
-          <br/>
-          <label for="inputSurname" class="sr-only">Surname</label>          
-          <input type="text" id="inputSurname" name="Surname" class="form-control" placeholder="Surname" >          
-          <br/>
-          <button class="btn  btn-primary btn-block" type="submit">Join alpha</button>
-          <small></small>
-
-      
-  
 
 
-        </form>
-    
-
-      </div>
     </div>
 
     <footer class="footer">
@@ -110,7 +169,23 @@ body {
     <script type='text/javascript' src="./js/bootstrap.min.js"></script>
     <script type="text/javascript">
     $(function () {
-          $('[data-toggle="tooltip"]').tooltip()
+          $('[data-toggle="tooltip"]').tooltip();
+          $.ajaxSetup({ cache: true });
+          $.getScript('//connect.facebook.net/en_US/sdk.js', function(){
+            FB.init({
+              appId: '1355789351205281',
+              cookie     : true,  // enable cookies to allow the server to access 
+                       // the session
+              xfbml      : true,  // parse social plugins on this page
+              version    : 'v2.8' // use graph api version 2.8                            
+            });     
+            $('#loginbutton,#feedbutton').removeAttr('disabled');
+
+            FB.getLoginStatus(function(response) {
+              statusChangeCallback(response);
+            });
+
+          });          
 
     });
     </script>

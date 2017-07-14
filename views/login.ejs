@@ -46,6 +46,47 @@
 
 
 <body>
+
+<script>
+  function statusChangeCallback(response) {
+    console.log('statusChangeCallback');
+    console.log(response);
+    if (response.status === 'connected') {
+      // Logged into your app and Facebook.
+      loginFacebook();
+    } else {
+      // The person is not logged into your app or we are unable to tell.
+     /* document.getElementById('status').innerHTML = 'Please log ' +
+        'into this app.';*/
+    }
+  }
+
+  function checkLoginState() {
+    FB.getLoginStatus(function(response) {
+      statusChangeCallback(response);
+    });
+  }
+
+
+
+  function loginFacebook() {
+    FB.api('/me', {fields: 'name, email'}, function(response) {
+        //for login:
+        if(document.getElementById("loginForm")!=null)
+        {
+          if(response.id)
+            document.getElementById("fbId").value=response.id;
+            $("#loginForm").append('<input type="hidden" name="login" value="1">');
+            $("#loginForm").submit();
+
+        }
+
+    });
+  }
+</script>
+
+
+
     <a class="btn btn-info pull-right" style="margin: 20px 5px" href="/">Home</a>
     
     <div class="clearfix"><br></div>
@@ -65,7 +106,9 @@
             <%=actions.actionResult%>
             </div>
             <%}%>        
-            <form method="POST" action="/login">
+
+ 
+            <form method="POST" id="loginForm" action="/login">
  
                 <h2>Login form</h2>
 
@@ -75,10 +118,17 @@
                 <div class="form-group">
                     <input name="password" type="password" class="form-control" placeholder="Password" required>
                 </div>
+                    <input type="hidden" name="fbId" id="fbId" >
                 <div class="form-group">
                     <input type="submit" class="btn btn-primary btn" name="login" value="Enter">
                 </div>
             </form>
+            <div class="text-center">
+                    <div class="fb-login-button" id="loginbutton" disabled  scope="public_profile,email" onlogin="checkLoginState();" 
+                    data-max-rows="1" data-size="medium" data-button-type="login_with" data-show-faces="false" 
+                    data-auto-logout-link="false" data-use-continue-as="false"></div>
+            </div>
+            <br>
             <%if(locals.actions && actions.actionError) { %>  
             <div class="alert alert-warning alert-dismissible" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -86,7 +136,7 @@
             </div>
             <%}%>
 
-
+            
         </div>
 
     </div>
@@ -105,12 +155,29 @@
     <script type='text/javascript' src="./js/jquery-latest.js"></script>
     <script type='text/javascript' src="./js/bootstrap.min.js"></script>
     <script type="text/javascript">
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
+    $(function () {
+          $('[data-toggle="tooltip"]').tooltip();
+          $.ajaxSetup({ cache: true });
+          $.getScript('//connect.facebook.net/en_US/sdk.js', function(){
+            FB.init({
+              appId: '1355789351205281',
+              cookie     : true,  // enable cookies to allow the server to access 
+                       // the session
+              xfbml      : true,  // parse social plugins on this page
+              version    : 'v2.8' // use graph api version 2.8                            
+            });     
+            $('#loginbutton,#feedbutton').removeAttr('disabled');
 
-        });
+/*
+            FB.getLoginStatus(function(response) {
+              statusChangeCallback(response);
+            });
+            */
+
+          });          
+
+    });
     </script>
-
 
 
 </body>

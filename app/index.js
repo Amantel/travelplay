@@ -204,14 +204,15 @@ app.post('/register_user', (req, res) => {
     var json = req.body;
     var email = json.email.trim();
     var name=json.name || "";
-    var surname=json.Surname || "";
+    var surname=json.surname || "";
+    var fbId=json.fbId || "";
 
     db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
 
         if (!err) {
             if (result.length > 0) {
                 sess.actionError = "Email already registred. Please wait for the approval.";                
-                res.redirect("/");
+                res.redirect("/reg");
                 return true;
             }
             else {
@@ -227,13 +228,14 @@ app.post('/register_user', (req, res) => {
                 new_user.update = new Date();
                 new_user.name= name;
                 new_user.surname=surname; 
+                new_user.fbId=fbId;
 
 
                 db.collection('users').save(new_user, (err, result) => {
                     if (err) {
                         sess.actionError = "Error with database in: save user";
                         console.log(err);
-                        res.redirect("/");
+                        res.redirect("/reg");
                         return false;
                     }
 
@@ -365,6 +367,40 @@ app.all('/admin_login', (req, res) => {
 });
 
 
+
+function loginUser(res,usersArray,sess,actions) {
+    if (usersArray.length > 0) {
+        console.log("USER FOUND");
+        if (usersArray[0].approved) {
+            console.log("USER AUTHED");
+            sess.freshAuth=1;
+            sess.auth = "1"; //AUTH COMPLETED
+            sess.authed_user = usersArray[0];
+            sess.authed_user.current_auth = sess.auth;
+            res.redirect("/");
+            //res.redirect("/my_trips");
+        } else {
+            sess.auth = "0";
+            sess.authed_user = {};
+            console.log("Not approved");                        
+            actions.actionResult="";
+            actions.actionError="User not approved";
+            res.render('login.ejs', {actions:actions });
+
+        }
+    }
+    else {
+        sess.auth = "0";
+        sess.authed_user = {};
+        console.log("Wrong credentials");
+        actions.actionResult="";
+        actions.actionError="Wrong credentials";
+        
+        res.render('login.ejs', {actions:actions });
+    }
+}
+
+
 app.all('/login', (req, res) => {
     sess = req.session;
     var actions={};
@@ -374,38 +410,8 @@ app.all('/login', (req, res) => {
             password: { $eq: req.body.password.trim() }
         }).toArray(function (err, result) {
 
-            if (!err) {
-                if (result.length > 0) {
-                    console.log("USER FOUND");
-
-                    if (result[0].approved) {
-                        console.log("USER AUTHED");
-                        sess.freshAuth=1;
-                        sess.auth = "1"; //AUTH COMPLETED
-                        sess.authed_user = result[0];
-                        sess.authed_user.current_auth = sess.auth;
-                        res.redirect("/");
-                        //res.redirect("/my_trips");
-                    } else {
-                        sess.auth = "0";
-                        sess.authed_user = {};
-                        console.log("Not approved");                        
-                        actions.actionResult="";
-                        actions.actionError="User not approved";
-                        res.render('login.ejs', {actions });
-
-                    }
-                }
-                else {
-                    sess.auth = "0";
-                    sess.authed_user = {};
-                    console.log("Wrong credentials");
-                    actions.actionResult="";
-                    actions.actionError="Wrong credentials";
-                    
-                    res.render('login.ejs', {actions });
-                }
-
+            if (!err) {                
+                loginUser(res,result,sess,actions);
             }
             else {
                 res.send({ error: err });
@@ -413,9 +419,23 @@ app.all('/login', (req, res) => {
             }
         });
 
+    } 
+    else  if ((req.body.login || null) && (req.body.fbId || null)) {
+        db.collection('users').find({
+            fbId: { $eq: req.body.fbId.trim() },
+        }).toArray(function (err, result) {
+            if (!err) {                
+                loginUser(res,result,sess,actions);
+            }
+            else {
+                res.send({ error: err });
+
+            }
+        });
     }
+
     else {
-        res.render('login.ejs', { authError: "", authSuccess: "" });
+        res.render('login.ejs', { actions:actions });
     }
 
 
@@ -760,8 +780,15 @@ app.get('/', (req, res) => {
 
 
 app.get('/reg', (req, res) => {
-    
-       res.render('first.ejs', {});
+        sess = req.session;
+        var actions = {};
+        actions.actionResult = sess.actionResult;
+        actions.actionError = sess.actionError;
+
+        delete sess.actionResult;
+        delete sess.actionError;
+
+       res.render('first.ejs', {actions:actions});
 
 });
 
