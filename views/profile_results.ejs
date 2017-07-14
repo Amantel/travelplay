@@ -58,7 +58,7 @@
 
         <%         
         var trips=[];
-        var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
         if(session && session.authed_user) {     
             trips=session.authed_user.trips || [];
@@ -178,9 +178,11 @@
                             <div class="event_div tier_<%=match.tier%>">
                                 <h5>Tier <%=match.tier%></h5>
                                 <div class="event_text_block start_date"><span class="intro">Start:</span> 
-                                    <% var d=new Date(match.start_date).getDay(); %>
-                                    (<%=days[d];%>)
-                                    <%=match.start_date%>
+                                    <% var d=new Date(match.start_date); %>
+									
+									<%=days[d.getDay()]+" "+("00"+d.getDate()).slice(2).slice(-2)+"-"+("00"+(d.getMonth()+1)).slice(-2)+"-"+d.getFullYear(d)%>
+									
+									
                                 </div>
                                 <% match.artists.forEach(function(artist){ %>
                                 

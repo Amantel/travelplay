@@ -113,7 +113,7 @@ body {
       </div>
       <div class="text-center">
       <h4>You can use facebook to start with Wanderlust</h4>
-    <div class="fb-login-button" id="loginbutton" disabled  scope="public_profile,email" onlogin="checkLoginState();" data-max-rows="1" data-size="medium" data-button-type="continue_with" data-show-faces="false" data-auto-logout-link="true" data-use-continue-as="false"></div>
+    <div class="fb-login-button" id="loginbutton" disabled  scope="public_profile,email" onlogin="checkLoginState();" data-max-rows="1" data-size="medium" data-button-type="continue_with" data-show-faces="false" data-auto-logout-link="false" data-use-continue-as="false"></div>
     </div>
 
       <div class="text-left" id="register_form">
@@ -180,10 +180,11 @@ body {
               version    : 'v2.8' // use graph api version 2.8                            
             });     
             $('#loginbutton,#feedbutton').removeAttr('disabled');
-
+/*
             FB.getLoginStatus(function(response) {
               statusChangeCallback(response);
             });
+            */
 
           });          
 

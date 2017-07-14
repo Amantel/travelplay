@@ -49,10 +49,9 @@
 
 <script>
   function statusChangeCallback(response) {
-    console.log('statusChangeCallback');
-    console.log(response);
     if (response.status === 'connected') {
       // Logged into your app and Facebook.
+      document.getElementById("fbAccessToken").value=response.authResponse.accessToken;        
       loginFacebook();
     } else {
       // The person is not logged into your app or we are unable to tell.
@@ -75,7 +74,7 @@
         if(document.getElementById("loginForm")!=null)
         {
           if(response.id)
-            document.getElementById("fbId").value=response.id;
+            
             $("#loginForm").append('<input type="hidden" name="login" value="1">');
             $("#loginForm").submit();
 
@@ -118,7 +117,7 @@
                 <div class="form-group">
                     <input name="password" type="password" class="form-control" placeholder="Password" required>
                 </div>
-                    <input type="hidden" name="fbId" id="fbId" >
+                    <input type="hidden" name="fbAccessToken" id="fbAccessToken" >
                 <div class="form-group">
                     <input type="submit" class="btn btn-primary btn" name="login" value="Enter">
                 </div>

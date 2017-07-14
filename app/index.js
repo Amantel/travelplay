@@ -72,6 +72,7 @@ var db;
 //tech.sendMail(settings.adminMail, "New matches on TravelPlay", "send");
 
 var interval;
+
  
 MongoClient.connect(server_settings.mongoUrl, (err, database) => {
     if (err) return console.log(err);
@@ -83,6 +84,12 @@ MongoClient.connect(server_settings.mongoUrl, (err, database) => {
         module.exports.db = db;
 
         console.log('listening on ' + server_settings.port);
+
+    //here we have to create Facebook access token    
+
+    
+    
+
 
 
     if(server_settings.startAll && server_settings.doSchedule) {
@@ -420,18 +427,66 @@ app.all('/login', (req, res) => {
         });
 
     } 
-    else  if ((req.body.login || null) && (req.body.fbId || null)) {
-        db.collection('users').find({
-            fbId: { $eq: req.body.fbId.trim() },
-        }).toArray(function (err, result) {
-            if (!err) {                
-                loginUser(res,result,sess,actions);
-            }
-            else {
-                res.send({ error: err });
+    else  if ((req.body.login || null) && (req.body.fbAccessToken || null)) {
+        //We got token. Now will find user ID by it:
 
+        var url="https://graph.facebook.com/debug_token?input_token="+
+            req.body.fbAccessToken.trim()+
+            "&access_token="+server_settings.FBappID+
+            "|"+server_settings.FBappSecret+"";
+
+        request({
+            url: url
+        }, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var json = JSON.parse(body);
+                if (!json) {
+                    console.log("FB ERROR JSON");
+                    res.redirect("/login");
+                    return false;                    
+                }
+
+                if(json.data.app_id && json.data.user_id) {
+                    if(
+                        json.data.app_id==server_settings.FBappID &&
+                        json.data.is_valid
+                    ) {
+
+                        db.collection('users').find({
+                            fbId: { $eq: json.data.user_id },
+                        }).toArray(function (err, result) {
+                            if (!err) {                
+                                loginUser(res,result,sess,actions);
+                            }
+                            else {
+                                res.send({ error: err });
+
+                            }
+                        });
+
+                    }
+                } else {
+                    console.log("FB ERROR JSON FORMAT");
+                    console.log(json);                    
+                    res.redirect("/login");
+                    return false;
+                }
+
+
+
+
+                
+            } else {
+                console.log("FB ERROR");
+                console.log(error);
+                res.redirect("/login");
+                return false;
             }
-        });
+        });        
+
+
+
+
     }
 
     else {
