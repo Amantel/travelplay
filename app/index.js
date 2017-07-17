@@ -254,8 +254,11 @@ app.post('/register_user', (req, res) => {
                                 code: { $eq: req.body.code.trim() }
                             }).toArray(function (err, result) {
 
-                                if (!err) {                
-                                    callback(null, result[0]); 
+                                if (!err) {        
+                                    if(result.length>0)        
+                                        callback(null, result[0]); 
+                                    else 
+                                        callback(null, -1); 
                                 }
                                 else {
                                     callback(err);
@@ -275,7 +278,7 @@ app.post('/register_user', (req, res) => {
                         /*
                         If user entered CODE, but it is bad - stop registration with info
                         */
-                        if(codeInfo) {
+                        if(codeInfo && codeInfo!==-1 && codeInfo!==0) {
 
                             if(codeInfo.active!==1) {
                                 sess.actionError = "This code is not active. Please try other, or register without code";
@@ -304,6 +307,10 @@ app.post('/register_user', (req, res) => {
                                                 }
                                             }
                                         );                            }
+                        } else if (codeInfo==-1) {
+                                sess.actionError = "There is no such code. Please try other, or register without code";
+                                res.redirect("/reg");  
+                                return false;                                                          
                         }
                         //save
                         db.collection('users').save(new_user, (err, result) => {

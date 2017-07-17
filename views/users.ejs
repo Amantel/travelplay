@@ -93,7 +93,7 @@ body {
                               <%=result[i].surname%> <%=result[i].name%>
                         </td>   
                         <td>
-                            Private                     
+                            <%=result[i].registrationCode || "Private"%>
                         </td>
                         <td>
                             <form method="POST" class="form-inline text-left" action="/approve_user">
@@ -209,7 +209,9 @@ body {
 
       
 </div>
-
+<div class="prefooter">
+<br><br>
+</div>
     <footer class="footer">
       <div class="container">
         <p class="text-muted text-center">
