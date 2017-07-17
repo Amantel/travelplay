@@ -214,16 +214,23 @@ app.post('/register_user', (req, res) => {
     var surname=json.surname || "";
     var fbId=json.fbId || "";
 
+    if(!email) {
+        sess.actionError = "Email already not submited.";                
+        res.redirect("/reg");
+        return false;
+    }
+
     db.collection('users').find({ email: { $eq: json.email } }).toArray(function (err, result) {
 
         if (!err) {
             if (result.length > 0) {
                 sess.actionError = "Email already registred. Please wait for the approval.";                
                 res.redirect("/reg");
-                return true;
+                return false;
             }
             else {
 
+                    
                 var new_user = {};
                 new_user.password = tech.generatePass();
                 new_user.code = tech.randomString(32, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
@@ -236,26 +243,128 @@ app.post('/register_user', (req, res) => {
                 new_user.name= name;
                 new_user.surname=surname; 
                 new_user.fbId=fbId;
+                new_user.registrationCode="";
 
 
-                db.collection('users').save(new_user, (err, result) => {
-                    if (err) {
-                        sess.actionError = "Error with database in: save user";
-                        console.log(err);
-                        res.redirect("/reg");
-                        return false;
+
+                async.waterfall([
+                    function(callback) {
+                        if(req.body.code || null) {
+                            db.collection('codes').find({
+                                code: { $eq: req.body.code.trim() }
+                            }).toArray(function (err, result) {
+
+                                if (!err) {                
+                                    callback(null, result[0]); 
+                                }
+                                else {
+                                    callback(err);
+                                }
+                            });
+
+                            
+                            
+                        } else {
+                            callback(null, 0); 
+                        }
+                    },
+                ], function (err, codeInfo) {
+                    if(err) {
+                        res.send(err);
+                    } else {
+                        /*
+                        If user entered CODE, but it is bad - stop registration with info
+                        */
+                        if(codeInfo) {
+
+                            if(codeInfo.active!==1) {
+                                sess.actionError = "This code is not active. Please try other, or register without code";
+                                res.redirect("/reg");  
+                                return false;                              
+                            } else if(codeInfo.left<=0) {
+                                sess.actionError = "This code has zero registrations left. Please try other, or register without code";
+                                res.redirect("/reg");                                
+                                return false;
+                            } else {
+                                new_user.registrationCode=codeInfo.code;
+                                new_user.approved=1;
+
+
+                                //id = new ObjectID(codeInfo._id);
+                                id = codeInfo._id;
+                                newLeft=codeInfo.left-1;
+
+                                db.collection('codes').update(
+                                            { _id: id }, //
+                                            { $set: {left:newLeft} },
+                                            (err, result) => {
+                                                if (err) {
+                                                    console.log(err);
+                                                    return false;
+                                                }
+                                            }
+                                        );                            }
+                        }
+                        //save
+                        db.collection('users').save(new_user, (err, result) => {
+                            if (err) {
+                                sess.actionError = "Error with database in: save user";
+                                console.log(err);
+                                res.redirect("/reg");
+                                return false;
+                            }
+
+                            if(new_user.approved===0) {
+
+                            sess.actionResult = "User registred. Please wait for approval";
+
+                            html = '<html><body>Visit <a href="' + server_settings.appUrl + 'admin_login" target="_blank"> here </a></body></html>';
+                            tech.sendMail(settings.adminMail, "New registration on " + server_settings.appName + " ", html);
+                            } else {
+                                sess.actionResult = "User registred and approved. Check your inbox for instructions";
+                                html = '<html><body>You can visit <a href="' + server_settings.appUrl + 'admin_login" target="_blank"> here </a></body></html>';
+                                tech.sendMail(settings.adminMail, "New registration with code on " + server_settings.appName + " ", html);
+
+                                
+                                html = '<html><body>'+
+                                    '<p><strong>Welcome to Wanderlust.cloud!</strong></p>'+
+                                    '<p>You can access your account on <a href="' + server_settings.appUrl + '" target="_blank">' + server_settings.appName + '</a> using your email as username and this password: ' + new_user.password + ' (you can change the password after you login)</p>'+
+                                    '<p>Wanderlust.cloud is the easiest system to get relevant suggestions for live gigs you might like during your travels.<br/>'+
+                                    'You can easily link your Spotify profile or add a list of your favourite artists manually. You can then also do the same with your upcoming trips, linking your Tripit account so we can automatically retrieve your travel schedule, or adding trips manually through the interface.<br/>'+
+                                    'Every time we have new suggestions for you, you will receive an email notification and you can easily check the list of events in your account on Wanderlust.cloud.</p>'+
+                                    '<p><strong>Please Note</strong>: Wanderlust.cloud is currently in a very early stage of development, so we will be happy to get your feedback on your experience with it. Send your questions, comments and suggestions to <a href="mailto:info@wanderlust.cloud">info@wanderlust.cloud</a>.</p>'+
+                                    '<p>Thanks!</p>'+
+                                    '<p>Francesco</p>'+
+                                    '</body></html>';
+                                
+                                tech.sendMail(new_user.email, "Welcome to " + server_settings.appName, html);
+
+
+
+                                
+                            }
+
+                            res.redirect("/");
+                            return true;
+
+                        });
+
                     }
-
-                    sess.actionResult = "User registred. Please wait for approval";
-
-                    var html = '<html><body>Visit <a href="' + server_settings.appUrl + 'admin_login" target="_blank"> here </a></body></html>';
-                    tech.sendMail(settings.adminMail, "New registration on " + server_settings.appName + " ", html);
-
-                    //console.log(sess.actionResult);
-                    res.redirect("/");
-                    return true;
-
+                    
+                    
                 });
+
+
+
+
+
+
+
+
+
+
+
+
             }
 
         }
@@ -501,6 +610,76 @@ app.all('/login', (req, res) => {
 
 
 
+
+app.post("/manage_code", (req, res) => {
+ 
+
+    if ((req.body.save || null) && (req.body.id || null)) {
+        var active = 0;
+        if (req.body.active && req.body.active==1) {
+            active = 1;
+        }
+
+        id = new ObjectID(req.body.id);
+
+        db.collection('codes').update({ _id: id }, { $set: { active: active } },
+            (err, result) => {
+                if (err) {
+                    res.send({ error: err });
+                }
+                res.redirect("/users");
+                return true;
+
+            });
+    }
+
+    else if ((req.body.new_code || null) && (req.body.code || null) && (req.body.total || null)) {
+
+        
+
+
+        db.collection('codes').save(
+            {
+                dateAdded: new Date(),
+                code:req.body.code.replace(" ","_"),
+                active:1,
+                total:req.body.total,
+                left:req.body.total
+            }, (err, result) => {
+                if (err) {
+                    sess.actionError = "Error with database in: manage code";
+                    console.log(err);
+                    res.redirect("/users");
+                    return false;
+                }
+
+                sess.actionResult = "New code added";
+                res.redirect("/users");
+                return true;
+
+            });
+
+
+    }
+    else {
+        res.redirect("/users");
+    }
+
+
+
+
+});
+
+
+
+
+
+
+
+
+
+
+
 app.post("/approve_user", (req, res) => {
     if ((req.body.delete || null) && (req.body.id || null)) {
         id = new ObjectID(req.body.id);
@@ -557,28 +736,65 @@ app.get('/users', (req, res) => {
         return false;
     }
 
-    db.collection('users').find().toArray(function (err, result) {
 
-        if (!err) {
+async.parallel([
+    function(callback) {
+        db.collection('users').find().toArray(function (err, result) {
 
-            result.sort(function (a, b) {
-                if (a.approved > b.approved) {
-                    return 1;
-                }
-                if (a.approved < b.approved) {
-                    return -1;
-                }
-                return 0;
-            });
+            if (!err) {
 
-            res.render('users.ejs', { result: result });
+                result.sort(function (a, b) {
+                    if (a.approved > b.approved) {
+                        return 1;
+                    }
+                    if (a.approved < b.approved) {
+                        return -1;
+                    }
+                    return 0;
+                });
+
+                callback(null, result);
 
 
-        }
-        else {
-            res.send({ error: err });
-        }
-    });
+            }
+            else {
+                callback(err);
+            }
+        });
+
+
+    },
+    function(callback) {
+        db.collection('codes').find().toArray(function (err, result) {
+            if (!err) {
+                callback(null, result);
+            }
+            else {
+                callback(err);
+                
+            }
+        });
+    }
+],
+// optional callback
+function(err, results) {
+    if(err) {
+        res.send(err);
+    } else {
+        var users=results[0];
+        var codes=results[1];
+        res.render('users.ejs', { users: users,codes:codes });
+
+    }
+    // the results array will equal ['one','two'] even though
+    // the second function had a shorter timeout.
+});
+
+
+
+    
+
+
 
 
 
