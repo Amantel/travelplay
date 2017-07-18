@@ -188,7 +188,49 @@ $(function () {
 
         //check all;
         if (band) {
-            
+            var bandName=encodeURI(band);
+            $(".loading").removeClass("hidden");   
+                        
+            $.post("/ask_spotify",function(spot_data){
+                if(spot_data.access_token) {
+
+                    $.ajax({
+                    url: "https://api.spotify.com/v1/search?q="+bandName+"&type=artist",
+                    type: 'GET',
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('Authorization', 'Bearer '+spot_data.access_token);
+                    },
+                    data: {},
+                    success: function (data) { 
+                        var genres=[];
+                        if(data.artists && data.artists.items && data.artists.items.length>0 && data.artists.items[0].genres)
+                            genres=data.artists.items[0].genres;
+                        var bandtr = createBand(band,genres, $("[data-trip]").length + 1);                
+                        $('[data-bands]').prepend(bandtr);
+                        $('body').animate({scrollTop:0}, '500');  
+                        $("#brb").click();
+                    },
+                    error: function () { 
+                        $(".loading").removeClass("hidden");   
+                        var genres=[];
+                        var bandtr = createBand(band,genres, $("[data-trip]").length + 1);   
+                        $('[data-bands]').prepend(bandtr);
+                        $('body').animate({scrollTop:0}, '500');  
+                        $("#brb").click();                    },
+                    });
+
+                     
+                }
+                else {
+                    $(".loading").removeClass("hidden");   
+                    var genres=[];
+                    var bandtr = createBand(band,genres, $("[data-trip]").length + 1);   
+                    $('[data-bands]').prepend(bandtr);
+                    $('body').animate({scrollTop:0}, '500');  
+                    $("#brb").click();
+                }
+            });
+            /* For now we can not access spotify
             var bandName=encodeURI(band);
             $(".loading").removeClass("hidden");            
             $.get( "https://api.spotify.com/v1/search?q="+bandName+"&type=artist", function( data ) {
@@ -201,6 +243,8 @@ $(function () {
                 $('body').animate({scrollTop:0}, '500');  
                 $("#brb").click();
             });
+            */
+  
 
             
 
