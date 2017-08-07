@@ -149,13 +149,19 @@ $(function () {
 
     $("#more_trips").click(function (e) {
         e.preventDefault();
-        var city = $("[data-new_city]").val();
-        var country = $("[data-new_country]").val();
-        var start = $("[data-new_start]").val();
-        var end = $("[data-new_end]").val();
+        var city = $("[data-new_city]").val().trim();
+        var country = $("[data-new_country]").val().trim();
+        var start = $("[data-new_start]").val().trim();
+        var end = $("[data-new_end]").val().trim();
 
         //check all;
-        var check = city && country && start && end;
+        var check = city && country && start && end 
+		&& moment(start).isValid() && moment(end).isValid() && moment(start).isBefore(end);
+		
+		
+		
+		
+		
         if (check) {
             var trip = createTrip(
                 city,
@@ -175,7 +181,7 @@ $(function () {
             */
 
         } else {
-            alert("One field is empty");
+            alert("One or more fields are empty or invalid");
         }
     });
 

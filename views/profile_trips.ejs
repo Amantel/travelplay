@@ -155,19 +155,19 @@
                                 <form class="form-inline" data-add_trip_form>
                                     <div class="form-group">
                                         <label class="sr-only" for="data-new_city">City</label>
-                                        <input type="text" value="" class="form-control" id="data-new_city" data-new_city placeholder="City">
+                                        <input required type="text" value="" class="form-control" id="data-new_city" data-new_city placeholder="City">
                                     </div>
                                     <div class="form-group">
                                         <label class="sr-only" for="data-new_country">Country</label>
-                                        <input type="text" value="" class="form-control" id="data-new_country" data-new_country placeholder="Country">
+                                        <input required type="text" value="" class="form-control" id="data-new_country" data-new_country placeholder="Country">
                                     </div>
                                     <div class="form-group">
                                         <label class="sr-only" for="data-new_start">Start </label>
-                                        <input type="text" value="" class="form-control" id="data-new_start" data-date_mask data-new_start placeholder="Start date YYYY-MM-DD">
+                                        <input required type="text" value="" class="form-control" id="data-new_start" data-date_mask data-new_start placeholder="Start date YYYY-MM-DD">
                                     </div>
                                     <div class="form-group">
                                         <label class="sr-only" for="data-new_end">End date</label>
-                                        <input type="text" value="" class="form-control" id="data-new_end" data-date_mask data-new_end placeholder="End date YYYY-MM-DD">
+                                        <input required type="text" value="" class="form-control" id="data-new_end" data-date_mask data-new_end placeholder="End date YYYY-MM-DD">
                                     </div>
                                     <a href="#" id="more_trips" class="btn btn-default pull-right">Add this trip</a>
                                 </form>
@@ -210,7 +210,8 @@
 
     <script type='text/javascript' src="./js/jquery-latest.js"></script>
     <script type='text/javascript' src="./js/bootstrap.min.js"></script>
-    <script src="./js/jquery.inputmask.bundle.min.js"></script>
+    <script type='text/javascript' src="./js/jquery.inputmask.bundle.min.js"></script>
+    <script type='text/javascript' src="./js/moment.min.js"></script>	
 
     <script src="./js/main.js"></script>
 
